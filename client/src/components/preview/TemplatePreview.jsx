@@ -17,6 +17,7 @@ export function TemplatePreview({
   firstPageOnly = false,
   title,
   className,
+  onPageCount,
 }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
@@ -39,7 +40,11 @@ export function TemplatePreview({
 
   const measure = () => {
     const doc = frameRef.current?.contentDocument;
-    if (doc?.documentElement) setDocHeight(Math.max(page.h, doc.documentElement.scrollHeight));
+    if (!doc?.documentElement) return;
+    const height = Math.max(page.h, doc.documentElement.scrollHeight);
+    setDocHeight(height);
+    // Screen layout approximates print pagination; exact page breaks are checked at export.
+    onPageCount?.(Math.max(1, Math.ceil((height - 2) / page.h)));
   };
 
   const scale = width ? width / page.w : 0;

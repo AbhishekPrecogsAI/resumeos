@@ -56,14 +56,12 @@ describe('register', () => {
   });
 
   it('rejects unexpected fields', async () => {
-    const res = await agent(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: 'a@example.com',
-        password: 'long enough pw',
-        displayName: 'A',
-        accountStatus: 'active',
-      });
+    const res = await agent(app).post('/api/v1/auth/register').send({
+      email: 'a@example.com',
+      password: 'long enough pw',
+      displayName: 'A',
+      accountStatus: 'active',
+    });
     expect(res.status).toBe(400);
   });
 

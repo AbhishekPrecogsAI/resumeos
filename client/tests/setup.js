@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
+
+// Lazy routes plus several mocked requests can exceed the 1s default.
+configure({ asyncUtilTimeout: 5000 });
 
 // jsdom lacks these browser APIs.
 window.matchMedia ??= (query) => ({

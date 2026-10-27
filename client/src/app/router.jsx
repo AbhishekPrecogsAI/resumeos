@@ -3,6 +3,7 @@ import { PublicLayout } from '../components/layout/PublicLayout.jsx';
 import { AppLayout } from '../components/layout/AppLayout.jsx';
 import { RequireAuth, RedirectIfSignedIn } from './guards.jsx';
 import { RouteError } from './RouteError.jsx';
+import { NotFoundPage } from '../features/public/NotFoundPage.jsx';
 
 const page = (loader, name) => async () => ({ Component: (await loader())[name] });
 
@@ -42,7 +43,7 @@ export const routes = [
         path: 'reset-password/:token',
         lazy: page(() => import('../features/auth/PasswordResetPages.jsx'), 'ResetPasswordPage'),
       },
-      { path: '*', lazy: pub('NotFoundPage', 'NotFoundPage') },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {
@@ -85,7 +86,7 @@ export const routes = [
               },
             ],
           },
-          { path: '*', lazy: pub('NotFoundPage', 'NotFoundPage') },
+          { path: '*', element: <NotFoundPage /> },
         ],
       },
     ],

@@ -59,3 +59,22 @@ describe('renderClarity', () => {
     expect(renderClarity(sampleResume, {}, { pageSize: 'A4' })).toContain('size: A4');
   });
 });
+
+describe('bullets', () => {
+  it('renders bullet objects and legacy strings, skipping empty ones', () => {
+    const content = { ...emptyContent(), contact: { name: 'A' } };
+    content.experience = [
+      {
+        id: 'exp_1',
+        title: 'T',
+        company: 'C',
+        bullets: [{ id: 'b1', text: 'Object bullet' }, 'String bullet', { id: 'b2', text: '  ' }],
+      },
+    ];
+    const html = renderClarity(content);
+    expect(html).toContain('<li>Object bullet</li>');
+    expect(html).toContain('<li>String bullet</li>');
+    expect(html.match(/<li>/g)).toHaveLength(2);
+    expect(html).not.toContain('[object Object]');
+  });
+});

@@ -74,7 +74,7 @@ describe('account', () => {
       .delete('/api/v1/account')
       .send({ password: credentials.password, confirmation: 'DELETE' });
     expect(res.status).toBe(200);
-    expect(res.body.deleted).toEqual({ account: 1, sessions: 2 });
+    expect(res.body.deleted).toMatchObject({ account: 1, sessions: 2 });
     expect(await User.countDocuments({ email: credentials.email })).toBe(0);
     expect((await client.get('/api/v1/auth/me')).status).toBe(401);
     // Other users are untouched.

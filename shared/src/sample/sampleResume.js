@@ -26,9 +26,21 @@ export const sampleResume = {
       endDate: '',
       current: true,
       bullets: [
-        'Led migration of the shipment-tracking API from a monolith to three Node.js services, cutting p95 latency from 820 ms to 310 ms.',
-        'Designed the idempotent webhook delivery pipeline used by 40+ carrier integrations.',
-        'Introduced contract tests between services; production incidents from breaking changes dropped to zero over two quarters.',
+        {
+          id: 'b_s1',
+          text: 'Led migration of the shipment-tracking API from a monolith to three Node.js services, cutting p95 latency from 820 ms to 310 ms.',
+          evidenceIds: [],
+        },
+        {
+          id: 'b_s2',
+          text: 'Designed the idempotent webhook delivery pipeline used by 40+ carrier integrations.',
+          evidenceIds: [],
+        },
+        {
+          id: 'b_s3',
+          text: 'Introduced contract tests between services; production incidents from breaking changes dropped to zero over two quarters.',
+          evidenceIds: [],
+        },
       ],
     },
     {
@@ -41,8 +53,16 @@ export const sampleResume = {
       endDate: '2022-02',
       current: false,
       bullets: [
-        'Built reconciliation jobs in Go that matched 2M+ daily transactions against bank statements.',
-        'Owned the PostgreSQL schema for ledgers, including online migrations with zero downtime.',
+        {
+          id: 'b_s4',
+          text: 'Built reconciliation jobs in Go that matched 2M+ daily transactions against bank statements.',
+          evidenceIds: [],
+        },
+        {
+          id: 'b_s5',
+          text: 'Owned the PostgreSQL schema for ledgers, including online migrations with zero downtime.',
+          evidenceIds: [],
+        },
       ],
     },
   ],

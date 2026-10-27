@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { LayoutDashboard, Menu, Settings, X } from 'lucide-react';
+import { FileText, LayoutDashboard, Menu, Settings, UserRound, X } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useTheme } from '../../hooks/useTheme.jsx';
 import { Logo } from './Logo.jsx';
@@ -11,6 +11,8 @@ import { cx } from '../../lib/cx.js';
 // Navigation grows as each product area ships.
 export const APP_NAV = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/app/profile', label: 'Master profile', icon: UserRound },
+  { to: '/app/resumes', label: 'Resumes', icon: FileText },
   { to: '/app/settings', label: 'Settings', icon: Settings },
 ];
 

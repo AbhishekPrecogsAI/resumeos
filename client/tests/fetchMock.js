@@ -6,8 +6,13 @@ export function mockApi(handlers) {
   const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init = {}) => {
     const method = (init.method ?? 'GET').toUpperCase();
     const path = String(url);
-    calls.push({ method, path, body: init.body ? JSON.parse(init.body) : undefined });
-    const handler = handlers[`${method} ${path}`];
+    calls.push({
+      method,
+      path,
+      body: init.body ? JSON.parse(init.body) : undefined,
+      headers: init.headers ?? {},
+    });
+    const handler = handlers[`${method} ${path}`] ?? handlers[`${method} ${path.split('?')[0]}`];
     const [status, body] = handler
       ? typeof handler === 'function'
         ? handler(init)

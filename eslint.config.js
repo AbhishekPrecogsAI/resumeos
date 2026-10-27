@@ -8,6 +8,11 @@ export default [
   { ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**'] },
   js.configs.recommended,
   {
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', ignoreRestSiblings: true }],
+    },
+  },
+  {
     files: ['server/**/*.js', 'scripts/**/*.mjs', '*.js'],
     languageOptions: { globals: globals.node },
   },

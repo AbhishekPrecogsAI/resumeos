@@ -1,6 +1,6 @@
 import { escapeHtml as e, safeHref, displayUrl } from '../escape.js';
 import { formatRange } from '../dates.js';
-import { SECTION_TITLES, resolveSectionOrder } from '../resumeModel.js';
+import { SECTION_TITLES, resolveSectionOrder, bulletText } from '../resumeModel.js';
 
 export const CLARITY = {
   id: 'clarity',
@@ -30,9 +30,9 @@ function link(url, text) {
 }
 
 function bullets(list) {
-  const items = (list ?? []).filter((b) => String(b ?? '').trim() !== '');
+  const items = (list ?? []).map(bulletText).filter((text) => text.trim() !== '');
   if (!items.length) return '';
-  return `<ul>${items.map((b) => `<li>${e(b)}</li>`).join('')}</ul>`;
+  return `<ul>${items.map((text) => `<li>${e(text)}</li>`).join('')}</ul>`;
 }
 
 function visibleItems(items, hidden) {
