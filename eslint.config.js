@@ -12,6 +12,11 @@ export default [
     languageOptions: { globals: globals.node },
   },
   {
+    // Isomorphic code and Playwright specs (which evaluate callbacks in the browser).
+    files: ['shared/**/*.js', 'e2e/**/*.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ['client/**/*.{js,jsx}'],
     plugins: { react, 'react-hooks': reactHooks },
     languageOptions: {
@@ -25,6 +30,7 @@ export default [
       ...reactHooks.configs.recommended.rules,
       'react/prop-types': 'off',
       'react/no-danger': 'error',
+      'react/no-unescaped-entities': 'off',
     },
   },
   { files: ['client/vite.config.js'], languageOptions: { globals: globals.node } },

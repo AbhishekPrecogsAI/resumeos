@@ -3,3 +3,5 @@ dist
 coverage
 package-lock.json
 AGENT-8.md
+test-results
+playwright-report

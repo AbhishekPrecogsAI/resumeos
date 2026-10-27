@@ -5,10 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ResumeOS — structured career data, versioned resumes, honest quality checks."
+      content="ResumeOS keeps your career history in one structured profile and generates versioned, job-specific resumes from it."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>ResumeOS</title>
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      (function () {
+        var pref = 'system';
+        try {
+          pref = localStorage.getItem('resumeos:theme') || 'system';
+        } catch (e) {}
+        var dark =
+          pref === 'dark' ||
+          (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "description": "ResumeOS — structured career data, versioned resumes, honest quality checks.",
   "workspaces": [
+    "shared",
     "client",
     "server"
   ],
@@ -18,11 +19,14 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm test -w server && npm test -w client",
-    "smoke": "node scripts/smoke.mjs"
+    "test": "npm test -w shared && npm test -w server && npm test -w client",
+    "smoke": "node scripts/smoke.mjs",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.64.1",
     "concurrently": "^10.0.6",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",

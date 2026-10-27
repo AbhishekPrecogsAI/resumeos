@@ -3,18 +3,20 @@
 A career-data workspace: maintain one trustworthy master profile and generate versioned,
 job-specific resumes from it, with deterministic quality checks and reliable exports.
 
-**Status:** Phase 0 (foundation). Only health checks and client–server connectivity exist.
+**Status:** Phase 1 complete (design system and public site). The authenticated app arrives from Phase 2.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
-[`docs/product-requirements.md`](docs/product-requirements.md).
+[`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
+[`docs/design-system.md`](docs/design-system.md).
 
 ## Stack
 
-| Part   | Tech                                                                  |
-| ------ | --------------------------------------------------------------------- |
-| Client | React 19 (JavaScript), Vite 8, Tailwind CSS 4, TanStack Query         |
-| Server | Node.js 22, Express 5, Mongoose 9, Zod (env validation), Helmet, CORS |
-| Tests  | Vitest, Supertest, Testing Library (jsdom)                            |
-| Tools  | npm workspaces, ESLint 9 (flat config), Prettier                      |
+| Part   | Tech                                                                          |
+| ------ | ----------------------------------------------------------------------------- |
+| Client | React 19 (JavaScript), Vite 8, Tailwind CSS 4, React Router 7, TanStack Query |
+| Shared | `shared/`: pure JS used by client and server (resume model, templates, dates) |
+| Server | Node.js 22, Express 5, Mongoose 9, Zod (env validation), Helmet, CORS         |
+| Tests  | Vitest, Supertest, Testing Library (jsdom), Playwright + axe-core             |
+| Tools  | npm workspaces, ESLint 9 (flat config), Prettier                              |
 
 ## Requirements
 
@@ -51,7 +53,11 @@ Docker: `docker compose up -d mongo`.
 | `npm run format:check` | Prettier check (`npm run format` to write)                     |
 | `npm run smoke`        | Hits the running dev servers and checks health + the dev proxy |
 
-E2E tests (Playwright) are not configured yet; they arrive with the first real user journey.
+E2E tests use the installed Google Chrome (`channel: 'chrome'`), so no browser download is needed.
+They start their own API on `:5100` (database `resumeos_e2e`) and client on `:5174`, so they don't
+touch your dev servers or data. They need MongoDB running. Checks include horizontal overflow at
+375/768/1280px, axe-core WCAG 2.1 AA scans in light and dark themes, keyboard focus, and no
+third-party requests.
 
 In development the Vite dev server proxies `/api` and `/health` to the server, so the client
 uses same-origin paths and never hard-codes the API URL.
