@@ -1,0 +1,98 @@
+# ResumeOS
+
+A career-data workspace: maintain one trustworthy master profile and generate versioned,
+job-specific resumes from it, with deterministic quality checks and reliable exports.
+
+**Status:** Phase 0 (foundation). Only health checks and client–server connectivity exist.
+The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
+[`docs/product-requirements.md`](docs/product-requirements.md).
+
+## Stack
+
+| Part   | Tech                                                                  |
+| ------ | --------------------------------------------------------------------- |
+| Client | React 19 (JavaScript), Vite 8, Tailwind CSS 4, TanStack Query         |
+| Server | Node.js 22, Express 5, Mongoose 9, Zod (env validation), Helmet, CORS |
+| Tests  | Vitest, Supertest, Testing Library (jsdom)                            |
+| Tools  | npm workspaces, ESLint 9 (flat config), Prettier                      |
+
+## Requirements
+
+- Node.js **≥ 22.12** (`.nvmrc` pins 22) and npm ≥ 10
+- MongoDB **7+**, either native `mongod` or via Docker Compose
+
+## Setup
+
+```bash
+npm install
+cp .env.example server/.env
+# Replace SESSION_SECRET in server/.env with a real secret:
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+The server validates environment variables at startup and exits with a list of problems if
+any are invalid. A placeholder `SESSION_SECRET` is rejected when `NODE_ENV=production`.
+`server/.env` is gitignored; never commit it. Do not put backend secrets in `VITE_*` variables.
+
+### MongoDB
+
+Native: make sure `mongod` is listening on `127.0.0.1:27017`.
+Docker: `docker compose up -d mongo`.
+
+## Scripts (run from the repo root)
+
+| Command                | What it does                                                   |
+| ---------------------- | -------------------------------------------------------------- |
+| `npm run dev`          | Starts server (`:5000`, watch mode) and client (`:5173`)       |
+| `npm run build`        | Production build of the client into `client/dist`              |
+| `npm start`            | Starts the server without watch mode                           |
+| `npm test`             | Server then client unit/integration tests                      |
+| `npm run lint`         | ESLint across the repo                                         |
+| `npm run format:check` | Prettier check (`npm run format` to write)                     |
+| `npm run smoke`        | Hits the running dev servers and checks health + the dev proxy |
+
+E2E tests (Playwright) are not configured yet; they arrive with the first real user journey.
+
+In development the Vite dev server proxies `/api` and `/health` to the server, so the client
+uses same-origin paths and never hard-codes the API URL.
+
+## Smoke test procedure
+
+1. Ensure MongoDB is running.
+2. `npm run dev` in one terminal.
+3. `npm run smoke` in another. Expected output:
+   ```
+   PASS  server /health/live  (200)
+   PASS  server /health/ready  (200)
+   PASS  client index  (200)
+   PASS  client proxy /health/ready  (200)
+   ```
+4. Open http://localhost:5173. It should read "API and database reachable".
+5. Stop MongoDB and click **Recheck**. It should read "API reachable, database unavailable",
+   and `GET /health/ready` should return `503`.
+
+## Endpoints so far
+
+| Method | Path            | Notes                                                     |
+| ------ | --------------- | --------------------------------------------------------- |
+| GET    | `/health/live`  | Process is up. Always `200` while serving.                |
+| GET    | `/health/ready` | `200` when MongoDB is connected, otherwise `503`.         |
+| GET    | `/api/v1/meta`  | API name/version; `features` lists only shipped features. |
+
+Errors use one shape: `{ "error": { "code", "message", "requestId" } }`. Every response
+carries an `x-request-id` header. Logs are structured JSON and record method, path, status
+and latency only, never request bodies.
+
+## Troubleshooting
+
+- **`Invalid environment configuration`:** the message lists each bad variable; fix `server/.env`.
+- **`/health/ready` returns 503:** MongoDB is unreachable at `MONGODB_URI`. The server keeps
+  serving and Mongoose keeps retrying in the background.
+- **`Port 5173 is in use`:** the client uses `strictPort`; free the port or stop the other Vite.
+- **Client shows "Couldn't reach the API":** the server isn't running on `:5000`, or
+  `API_PROXY_TARGET` points elsewhere.
+
+## Resetting local data
+
+Development data lives in the `resumeos` database. To wipe it:
+`mongosh resumeos --eval 'db.dropDatabase()'`. Demo-data seeding is not implemented yet.
