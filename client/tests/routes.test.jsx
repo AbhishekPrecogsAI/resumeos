@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
+import { beforeEach } from 'vitest';
 import { renderRoute } from './render.jsx';
+import { mockApi, SIGNED_OUT } from './fetchMock.js';
+
+beforeEach(() => mockApi(SIGNED_OUT));
 
 describe('public routes', () => {
   it.each([

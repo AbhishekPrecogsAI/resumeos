@@ -39,6 +39,7 @@ describe('api basics', () => {
     const res = await request(buildApp()).get('/api/v1/meta');
     expect(res.status).toBe(200);
     expect(res.body.apiVersion).toBe('v1');
+    expect(res.headers['cache-control']).toBe('no-store');
   });
 
   it('unknown routes return a consistent 404 error body', async () => {
@@ -51,6 +52,7 @@ describe('api basics', () => {
   it('malformed JSON returns 400 without a stack trace', async () => {
     const res = await request(buildApp())
       .post('/api/v1/meta')
+      .set('origin', 'http://localhost:5173')
       .set('content-type', 'application/json')
       .send('{bad');
     expect(res.status).toBe(400);

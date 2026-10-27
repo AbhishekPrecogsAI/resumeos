@@ -6,6 +6,7 @@ const CLIENT_PORT = 5174;
 
 export default defineConfig({
   testDir: 'e2e',
+  globalSetup: './e2e/global-setup.js',
   fullyParallel: false,
   workers: 1,
   retries: 0,

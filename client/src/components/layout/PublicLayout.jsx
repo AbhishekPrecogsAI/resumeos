@@ -6,6 +6,7 @@ import { ThemeToggle } from './ThemeToggle.jsx';
 import { SkipLink } from './SkipLink.jsx';
 import { ButtonLink } from '../ui/Button.jsx';
 import { cx } from '../../lib/cx.js';
+import { useAuth } from '../../hooks/useAuth.jsx';
 
 const NAV = [
   { to: '/features', label: 'Features' },
@@ -23,6 +24,7 @@ function navClass({ isActive }) {
 
 export function PublicLayout() {
   const location = useLocation();
+  const { user } = useAuth();
   // The menu is open only for the path it was opened on, so navigating closes it.
   const [menuPath, setMenuPath] = useState(null);
   const menuOpen = menuPath === location.pathname;
@@ -50,12 +52,23 @@ export function PublicLayout() {
           </nav>
           <div className="ml-auto hidden items-center gap-3 lg:flex">
             <ThemeToggle />
-            <Link to="/login" className="rounded-md px-2 py-1.5 text-sm text-muted hover:text-ink">
-              Sign in
-            </Link>
-            <ButtonLink to="/register" size="sm">
-              Build your resume
-            </ButtonLink>
+            {user ? (
+              <ButtonLink to="/app" size="sm">
+                Open workspace
+              </ButtonLink>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-md px-2 py-1.5 text-sm text-muted hover:text-ink"
+                >
+                  Sign in
+                </Link>
+                <ButtonLink to="/register" size="sm">
+                  Build your resume
+                </ButtonLink>
+              </>
+            )}
           </div>
           <button
             type="button"
@@ -84,15 +97,21 @@ export function PublicLayout() {
                   {item.label}
                 </NavLink>
               ))}
-              <NavLink
-                to="/login"
-                className={({ isActive }) => cx(navClass({ isActive }), 'py-2 text-base')}
-              >
-                Sign in
-              </NavLink>
+              {!user && (
+                <NavLink
+                  to="/login"
+                  className={({ isActive }) => cx(navClass({ isActive }), 'py-2 text-base')}
+                >
+                  Sign in
+                </NavLink>
+              )}
             </nav>
             <div className="mt-4 flex items-center justify-between gap-3">
-              <ButtonLink to="/register">Build your resume</ButtonLink>
+              {user ? (
+                <ButtonLink to="/app">Open workspace</ButtonLink>
+              ) : (
+                <ButtonLink to="/register">Build your resume</ButtonLink>
+              )}
               <ThemeToggle />
             </div>
           </div>

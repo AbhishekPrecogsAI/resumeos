@@ -1,43 +1,92 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import { PublicLayout } from '../components/layout/PublicLayout.jsx';
+import { AppLayout } from '../components/layout/AppLayout.jsx';
+import { RequireAuth, RedirectIfSignedIn } from './guards.jsx';
 import { RouteError } from './RouteError.jsx';
 
 const page = (loader, name) => async () => ({ Component: (await loader())[name] });
 
+const pub = (file, name) => page(() => import(`../features/public/${file}.jsx`), name);
+
 export const routes = [
   {
     element: <PublicLayout />,
+    errorElement: <RouteError />,
     hydrateFallbackElement: <div className="min-h-dvh" />,
+    children: [
+      { index: true, lazy: pub('LandingPage', 'LandingPage') },
+      { path: 'features', lazy: pub('FeaturesPage', 'FeaturesPage') },
+      { path: 'templates', lazy: pub('TemplatesPage', 'TemplatesPage') },
+      { path: 'pricing', lazy: pub('PricingPage', 'PricingPage') },
+      { path: 'security', lazy: pub('SecurityPage', 'SecurityPage') },
+      { path: 'privacy', lazy: pub('LegalPages', 'PrivacyPage') },
+      { path: 'terms', lazy: pub('LegalPages', 'TermsPage') },
+      {
+        element: <RedirectIfSignedIn />,
+        children: [
+          {
+            path: 'login',
+            lazy: page(() => import('../features/auth/LoginPage.jsx'), 'LoginPage'),
+          },
+          {
+            path: 'register',
+            lazy: page(() => import('../features/auth/RegisterPage.jsx'), 'RegisterPage'),
+          },
+        ],
+      },
+      {
+        path: 'forgot-password',
+        lazy: page(() => import('../features/auth/PasswordResetPages.jsx'), 'ForgotPasswordPage'),
+      },
+      {
+        path: 'reset-password/:token',
+        lazy: page(() => import('../features/auth/PasswordResetPages.jsx'), 'ResetPasswordPage'),
+      },
+      { path: '*', lazy: pub('NotFoundPage', 'NotFoundPage') },
+    ],
+  },
+  {
+    path: 'app',
+    element: <RequireAuth />,
     errorElement: <RouteError />,
     children: [
       {
-        index: true,
-        lazy: page(() => import('../features/public/LandingPage.jsx'), 'LandingPage'),
-      },
-      {
-        path: 'features',
-        lazy: page(() => import('../features/public/FeaturesPage.jsx'), 'FeaturesPage'),
-      },
-      {
-        path: 'templates',
-        lazy: page(() => import('../features/public/TemplatesPage.jsx'), 'TemplatesPage'),
-      },
-      {
-        path: 'pricing',
-        lazy: page(() => import('../features/public/PricingPage.jsx'), 'PricingPage'),
-      },
-      {
-        path: 'security',
-        lazy: page(() => import('../features/public/SecurityPage.jsx'), 'SecurityPage'),
-      },
-      {
-        path: 'privacy',
-        lazy: page(() => import('../features/public/LegalPages.jsx'), 'PrivacyPage'),
-      },
-      { path: 'terms', lazy: page(() => import('../features/public/LegalPages.jsx'), 'TermsPage') },
-      {
-        path: '*',
-        lazy: page(() => import('../features/public/NotFoundPage.jsx'), 'NotFoundPage'),
+        element: <AppLayout />,
+        children: [
+          {
+            index: true,
+            lazy: page(() => import('../features/dashboard/DashboardPage.jsx'), 'DashboardPage'),
+          },
+          {
+            path: 'settings',
+            lazy: page(() => import('../features/settings/SettingsLayout.jsx'), 'SettingsLayout'),
+            children: [
+              { index: true, element: <Navigate to="profile" replace /> },
+              {
+                path: 'profile',
+                lazy: page(
+                  () => import('../features/settings/ProfileSettingsPage.jsx'),
+                  'ProfileSettingsPage',
+                ),
+              },
+              {
+                path: 'security',
+                lazy: page(
+                  () => import('../features/settings/SecuritySettingsPage.jsx'),
+                  'SecuritySettingsPage',
+                ),
+              },
+              {
+                path: 'privacy',
+                lazy: page(
+                  () => import('../features/settings/PrivacySettingsPage.jsx'),
+                  'PrivacySettingsPage',
+                ),
+              },
+            ],
+          },
+          { path: '*', lazy: pub('NotFoundPage', 'NotFoundPage') },
+        ],
       },
     ],
   },

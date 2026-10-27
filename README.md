@@ -3,10 +3,10 @@
 A career-data workspace: maintain one trustworthy master profile and generate versioned,
 job-specific resumes from it, with deterministic quality checks and reliable exports.
 
-**Status:** Phase 1 complete (design system and public site). The authenticated app arrives from Phase 2.
+**Status:** Phase 2 complete (accounts, sessions, settings). Profile editing arrives in Phase 3.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 [`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
-[`docs/design-system.md`](docs/design-system.md).
+[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md).
 
 ## Stack
 
@@ -79,11 +79,24 @@ uses same-origin paths and never hard-codes the API URL.
 
 ## Endpoints so far
 
-| Method | Path            | Notes                                                     |
-| ------ | --------------- | --------------------------------------------------------- |
-| GET    | `/health/live`  | Process is up. Always `200` while serving.                |
-| GET    | `/health/ready` | `200` when MongoDB is connected, otherwise `503`.         |
-| GET    | `/api/v1/meta`  | API name/version; `features` lists only shipped features. |
+| Method | Path                                              | Notes                                             |
+| ------ | ------------------------------------------------- | ------------------------------------------------- |
+| GET    | `/health/live`, `/health/ready`                   | Liveness; readiness is `503` when MongoDB is down |
+| GET    | `/api/v1/meta`                                    | API version and shipped features                  |
+| POST   | `/api/v1/auth/register`                           | Creates account and session cookie                |
+| POST   | `/api/v1/auth/login`, `/logout`                   | Generic error on bad credentials                  |
+| GET    | `/api/v1/auth/me`                                 | Current user, or `401`                            |
+| POST   | `/api/v1/auth/change-password`                    | Signs out every other session                     |
+| GET    | `/api/v1/auth/sessions`                           | Your active sessions                              |
+| DELETE | `/api/v1/auth/sessions/:id`                       | Sign out one session                              |
+| POST   | `/api/v1/auth/sessions/revoke-others`             | Sign out all other sessions                       |
+| POST   | `/api/v1/auth/forgot-password`, `/reset-password` | `501`: no email service configured                |
+| GET    | `/api/v1/account`, PATCH `/api/v1/account`        | Read or update display name and preferences       |
+| GET    | `/api/v1/account/export`                          | JSON export of all your data                      |
+| DELETE | `/api/v1/account`                                 | Body `{ password, confirmation: "DELETE" }`       |
+
+State-changing API requests must come from an allowed origin (see `docs/security.md`); the
+Vite dev proxy preserves the browser's `Origin`, so this works in development.
 
 Errors use one shape: `{ "error": { "code", "message", "requestId" } }`. Every response
 carries an `x-request-id` header. Logs are structured JSON and record method, path, status

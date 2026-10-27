@@ -36,3 +36,30 @@ export async function expectNoAxeViolations(page, { exclude = [] } = {}) {
   );
   expect(summary).toEqual([]);
 }
+
+let seq = 0;
+export function uniqueEmail(prefix = 'e2e') {
+  seq += 1;
+  return `${prefix}.${Date.now()}.${seq}@example.com`;
+}
+
+export const PASSWORD = 'correct horse battery staple';
+
+export async function register(
+  page,
+  { name = 'Mira Okafor', email = uniqueEmail(), password = PASSWORD } = {},
+) {
+  await page.goto('/register');
+  await page.getByLabel('Your name').fill(name);
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel(/^Password/).fill(password);
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await page.waitForURL('**/app');
+  return { name, email, password };
+}
+
+export async function signOut(page) {
+  await page.getByRole('button', { name: /Account menu/ }).click();
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.waitForURL('**/login');
+}
