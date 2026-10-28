@@ -6,6 +6,8 @@ export const MERIDIAN = {
   name: 'Meridian',
   style: 'Dark sidebar, two columns',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['IBM Plex Sans'],
   accent: { default: '#17323f' },
   docxFont: 'Arial',
@@ -89,7 +91,7 @@ export function renderMeridian(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'left', header: 'sidebar' },
+    sidebar: { keys: MERIDIAN.sideSections, side: 'left', header: 'sidebar' },
     skillChips: true,
     contactItems: true,
     contactIcons: true,

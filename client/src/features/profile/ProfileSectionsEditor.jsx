@@ -18,6 +18,8 @@ export const PROFILE_NAV = [
   { id: 'skills', title: 'Skills' },
   { id: 'education', title: 'Education' },
   { id: 'certifications', title: 'Certifications' },
+  { id: 'languages', title: 'Languages' },
+  { id: 'interests', title: 'Interests' },
   { id: 'custom', title: 'Custom sections' },
   { id: 'evidence', title: 'Evidence' },
 ];

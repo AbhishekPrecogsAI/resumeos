@@ -7,7 +7,8 @@ import { contentHash } from '@resumeos/shared/hash.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { ExportRecord } from './export.model.js';
 import { renderPdf } from './render.js';
-import { validatePdf } from './validate.js';
+import { validatePdf, parsePdf } from './validate.js';
+import { fitToOnePage } from '@resumeos/shared/fit.js';
 import { renderDocx } from './docx.js';
 import { validateDocx } from './validateDocx.js';
 import { docxReferenceHtml } from './docx.js';
@@ -200,6 +201,54 @@ export function createExportService({ env, pool, logger }) {
         }
         throw err;
       }
+    },
+
+    /**
+     * Find the gentlest spacing and text size that fits the saved draft on one page, by
+     * rendering real PDFs and counting their pages. Nothing is saved; the client applies the
+     * result as an ordinary (undoable) edit.
+     */
+    async fitOnePage(userId, resumeId) {
+      const resume = await Resume.findOne({ _id: resumeId, userId }).lean();
+      if (!resume)
+        throw new HttpError(404, 'NOT_FOUND', "That resume doesn't exist or isn't yours.");
+      const template = getTemplate(resume.templateId);
+      const { content, layout } = resume.draft;
+      const photo =
+        layout?.showPhoto && template?.photo ? await photoService.dataUrlFor(userId) : null;
+      const countPages = async (candidate) => {
+        const rendered = await renderPdf(pool, {
+          content,
+          layout: candidate,
+          templateId: resume.templateId,
+          pageSize: resume.pageSize,
+          timeoutMs: env.EXPORT_TIMEOUT_MS,
+          accentColor: resume.accentColor ?? null,
+          pattern: resume.backgroundPattern ?? 'none',
+          photo,
+        });
+        return (await parsePdf(rendered.buffer)).pageCount;
+      };
+      let result;
+      try {
+        result = await fitToOnePage(layout ?? {}, countPages);
+      } catch (err) {
+        if (err instanceof HttpError) throw err;
+        logger.error('fit to one page failed', { name: err.name, code: err.code });
+        throw new HttpError(
+          503,
+          'EXPORT_UNAVAILABLE',
+          "The page couldn't be measured right now. Try again in a moment.",
+        );
+      }
+      return {
+        alreadyFits: result.alreadyFits,
+        pages: result.pages,
+        draftRevision: resume.draftRevision,
+        settings: result.layout
+          ? { spacing: result.layout.spacing ?? 'normal', fontScale: result.layout.fontScale ?? 1 }
+          : null,
+      };
     },
 
     async list(userId, { page, limit, resumeId }) {

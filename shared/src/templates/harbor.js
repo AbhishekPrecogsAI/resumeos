@@ -6,6 +6,8 @@ export const HARBOR = {
   name: 'Harbor',
   style: 'Colour header band with photo and a tinted side column',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['Outfit', 'Manrope'],
   accent: { default: '#174a5c' },
   photo: true,
@@ -94,7 +96,7 @@ export function renderHarbor(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
+    sidebar: { keys: HARBOR.sideSections, side: 'right', header: 'top' },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

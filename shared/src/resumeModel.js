@@ -6,6 +6,8 @@ export const SECTION_KEYS = [
   'skills',
   'education',
   'certifications',
+  'languages',
+  'interests',
 ];
 
 export const SECTION_TITLES = {
@@ -15,6 +17,8 @@ export const SECTION_TITLES = {
   skills: 'Skills',
   education: 'Education',
   certifications: 'Certifications',
+  languages: 'Languages',
+  interests: 'Interests',
 };
 
 /** List sections whose entries carry stable ids. */
@@ -24,6 +28,8 @@ export const LIST_SECTIONS = [
   'skills',
   'education',
   'certifications',
+  'languages',
+  'interests',
   'customSections',
 ];
 
@@ -33,6 +39,8 @@ export const ID_PREFIX = {
   skills: 'sk',
   education: 'edu',
   certifications: 'cert',
+  languages: 'lang',
+  interests: 'int',
   customSections: 'sec',
   customItem: 'itm',
   evidenceItems: 'ev',
@@ -62,9 +70,25 @@ export function emptyContent() {
     skills: [],
     education: [],
     certifications: [],
+    languages: [],
+    interests: [],
     customSections: [],
   };
 }
+
+/**
+ * Language proficiency, strongest first. `dots` is how many of five dots templates fill; the
+ * label is always printed as text too, so applicant tracking systems read the level.
+ */
+export const LANGUAGE_LEVELS = [
+  { id: 'native', label: 'Native', dots: 5 },
+  { id: 'fluent', label: 'Fluent', dots: 4 },
+  { id: 'professional', label: 'Professional', dots: 3 },
+  { id: 'conversational', label: 'Conversational', dots: 2 },
+  { id: 'basic', label: 'Basic', dots: 1 },
+];
+export const LANGUAGE_LEVEL_IDS = LANGUAGE_LEVELS.map((l) => l.id);
+export const languageLevel = (id) => LANGUAGE_LEVELS.find((l) => l.id === id) ?? null;
 
 export function defaultLayout(content = emptyContent()) {
   return {

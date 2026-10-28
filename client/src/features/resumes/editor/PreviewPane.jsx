@@ -25,7 +25,7 @@ export function PreviewPane({
       accentColor,
       pattern,
       photo,
-      fontCss: templateFontCss(templateId),
+      fontCss: templateFontCss(templateId, layout?.font),
     });
     if (!printHtml(html))
       toast.error("Couldn't open the print preview", 'Allow pop-ups for this site and try again.');

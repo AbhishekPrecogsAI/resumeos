@@ -6,6 +6,8 @@ export const SUMMIT = {
   name: 'Summit',
   style: 'Classic header with photo and a dark contact bar',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['Source Serif 4', 'IBM Plex Sans'],
   accent: { default: '#8a1f3d' },
   photo: true,
@@ -84,7 +86,7 @@ export function renderSummit(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
+    sidebar: { keys: SUMMIT.sideSections, side: 'right', header: 'top' },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

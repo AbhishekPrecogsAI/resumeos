@@ -1,6 +1,7 @@
-import { SECTION_KEYS } from './resumeModel.js';
+import { SECTION_KEYS, LIST_SECTIONS } from './resumeModel.js';
 
-const ENTRY_SECTIONS = ['experience', 'projects', 'skills', 'education', 'certifications'];
+// Every list section except custom sections, which are handled separately below.
+const ENTRY_SECTIONS = LIST_SECTIONS.filter((k) => k !== 'customSections');
 
 const stripBullets = (bullets) =>
   (bullets ?? []).map((b) => (typeof b === 'string' ? b : { id: b.id, text: b.text ?? '' }));

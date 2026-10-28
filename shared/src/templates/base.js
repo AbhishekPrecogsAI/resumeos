@@ -2,7 +2,8 @@ import { escapeHtml as e, safeHref, displayUrl } from '../escape.js';
 import { accentPalette, accentProblem } from './color.js';
 import { patternLayer } from './patterns.js';
 import { formatRange } from '../dates.js';
-import { SECTION_TITLES, resolveSectionOrder, bulletText } from '../resumeModel.js';
+import { SECTION_TITLES, resolveSectionOrder, bulletText, languageLevel } from '../resumeModel.js';
+import { fontChoice } from './fonts.js';
 
 export const PAGE = {
   A4: { size: 'A4', width: '210mm', minHeight: '297mm' },
@@ -69,6 +70,15 @@ const article = (ctx, key, inner) =>
   ctx.editable
     ? `<article class="entry" data-entry="${e(key)}">${inner}</article>`
     : `<article class="entry">${inner}</article>`;
+
+/** Five dots, `filled` of them solid, in the current text colour. */
+const levelDots = (filled) =>
+  `<svg class="dots" aria-hidden="true" focusable="false" viewBox="0 0 37 6">${[0, 1, 2, 3, 4]
+    .map(
+      (i) =>
+        `<circle cx="${3 + i * 7.75}" cy="3" r="2.6" fill="currentColor"${i < filled ? '' : ' fill-opacity="0.22"'}/>`,
+    )
+    .join('')}</svg>`;
 
 const renderers = {
   summary: (c, hidden, ctx = {}) =>
@@ -259,7 +269,57 @@ const renderers = {
         })}${x.url ? `<p class="links">${link(x.url)}</p>` : ''}</article>`;
       })
       .join(''),
+
+  // Each language is a name and an optional level. The level is always printed as a word;
+  // templates with an accent also draw it as five dots (an inline SVG with no text, so it stays
+  // sharp in PDFs and adds nothing to extracted text).
+  languages: (c, hidden, ctx = {}) => {
+    const items = visibleItems(c.languages, hidden).filter((x) => ctx.editable || x.name?.trim());
+    if (!items.length) return '';
+    const cls = `langs${ctx.levelDots ? ' dots' : ''}`;
+    if (ctx.editable)
+      return `<dl class="${cls}">${items
+        .map((x) => {
+          const key = `languages:${x.id}`;
+          const level = languageLevel(x.level);
+          return `<div data-entry="${e(key)}"><dt>${ed(ctx, `${key}:name`, x.name, 'Language')}</dt><dd class="lvl" data-level="${e(key)}" role="button" tabindex="0">${e(level?.label ?? 'Set level')}${ctx.levelDots ? levelDots(level?.dots ?? 0) : ''}</dd></div>`;
+        })
+        .join('')}</dl>`;
+    return `<dl class="${cls}">${items
+      .map((x) => {
+        const level = languageLevel(x.level);
+        return `<div><dt>${e(x.name.trim())}</dt>${level ? `<dd class="lvl">${e(level.label)}${ctx.levelDots ? levelDots(level.dots) : ''}</dd>` : ''}</div>`;
+      })
+      .join('')}</dl>`;
+  },
+
+  interests: (c, hidden, ctx = {}) => {
+    const items = visibleItems(c.interests, hidden).filter((x) => ctx.editable || x.name?.trim());
+    if (!items.length) return '';
+    if (ctx.editable)
+      return `<p class="interests">${items
+        .map(
+          (x) =>
+            `<span${ctx.skillChips ? ' class="chip"' : ''} data-entry="interests:${e(x.id)}">${ed(ctx, `interests:${x.id}:name`, x.name, 'Interest')}</span>`,
+        )
+        .join(ctx.skillChips ? ' ' : '<span class="sep">, </span>')}</p>`;
+    const names = items.map((x) => x.name.trim());
+    return ctx.skillChips
+      ? `<p class="interests">${names.map((n) => `<span class="chip">${e(n)}</span>`).join(' ')}</p>`
+      : `<p class="interests">${e(names.join(', '))}</p>`;
+  },
 };
+
+// Shared styles for the language and interest lists, added only when a resume shows them, so
+// other output is unchanged. Templates can override any of it. Dots use the text colour, so
+// they read on light and dark columns alike; the empty dots are a tint of it (never opacity).
+const LIST_CSS = `.langs { margin: 0; }
+.langs div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 8pt; margin-bottom: 3pt; break-inside: avoid; }
+.langs dt { font-weight: 600; overflow-wrap: normal; }
+.langs dd { margin: 0 0 0 auto; display: flex; align-items: center; gap: 6pt; font-size: 0.88em; white-space: nowrap; }
+.langs .dots { width: 37pt; height: 6pt; flex: none; }
+.interests { margin: 0; }
+`;
 
 function renderCustom(section, hidden, ctx = {}) {
   return visibleItems(section.items, hidden)
@@ -313,10 +373,14 @@ const SECTION_ICON_PATHS = {
   education:
     '<path d="M2.5 9L12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5M21.5 9v5.5"/>',
   certifications: '<circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.3L7 21l5-2.7 5 2.7-1.5-7.7"/>',
+  languages:
+    '<path d="M4 5h9M8.5 3v2M6 5c.6 3.4 2.6 6 5.5 7.5M11 5c-.8 3.6-3.2 6.4-6.5 8"/><path d="M12.5 21l4-9 4 9M14 17.5h5"/>',
+  interests:
+    '<path d="M12 20.5s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.9c0 5.4-7.5 10-7.5 10z"/>',
   custom: '<path d="M6.5 3.5h11a1 1 0 0 1 1 1V21L12 16.5 5.5 21V4.5a1 1 0 0 1 1-1z"/>',
 };
 const sectionIcon = (key) =>
-  `<svg class="h-ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SECTION_ICON_PATHS[key.startsWith('custom:') ? 'custom' : key]}</svg>`;
+  `<svg class="h-ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SECTION_ICON_PATHS[key] ?? SECTION_ICON_PATHS.custom}</svg>`;
 
 const icon = (kind) =>
   `<svg class="ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[kind]}</svg>`;
@@ -398,6 +462,8 @@ const EDITABLE_CSS = `
 p[data-edit]:empty, h2[data-edit]:empty { min-height: 1.2em; }
 .dates[data-dates] { cursor: pointer; border-radius: 2px; }
 .dates[data-dates]:hover { background-color: rgba(46, 63, 184, 0.07); }
+.lvl[data-level] { cursor: pointer; border-radius: 2px; }
+.lvl[data-level]:hover { background-color: rgba(46, 63, 184, 0.07); }
 .ed-empty { margin: 2pt 0 0; color: #7a828d; font-style: italic; cursor: pointer; }
 .ed-empty:hover { color: #2e3fb8; }
 [data-entry].ed-active { outline: 1.5px dashed rgba(46, 63, 184, 0.45); outline-offset: 3pt; border-radius: 3pt; }
@@ -437,6 +503,33 @@ function patternCss(defaultAccent, accentColor, pattern, pageBackground) {
   return `\nhtml { background: ${layer}, ${pageBackground}; }\nbody { background: transparent; }\n`;
 }
 
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+// Spacing presets. Appended after the template's CSS with the same low specificity, so a
+// template's own special cases (e.g. no gap above a column's first section) still win.
+const SPACING_CSS = {
+  compact:
+    'body { line-height: 1.36; } section { margin-top: 9pt; } .entry { margin-bottom: 5pt; } li { margin-top: 0.5pt; margin-bottom: 0.5pt; } h2 { margin-bottom: 5pt; }',
+  relaxed:
+    'body { line-height: 1.6; } section { margin-top: 17pt; } .entry { margin-bottom: 12pt; } li { margin-top: 3pt; margin-bottom: 3pt; } h2 { margin-bottom: 10pt; }',
+};
+
+/**
+ * Text size and spacing chosen for this resume. Size scales the whole page with CSS zoom, which
+ * Chrome applies to PDFs too; the screen width is divided back so the page stays page-sized.
+ * Values are clamped here as well as validated on save, because previews render unsaved drafts.
+ */
+function designCss(layout, page) {
+  let out = '';
+  const scale = Number(layout.fontScale);
+  if (Number.isFinite(scale) && scale !== 1) {
+    const s = Math.min(1.2, Math.max(0.8, Math.round(scale * 100) / 100));
+    out += `\nhtml { zoom: ${s}; }\n@media screen { body { width: calc(${page.width} / ${s}); min-height: calc(${page.minHeight} / ${s}); } }\n`;
+  }
+  if (SPACING_CSS[layout.spacing]) out += `\n${SPACING_CSS[layout.spacing]}\n`;
+  return out;
+}
+
 export function renderResume(
   content,
   layout = {},
@@ -461,6 +554,7 @@ export function renderResume(
   },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
+  const chosenFont = fontChoice(layout.font);
   const hiddenSections = new Set(layout.hiddenSections ?? []);
   const hiddenItems = new Set(layout.hiddenItems ?? []);
   const contact = content.contact ?? {};
@@ -477,7 +571,11 @@ export function renderResume(
         body = renderCustom(section, hiddenItems, { editable });
       } else {
         title = SECTION_TITLES[key];
-        body = renderers[key](content, hiddenItems, { skillChips, editable });
+        body = renderers[key](content, hiddenItems, {
+          skillChips,
+          editable,
+          levelDots: Boolean(defaultAccent),
+        });
       }
       if (editable) {
         // The editor shows every visible section, with an invitation to add when it's empty.
@@ -503,6 +601,7 @@ export function renderResume(
     })
     .filter(Boolean);
 
+  const usesLists = sections.some((s) => s.key === 'languages' || s.key === 'interests');
   const photoTag = isPhotoDataUrl(photo) ? `<img class="photo" src="${photo}" alt="">\n` : '';
   const header = `<header${photoTag ? ' class="with-photo"' : ''}>
 ${photoTag}${editable ? ed({ editable }, 'contact:name', contact.name, 'Your name', 'h1') : `<h1>${e(contact.name || '')}</h1>`}
@@ -518,9 +617,16 @@ ${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g.
     // the right (CSS grid placement). The sidebar usually ends on page 1 while the main column
     // continues, so this order lets extractors read the whole sidebar, then the whole main
     // column, on any number of pages, instead of interleaving the columns page by page.
+    // The template decides which sections sit in the sidebar; the resume can move any of them.
+    const placement = isPlainObject(layout.placement) ? layout.placement : {};
     const inSide = new Set(sidebar.keys);
-    // Sections listed in `fullWidth` (e.g. the summary) span both columns, above them.
-    const wide = new Set(fullWidth);
+    for (const [key, where] of Object.entries(placement)) {
+      if (where === 'side') inSide.add(key);
+      else if (where === 'main') inSide.delete(key);
+    }
+    // Sections listed in `fullWidth` (e.g. the summary) span both columns, above them, unless
+    // the resume placed them in a column.
+    const wide = new Set(fullWidth.filter((key) => !(key in placement)));
     const above = sections
       .filter((s) => wide.has(s.key))
       .map((s) => s.html)
@@ -543,7 +649,7 @@ ${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g.
 <title>${e(contact.name || 'Resume')}</title>
 <style>
 ${fontCss}
-${accentVars(defaultAccent, accentColor)}${css(page, fontStack)}${patternCss(defaultAccent, accentColor, pattern, pageBackground)}${editable ? EDITABLE_CSS : ''}</style></head>
+${accentVars(defaultAccent, accentColor)}${usesLists ? LIST_CSS : ''}${css(page, chosenFont?.stack ?? fontStack)}${designCss(layout, page)}${patternCss(defaultAccent, accentColor, pattern, pageBackground)}${editable ? EDITABLE_CSS : ''}</style></head>
 <body${sidebar ? ' class="has-sidebar"' : ''}>
 ${body}
 </body></html>`;

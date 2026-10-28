@@ -6,6 +6,8 @@ export const PULSE = {
   name: 'Pulse',
   style: 'Dark right column with photo header and icons',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['Outfit', 'Manrope'],
   accent: { default: '#0f6e66' },
   photo: true,
@@ -103,7 +105,7 @@ export function renderPulse(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
+    sidebar: { keys: PULSE.sideSections, side: 'right', header: 'top' },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

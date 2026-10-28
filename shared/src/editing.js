@@ -1,5 +1,5 @@
 import { newId } from './ids.js';
-import { ID_PREFIX } from './resumeModel.js';
+import { ID_PREFIX, LANGUAGE_LEVEL_IDS } from './resumeModel.js';
 
 /*
  * Pure edits for the on-page editor. Paths come from the editable renderer and use entry ids:
@@ -11,7 +11,14 @@ import { ID_PREFIX } from './resumeModel.js';
  * Every function returns new content and never mutates its input.
  */
 
-const LIST_ENTRY_SECTIONS = ['experience', 'projects', 'education', 'certifications'];
+const LIST_ENTRY_SECTIONS = [
+  'experience',
+  'projects',
+  'education',
+  'certifications',
+  'languages',
+  'interests',
+];
 
 export const BLANK_ENTRY = {
   experience: () => ({
@@ -56,6 +63,8 @@ export const BLANK_ENTRY = {
     expiresDate: '',
     url: '',
   }),
+  languages: () => ({ id: newId(ID_PREFIX.languages), name: '', level: '' }),
+  interests: () => ({ id: newId(ID_PREFIX.interests), name: '' }),
   custom: () => ({
     id: newId(ID_PREFIX.customItem),
     title: '',
@@ -73,6 +82,8 @@ const FIRST_FIELD = {
   projects: 'name',
   education: 'degree',
   certifications: 'name',
+  languages: 'name',
+  interests: 'name',
   custom: 'title',
 };
 
@@ -173,7 +184,7 @@ export function addEntry(content, sectionKey) {
     return { content: next, focus: `custom:${section.id}:${item.id}:title` };
   }
   const entry = BLANK_ENTRY[sectionKey]();
-  next[sectionKey].push(entry);
+  (next[sectionKey] ??= []).push(entry);
   return { content: next, focus: `${sectionKey}:${entry.id}:${FIRST_FIELD[sectionKey]}` };
 }
 
@@ -290,6 +301,17 @@ export function setDates(content, entryKey, { start, end, current }) {
     x.endDate = current ? '' : end;
     x.current = Boolean(current);
   }
+  return next;
+}
+
+/** Step a language to the next level, strongest first, then back to no level. */
+export function cycleLanguageLevel(content, entryKey) {
+  const next = clone(content);
+  const loc = locateEntry(next, entryKey);
+  if (!loc || loc.kind !== 'languages') return content;
+  const x = loc.list[loc.index];
+  const order = [...LANGUAGE_LEVEL_IDS, ''];
+  x.level = order[(order.indexOf(x.level ?? '') + 1) % order.length];
   return next;
 }
 

@@ -1,13 +1,15 @@
 import { bulletText, resolveSectionOrder, sectionTitle } from '../resumeModel.js';
 import { matchKind } from './match.js';
 
-const ENTRY_SECTIONS = ['experience', 'projects', 'education', 'certifications'];
+// Languages count (job descriptions often ask for one); interests don't.
+const ENTRY_SECTIONS = ['experience', 'projects', 'education', 'certifications', 'languages'];
 const label = (section, e) =>
   ({
     experience: [e.title, e.company].filter(Boolean).join(', '),
     projects: e.name,
     education: [e.degree, e.institution].filter(Boolean).join(', '),
     certifications: e.name,
+    languages: e.name,
   })[section] ||
   e.title ||
   'Untitled entry';

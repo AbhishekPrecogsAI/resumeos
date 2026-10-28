@@ -126,6 +126,43 @@ their own colours, type, shapes and proportions.
 per section type and one for custom sections. Icons are SVG paths with `aria-hidden`, so headings
 still extract as just their words, and the export checks find them as before.
 
+**Languages and interests.** Two list sections next to skills (`content.languages`:
+`{ id, name, level }`, `content.interests`: `{ id, name }`). A language's level is one of
+Native, Fluent, Professional, Conversational or Basic, or none. It always prints as a word, so
+applicant tracking systems read it. Templates with an accent also draw five dots, as an inline
+SVG with no text that stays sharp in PDFs. CSS gradient dots were tried first; Chrome rasterises
+them in PDFs and they looked blurry. Interests print as chips where a template uses chips for
+skills, otherwise as a comma-separated line. Their styles are added only when a resume shows
+either section, so other output is unchanged. Job matching counts languages; interests are left
+out because they'd produce false matches.
+
+**Design settings.** Stored in the resume layout, so versions, compare, share links and exports
+all carry them. They're optional, and a layout that never set them keeps the same shape and hash.
+
+| Setting     | Values                                                        | How it renders                                                           |
+| ----------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `font`      | Inter, Manrope, IBM Plex Sans, Source Serif 4, Lora; or unset | Replaces the body font stack; display fonts for names stay               |
+| `fontScale` | 0.8–1.2                                                       | `html { zoom }`, which Chrome applies to PDFs; screen width divided back |
+| `spacing`   | `compact`, `normal`, `relaxed`                                | Line height and section, entry and bullet gaps, after the template CSS   |
+| `placement` | `{ sectionKey: 'main' \| 'side' }`                            | Moves sections between columns on sidebar templates                      |
+
+Templates with a sidebar list their default sidebar sections in `sideSections`, and Orbit and
+Tide list `fullWidthSections`, so the editor can show each section's default column. The
+sidebar always comes first in the document whatever is placed in it. The renderer clamps and
+ignores invalid values as well as the API rejecting them, because previews render unsaved
+drafts. DOCX uses the chosen font's closest Word font (Arial or Georgia).
+
+**Fit to one page.** `POST /resumes/:id/fit-one-page` renders the saved draft as real PDFs:
+first compact spacing, then 95%, 90% and 85% text, never larger than the resume already has. It
+returns the first settings whose PDF is one page, or says nothing fits. It saves nothing; the
+editor applies the result as an ordinary, undoable edit. An earlier version estimated pages in
+the browser, but a comparison against PDFs showed 4 wrong answers in 30, all saying "fits" when
+it didn't, because page breaks inside entries push content onto the next page. The preview's
+page count is still an estimate, labelled as one.
+
+**Zoom and measurement.** With `zoom` on the root, Chrome reports `scrollHeight` before zoom,
+so the preview multiplies by the computed zoom (`client/src/lib/measurePages.js`).
+
 **Reading order rule: no positioned text.** Chrome paints positioned elements (`position`,
 `transform`, `opacity`, `z-index`) in a later pass, and PDF text follows paint order. So any text
 inside one extracts after the rest of the page. An earlier Horizon release positioned its

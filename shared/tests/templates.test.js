@@ -6,7 +6,16 @@ import { emptyContent } from '../src/resumeModel.js';
 describe('renderClarity', () => {
   it('renders sections in layout order', () => {
     const html = renderClarity(sampleResume, {
-      sectionOrder: ['skills', 'experience', 'summary', 'projects', 'education', 'certifications'],
+      sectionOrder: [
+        'skills',
+        'experience',
+        'summary',
+        'projects',
+        'education',
+        'certifications',
+        'languages',
+        'interests',
+      ],
     });
     const order = [...html.matchAll(/data-section="([^"]+)"/g)].map((m) => m[1]);
     expect(order).toEqual([
@@ -16,6 +25,8 @@ describe('renderClarity', () => {
       'projects',
       'education',
       'certifications',
+      'languages',
+      'interests',
     ]);
   });
 
@@ -97,7 +108,16 @@ describe('templates registry', () => {
   it('templates without a sidebar keep the layout order in the document', async () => {
     const { TEMPLATES } = await import('../src/templates/index.js');
     const layout = {
-      sectionOrder: ['skills', 'experience', 'summary', 'projects', 'education', 'certifications'],
+      sectionOrder: [
+        'skills',
+        'experience',
+        'summary',
+        'projects',
+        'education',
+        'certifications',
+        'languages',
+        'interests',
+      ],
     };
     for (const t of TEMPLATES) {
       const markup = t.render(sampleResume, layout).replace(/<style>[\s\S]*?<\/style>/, '');
@@ -112,6 +132,8 @@ describe('templates registry', () => {
           'skills',
           'education',
           'certifications',
+          'languages',
+          'interests',
           'experience',
           'projects',
         ]);
@@ -120,6 +142,8 @@ describe('templates registry', () => {
           'skills',
           'education',
           'certifications',
+          'languages',
+          'interests',
           'experience',
           'summary',
           'projects',
@@ -129,7 +153,12 @@ describe('templates registry', () => {
 
   it('Clarity and Ledger share identical markup', async () => {
     const { getTemplate } = await import('../src/templates/index.js');
-    const strip = (html) => html.replace(/<style>[\s\S]*?<\/style>/, '');
+    // Ledger has an accent, so its language levels also get dots (drawn, no text; same words).
+    const strip = (html) =>
+      html
+        .replace(/<style>[\s\S]*?<\/style>/, '')
+        .replace('class="langs dots"', 'class="langs"')
+        .replace(/<svg class="dots"[\s\S]*?<\/svg>/g, '');
     expect(strip(getTemplate('ledger').render(sampleResume, {}))).toBe(
       strip(getTemplate('clarity').render(sampleResume, {})),
     );

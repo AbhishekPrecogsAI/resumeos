@@ -6,6 +6,8 @@ export const KEYSTONE = {
   name: 'Keystone',
   style: 'Dark header block with ringed photo and two columns',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['Manrope'],
   accent: { default: '#b45309' },
   photo: true,
@@ -92,7 +94,7 @@ export function renderKeystone(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
+    sidebar: { keys: KEYSTONE.sideSections, side: 'right', header: 'top' },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

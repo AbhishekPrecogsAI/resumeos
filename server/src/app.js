@@ -64,7 +64,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
     (userId, resumeId) => shares.removeForResume(userId, resumeId),
   ];
   const { versions, compare } = versionRouters();
-  const { resumeExport, exportsRouter } = exportRouters({ exportsService, limits });
+  const { resumeExport, resumeFit, exportsRouter } = exportRouters({ exportsService, limits });
 
   app.disable('x-powered-by');
   app.set('trust proxy', env.NODE_ENV === 'production' ? 1 : false);
@@ -105,6 +105,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   mount('/profile/photo', photoRouter());
   mount('/profile', profileRouter());
   mount('/resumes/:resumeId/export', resumeExport);
+  mount('/resumes/:resumeId/fit-one-page', resumeFit);
   mount('/resumes/:resumeId/versions', versions);
   mount('/resumes/:resumeId/compare', compare);
   mount('/resumes/:resumeId/shares', shareRouter({ shares }));

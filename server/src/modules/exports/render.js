@@ -1,5 +1,6 @@
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { serverFontCss } from './fonts.js';
+import { fontFamiliesFor } from '@resumeos/shared/templates/fonts.js';
 import { HttpError } from '../../utils/HttpError.js';
 
 const PAGE_WIDTH_PX = { A4: 794, Letter: 816 };
@@ -53,7 +54,7 @@ export async function renderPdf(
     photo,
     pattern,
     pageSize,
-    fontCss: serverFontCss(template.fonts),
+    fontCss: serverFontCss(fontFamiliesFor(template.fonts, layout?.font)),
   });
 
   const work = pool.withPage(async (page) => {

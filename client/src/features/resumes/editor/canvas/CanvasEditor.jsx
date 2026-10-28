@@ -10,14 +10,16 @@ import {
   removeSkill,
   deleteEntry,
   moveEntry,
+  cycleLanguageLevel,
 } from '@resumeos/shared/editing.js';
 import { templateFontCss } from '../../../../lib/templateFonts.js';
 import { DatePopover } from './DatePopover.jsx';
-
-const PAGE_PX = { A4: { w: 794, h: 1123 }, Letter: { w: 816, h: 1056 } };
+import { PAGE_PX, documentHeight } from '../../../../lib/measurePages.js';
 const URL_FIELD =
   /^(contact:(website|linkedin|github|portfolio)|(projects|certifications):[^:]+:(url|repositoryUrl))$/;
 const BULLET_FIELD = /^(.*):bullets:([^:]+):text$/;
+// One-line list entries: Enter adds the next one, Backspace on an empty one removes it.
+const LIST_ITEM_FIELD = /^(languages|interests):([^:]+):name$/;
 
 /** Light normalisation while typing, so autosave never stores a half-formed value. */
 export function normalise(path, text) {
@@ -93,7 +95,7 @@ export function CanvasEditor({
       accentColor,
       pattern,
       photo,
-      fontCss: templateFontCss(template.id),
+      fontCss: templateFontCss(template.id, layout?.font),
     });
   }, [renderContent, layout, templateId, pageSize, accentColor, pattern, photo]);
 
@@ -110,7 +112,7 @@ export function CanvasEditor({
   const measure = useCallback(() => {
     const doc = frameRef.current?.contentDocument;
     if (!doc?.documentElement) return;
-    setHeight(Math.max(page.h, doc.documentElement.scrollHeight));
+    setHeight(Math.max(page.h, documentHeight(doc)));
     setActive((a) => {
       if (!a) return a;
       const el = doc.querySelector(`[data-entry="${cssEscape(a.key)}"]`);
@@ -160,7 +162,7 @@ export function CanvasEditor({
     });
 
     doc.addEventListener('keydown', (ev) => {
-      const button = ev.target.closest?.('[data-dates], [data-add]');
+      const button = ev.target.closest?.('[data-dates], [data-add], [data-level]');
       if (button && (ev.key === 'Enter' || ev.key === ' ')) {
         ev.preventDefault();
         button.click();
@@ -171,9 +173,13 @@ export function CanvasEditor({
       const path = el.dataset.edit;
       const bullet = BULLET_FIELD.exec(path);
       const skill = path.startsWith('skills:') ? path.split(':')[1] : null;
+      const item = LIST_ITEM_FIELD.exec(path);
       if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) {
         ev.preventDefault();
-        if (bullet) {
+        if (item) {
+          const out = addEntry(contentRef.current, item[1]);
+          structural({ content: out.content }, out.focus);
+        } else if (bullet) {
           const out = addBullet(contentRef.current, bullet[1], bullet[2]);
           if (out.focus) structural({ content: out.content }, out.focus);
         } else if (skill) {
@@ -186,6 +192,14 @@ export function CanvasEditor({
           const fields = [...doc.querySelectorAll('[data-edit]')];
           fields[fields.indexOf(el) + 1]?.focus();
         }
+      } else if (ev.key === 'Backspace' && el.textContent === '' && item) {
+        ev.preventDefault();
+        const list = contentRef.current[item[1]] ?? [];
+        const prev = list[list.findIndex((x) => x.id === item[2]) - 1];
+        structural(
+          { content: deleteEntry(contentRef.current, `${item[1]}:${item[2]}`) },
+          prev ? `${item[1]}:${prev.id}:name` : null,
+        );
       } else if (ev.key === 'Backspace' && el.textContent === '' && (bullet || skill)) {
         ev.preventDefault();
         const out = bullet
@@ -208,6 +222,11 @@ export function CanvasEditor({
       const datesEl = ev.target.closest?.('[data-dates]');
       if (datesEl) {
         setDates({ key: datesEl.dataset.dates, rect: datesEl.getBoundingClientRect() });
+        return;
+      }
+      const level = ev.target.closest?.('[data-level]');
+      if (level) {
+        structural({ content: cycleLanguageLevel(contentRef.current, level.dataset.level) });
         return;
       }
       const add = ev.target.closest?.('[data-add]');

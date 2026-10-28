@@ -9,6 +9,7 @@ import {
   History,
   Save,
   Share2,
+  SlidersHorizontal,
   Keyboard,
   Plus,
   Redo2,
@@ -55,6 +56,7 @@ import { PreviewPane } from './PreviewPane.jsx';
 import { ShortcutsDialog } from './ShortcutsDialog.jsx';
 import { ExportDialog } from './ExportDialog.jsx';
 import { ShareDialog } from './ShareDialog.jsx';
+import { DesignDialog } from './DesignDialog.jsx';
 import { CanvasWorkspace } from './canvas/CanvasWorkspace.jsx';
 import { QualityPanel } from './QualityPanel.jsx';
 import { runQualityChecks } from '@resumeos/shared/quality/engine.js';
@@ -240,6 +242,7 @@ function ResumeEditor({ resume, profile }) {
   };
   const [exportOpen, setExportOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [designOpen, setDesignOpen] = useState(false);
   const [saveVersionOpen, setSaveVersionOpen] = useState(false);
   const [pendingSectionDelete, setPendingSectionDelete] = useState(null);
   const [resolving, setResolving] = useState(false);
@@ -649,6 +652,9 @@ function ResumeEditor({ resume, profile }) {
             <option value="A4">A4</option>
             <option value="Letter">US Letter</option>
           </select>
+          <Button variant="secondary" size="sm" onClick={() => setDesignOpen(true)}>
+            <SlidersHorizontal className="size-4" aria-hidden="true" /> Design
+          </Button>
           {getTemplate(meta.templateId)?.accent && (
             <>
               <AccentPicker
@@ -878,6 +884,15 @@ function ResumeEditor({ resume, profile }) {
         open={saveVersionOpen}
         onClose={() => setSaveVersionOpen(false)}
         resumeId={resume.id}
+        flush={autosave.flush}
+      />
+      <DesignDialog
+        open={designOpen}
+        onClose={() => setDesignOpen(false)}
+        resumeId={resume.id}
+        draft={autosave.data}
+        setDraft={setDraft}
+        meta={meta}
         flush={autosave.flush}
       />
       <ShareDialog

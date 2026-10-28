@@ -6,6 +6,8 @@ export const PRISM = {
   name: 'Prism',
   style: 'Accent stripe, light tinted sidebar',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['IBM Plex Sans'],
   accent: { default: '#5b2a6e' },
   docxFont: 'Arial',
@@ -84,7 +86,7 @@ export function renderPrism(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'left', header: 'top' },
+    sidebar: { keys: PRISM.sideSections, side: 'left', header: 'top' },
     skillChips: true,
     contactIcons: true,
     defaultAccent: PRISM.accent.default,

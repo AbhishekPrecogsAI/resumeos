@@ -6,6 +6,8 @@ export const ATELIER = {
   name: 'Atelier',
   style: 'Colour header band, serif headings, right sidebar',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['IBM Plex Sans', 'Source Serif 4'],
   accent: { default: '#23304a' },
   docxFont: 'Georgia',
@@ -86,7 +88,7 @@ export function renderAtelier(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
+    sidebar: { keys: ATELIER.sideSections, side: 'right', header: 'top' },
     skillChips: true,
     contactIcons: true,
     defaultAccent: ATELIER.accent.default,

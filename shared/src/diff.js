@@ -134,6 +134,11 @@ function diffBullets(before = [], after = []) {
   return out;
 }
 
+const placementList = (p) =>
+  Object.entries(p)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}:${v}`);
+
 function entryLabel(entry) {
   if (!entry) return '';
   return (
@@ -317,6 +322,22 @@ export function diffResumes(left, right) {
       field: 'backgroundPattern',
       before: left.backgroundPattern ?? 'none',
       after: right.backgroundPattern ?? 'none',
+    });
+  // Design settings live in the layout; unset means the template's default.
+  const design = (s) => ({
+    font: s.layout?.font ?? null,
+    fontScale: s.layout?.fontScale ?? 1,
+    spacing: s.layout?.spacing ?? 'normal',
+    placement: s.layout?.placement ?? {},
+  });
+  const [ld, rd] = [design(left), design(right)];
+  for (const field of ['font', 'fontScale', 'spacing'])
+    if (ld[field] !== rd[field]) template.push({ field, before: ld[field], after: rd[field] });
+  if (!same(placementList(ld.placement), placementList(rd.placement)))
+    template.push({
+      field: 'placement',
+      before: placementList(ld.placement),
+      after: placementList(rd.placement),
     });
 
   const summary = { added: 0, removed: 0, modified: 0, reordered: 0 };

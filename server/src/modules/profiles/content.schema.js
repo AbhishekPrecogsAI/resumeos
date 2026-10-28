@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { ID_PATTERN } from '@resumeos/shared/ids.js';
 import { LIMITS } from '@resumeos/shared/limits.js';
-import { SECTION_KEYS } from '@resumeos/shared/resumeModel.js';
+import { SECTION_KEYS, LANGUAGE_LEVEL_IDS } from '@resumeos/shared/resumeModel.js';
+import { FONT_CHOICE_IDS } from '@resumeos/shared/templates/fonts.js';
 
 // User text is stored exactly as typed: no trimming or rewriting. Only types and sizes are enforced.
 const text = (max) => z.string().max(max, `Use at most ${max} characters.`).default('');
@@ -111,6 +112,16 @@ export const SECTION_SCHEMAS = {
     expiresDate: month,
     url,
   }),
+  languages: z.strictObject({
+    id,
+    name: text(80),
+    // '' means no level is shown.
+    level: z.enum(['', ...LANGUAGE_LEVEL_IDS]).default(''),
+  }),
+  interests: z.strictObject({
+    id,
+    name: text(80),
+  }),
   customSections: z.strictObject({
     id,
     title: text(LIMITS.shortText),
@@ -173,6 +184,15 @@ export const layoutSchema = z.strictObject({
   hiddenItems: z.array(id).max(1000).default([]),
   // Show the profile photo on templates that support one. Off by default.
   showPhoto: z.boolean().default(false),
+  // Design settings. Optional, so layouts saved before they existed keep the same shape (and hash).
+  // Which column a section goes in on two-column templates; unset keeps the template's choice.
+  placement: z
+    .record(sectionKey, z.enum(['main', 'side']))
+    .refine((v) => Object.keys(v).length <= 30, 'Too many sections.')
+    .optional(),
+  fontScale: z.number().min(0.8).max(1.2).optional(),
+  spacing: z.enum(['compact', 'normal', 'relaxed']).optional(),
+  font: z.union([z.enum(FONT_CHOICE_IDS), z.null()]).optional(),
 });
 
 export const baselinesSchema = z

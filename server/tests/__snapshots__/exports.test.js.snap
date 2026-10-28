@@ -43,5 +43,14 @@ exports[`PDF rendering and validation > layout regression: sample text lines are
   "1: CERTIFICATIONS",
   "1: Certified Kubernetes Application Developer, CNCF",
   "1: May 2023",
+  "1: LANGUAGES",
+  "1: Swedish",
+  "1: Native",
+  "1: English",
+  "1: Fluent",
+  "1: Portuguese",
+  "1: Conversational",
+  "1: INTERESTS",
+  "1: Trail running, Film photography, Mentoring new engineers",
 ]
 `;

@@ -6,6 +6,10 @@ export const TIDE = {
   name: 'Tide',
   style: 'Wave-edged colour header with two columns',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  // Sections spanning both columns above them, unless the resume places them in a column.
+  fullWidthSections: ['summary'],
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['Manrope'],
   accent: { default: '#1f4fb4' },
   photo: true,
@@ -98,8 +102,8 @@ export function renderTide(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
-    fullWidth: ['summary'],
+    sidebar: { keys: TIDE.sideSections, side: 'right', header: 'top' },
+    fullWidth: TIDE.fullWidthSections,
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

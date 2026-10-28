@@ -3,6 +3,8 @@ import { ArrowRightLeft, Minus, MoveVertical, Pencil, Plus } from 'lucide-react'
 import { formatMonth } from '@resumeos/shared/dates.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { PATTERNS } from '@resumeos/shared/templates/patterns.js';
+import { fontChoice } from '@resumeos/shared/templates/fonts.js';
+import { SECTION_TITLES } from '@resumeos/shared/resumeModel.js';
 import { Badge } from '../ui/Badge.jsx';
 import { cx } from '../../lib/cx.js';
 
@@ -42,6 +44,10 @@ const FIELD_LABELS = {
   pageSize: 'Page size',
   accentColor: 'Accent colour',
   backgroundPattern: 'Background',
+  font: 'Font',
+  fontScale: 'Text size',
+  spacing: 'Spacing',
+  placement: 'Section columns',
 };
 
 export const STATUS = {
@@ -71,6 +77,18 @@ function StatusBadge({ status, moved }) {
 
 function formatValue(field, value) {
   if (field === 'accentColor' && !value) return 'Template default';
+  if (field === 'font') return value ? (fontChoice(value)?.label ?? value) : 'Template default';
+  if (field === 'fontScale') return `${Math.round(value * 100)}%`;
+  if (field === 'spacing') return value.charAt(0).toUpperCase() + value.slice(1);
+  if (field === 'placement')
+    return value.length
+      ? value
+          .map((p) => {
+            const [key, where] = p.split(/:(?=[^:]+$)/);
+            return `${SECTION_TITLES[key] ?? 'Custom section'} in the ${where === 'side' ? 'side' : 'main'} column`;
+          })
+          .join('; ')
+      : 'Template default';
   if (field === 'backgroundPattern') return PATTERNS.find((p) => p.id === value)?.name ?? value;
   if (value === null || value === undefined || value === '') return '(empty)';
   if (Array.isArray(value))

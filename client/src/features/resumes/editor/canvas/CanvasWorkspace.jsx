@@ -23,7 +23,14 @@ import { QualityPanel } from '../QualityPanel.jsx';
 import { CanvasEditor } from './CanvasEditor.jsx';
 
 function entryName(content, id) {
-  for (const key of ['experience', 'projects', 'education', 'certifications']) {
+  for (const key of [
+    'experience',
+    'projects',
+    'education',
+    'certifications',
+    'languages',
+    'interests',
+  ]) {
     const e = (content[key] ?? []).find((x) => x.id === id);
     if (e)
       return (

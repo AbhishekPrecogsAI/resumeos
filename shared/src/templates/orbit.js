@@ -6,6 +6,10 @@ export const ORBIT = {
   name: 'Orbit',
   style: 'Modern header card with photo, icons and two columns',
   columns: 2,
+  // Sections shown in the sidebar unless the resume moves them.
+  // Sections spanning both columns above them, unless the resume places them in a column.
+  fullWidthSections: ['summary'],
+  sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
   fonts: ['Manrope'],
   accent: { default: '#1f4fb4' },
   photo: true,
@@ -90,8 +94,8 @@ export function renderOrbit(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
-    fullWidth: ['summary'],
+    sidebar: { keys: ORBIT.sideSections, side: 'right', header: 'top' },
+    fullWidth: ORBIT.fullWidthSections,
     skillChips: true,
     contactIcons: true,
     photo,

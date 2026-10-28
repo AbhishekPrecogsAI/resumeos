@@ -115,5 +115,15 @@ export const sampleResume = {
       url: '',
     },
   ],
+  languages: [
+    { id: 'lang_1', name: 'Swedish', level: 'native' },
+    { id: 'lang_2', name: 'English', level: 'fluent' },
+    { id: 'lang_3', name: 'Portuguese', level: 'conversational' },
+  ],
+  interests: [
+    { id: 'int_1', name: 'Trail running' },
+    { id: 'int_2', name: 'Film photography' },
+    { id: 'int_3', name: 'Mentoring new engineers' },
+  ],
   customSections: [],
 };

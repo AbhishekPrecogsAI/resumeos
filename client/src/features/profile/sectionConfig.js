@@ -1,5 +1,5 @@
 import { newId } from '@resumeos/shared/ids.js';
-import { ID_PREFIX } from '@resumeos/shared/resumeModel.js';
+import { ID_PREFIX, LANGUAGE_LEVELS, languageLevel } from '@resumeos/shared/resumeModel.js';
 import { safeHref } from '@resumeos/shared/escape.js';
 
 const urlError = (v) =>
@@ -184,6 +184,37 @@ export const SECTIONS = {
         validate: urlError,
       },
     ],
+  },
+  languages: {
+    title: 'Languages',
+    noun: 'language',
+    addLabel: 'Add language',
+    emptyText: 'No languages added. Include the ones you can work in.',
+    describe: (l) => join(l.name, languageLevel(l.level)?.label),
+    newItem: () => ({ id: newId(ID_PREFIX.languages), name: '', level: '' }),
+    fields: [
+      { key: 'name', label: 'Language' },
+      {
+        key: 'level',
+        label: 'Level',
+        type: 'select',
+        optional: true,
+        hint: 'Shown as a word, and as dots on templates with an accent colour.',
+        options: [
+          { value: '', label: 'Don’t show a level' },
+          ...LANGUAGE_LEVELS.map((l) => ({ value: l.id, label: l.label })),
+        ],
+      },
+    ],
+  },
+  interests: {
+    title: 'Interests',
+    noun: 'interest',
+    addLabel: 'Add interest',
+    emptyText: 'No interests added. A few specific ones give interviewers something to ask about.',
+    describe: (i) => i.name,
+    newItem: () => ({ id: newId(ID_PREFIX.interests), name: '' }),
+    fields: [{ key: 'name', label: 'Interest', hint: 'For example "Trail running".' }],
   },
   evidenceItems: {
     title: 'Evidence',

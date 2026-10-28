@@ -11,10 +11,16 @@ import {
 } from 'docx';
 import { formatRange } from '@resumeos/shared/dates.js';
 import { safeHref, displayUrl } from '@resumeos/shared/escape.js';
-import { SECTION_TITLES, resolveSectionOrder, bulletText } from '@resumeos/shared/resumeModel.js';
+import {
+  SECTION_TITLES,
+  resolveSectionOrder,
+  bulletText,
+  languageLevel,
+} from '@resumeos/shared/resumeModel.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { renderClarity } from '@resumeos/shared/templates/clarity.js';
 import { accentPalette, accentProblem } from '@resumeos/shared/templates/color.js';
+import { fontChoice } from '@resumeos/shared/templates/fonts.js';
 
 /** DOCX is single-column in layout order for every template, so validate against that render. */
 export const docxReferenceHtml = (content, layout, pageSize) =>
@@ -156,6 +162,24 @@ function sectionParagraphs(key, content, hidden, width) {
           width,
         ),
       );
+    case 'languages':
+      return visible(content.languages, hidden)
+        .filter((x) => x.name?.trim())
+        .map((x) => {
+          const level = languageLevel(x.level);
+          return new Paragraph({
+            children: [
+              run(x.name.trim(), { bold: true }),
+              ...(level ? [run(` (${level.label})`)] : []),
+            ],
+          });
+        });
+    case 'interests': {
+      const names = visible(content.interests, hidden)
+        .map((x) => x.name?.trim())
+        .filter(Boolean);
+      return names.length ? [new Paragraph({ children: [run(names.join(', '))] })] : [];
+    }
     default: {
       const section = (content.customSections ?? []).find((s) => `custom:${s.id}` === key);
       return visible(section?.items, hidden).flatMap((x) =>
@@ -219,7 +243,7 @@ export async function renderDocx({
     );
   }
 
-  const font = template?.docxFont ?? 'Arial';
+  const font = fontChoice(layout?.font)?.docxFont ?? template?.docxFont ?? 'Arial';
   // Templates with an accent colour their name and headings with it in Word too.
   const headingColor = template?.accent
     ? accentPalette(

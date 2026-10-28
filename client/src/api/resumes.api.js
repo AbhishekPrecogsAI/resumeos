@@ -8,6 +8,12 @@ export const resumesApi = {
     apiFetch(`${base}?page=${page}&limit=${limit}&includeArchived=${includeArchived}`),
   create: (body) => apiFetch(base, { method: 'POST', body }).then((r) => r.resume),
   get: (id, { signal } = {}) => apiFetch(`${base}/${enc(id)}`, { signal }).then((r) => r.resume),
+  // Renders real PDFs on the server to find spacing and text size that fit one page.
+  fitOnePage: (id) =>
+    apiFetch(`${base}/${enc(id)}/fit-one-page`, {
+      method: 'POST',
+      body: {},
+    }),
   update: (id, body) =>
     apiFetch(`${base}/${enc(id)}`, { method: 'PATCH', body }).then((r) => r.resume),
   saveDraft: (id, revision, draft) =>

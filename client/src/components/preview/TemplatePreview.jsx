@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getTemplate, DEFAULT_TEMPLATE_ID } from '@resumeos/shared/templates/index.js';
 import { cx } from '../../lib/cx.js';
 import { templateFontCss } from '../../lib/templateFonts.js';
-
-const PAGE_PX = { A4: { w: 794, h: 1123 }, Letter: { w: 816, h: 1056 } };
+import { PAGE_PX, documentHeight, pagesFor } from '../../lib/measurePages.js';
 
 /**
  * Renders a template's HTML in a sandboxed iframe (no scripts) scaled to the container width.
@@ -35,7 +34,7 @@ export function TemplatePreview({
       accentColor,
       pattern,
       photo,
-      fontCss: templateFontCss(templateId),
+      fontCss: templateFontCss(templateId, layout?.font),
     });
   }, [content, layout, templateId, pageSize, accentColor, pattern, photo]);
 
@@ -50,10 +49,10 @@ export function TemplatePreview({
   const measure = () => {
     const doc = frameRef.current?.contentDocument;
     if (!doc?.documentElement) return;
-    const height = Math.max(page.h, doc.documentElement.scrollHeight);
+    const height = Math.max(page.h, documentHeight(doc));
     setDocHeight(height);
     // Screen layout approximates print pagination; exact page breaks are checked at export.
-    onPageCount?.(Math.max(1, Math.ceil((height - 2) / page.h)));
+    onPageCount?.(pagesFor(height, pageSize));
   };
 
   const scale = width ? width / page.w : 0;

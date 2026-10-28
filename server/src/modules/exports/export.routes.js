@@ -56,6 +56,18 @@ export function exportRouters({ exportsService, limits }) {
     }),
   );
 
+  // POST /resumes/:resumeId/fit-one-page: measure real PDFs; returns settings, saves nothing.
+  const resumeFit = Router({ mergeParams: true });
+  resumeFit.post(
+    '/',
+    requireAuth,
+    limits.export,
+    validate({ params: z.strictObject({ resumeId: objectId }), body: z.strictObject({}) }),
+    route(async (req, res) =>
+      res.json(await exportsService.fitOnePage(req.auth.user._id, req.valid.params.resumeId)),
+    ),
+  );
+
   const exportsRouter = Router();
   exportsRouter.use(requireAuth);
   exportsRouter.get(
@@ -96,5 +108,5 @@ export function exportRouters({ exportsService, limits }) {
     }),
   );
 
-  return { resumeExport, exportsRouter };
+  return { resumeExport, resumeFit, exportsRouter };
 }

@@ -37,7 +37,70 @@ export const TEMPLATE_FONTS = {
     weights: [500, 600, 700],
     subsets: ['latin', 'latin-ext'],
   },
+  Inter: {
+    package: '@fontsource/inter',
+    prefix: 'inter',
+    weights: [400, 500, 600, 700, 800],
+    subsets: ALL_SUBSETS,
+  },
+  Lora: {
+    package: '@fontsource/lora',
+    prefix: 'lora',
+    weights: [400, 500, 600, 700],
+    subsets: ALL_SUBSETS,
+  },
 };
+
+/**
+ * Fonts a resume can switch its body text to. Each covers Latin, Latin Extended and Vietnamese
+ * and has the weights templates use. `docxFont` is the closest font Word documents can rely on.
+ */
+export const FONT_CHOICES = [
+  {
+    id: 'Inter',
+    label: 'Inter',
+    kind: 'Sans-serif',
+    stack: "'Inter', 'Helvetica Neue', Arial, sans-serif",
+    docxFont: 'Arial',
+  },
+  {
+    id: 'Manrope',
+    label: 'Manrope',
+    kind: 'Sans-serif',
+    stack: "'Manrope', 'Helvetica Neue', Arial, sans-serif",
+    docxFont: 'Arial',
+  },
+  {
+    id: 'IBM Plex Sans',
+    label: 'IBM Plex Sans',
+    kind: 'Sans-serif',
+    stack: "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif",
+    docxFont: 'Arial',
+  },
+  {
+    id: 'Source Serif 4',
+    label: 'Source Serif',
+    kind: 'Serif',
+    stack: "'Source Serif 4', Georgia, serif",
+    docxFont: 'Georgia',
+  },
+  {
+    id: 'Lora',
+    label: 'Lora',
+    kind: 'Serif',
+    stack: "'Lora', Georgia, serif",
+    docxFont: 'Georgia',
+  },
+];
+export const FONT_CHOICE_IDS = FONT_CHOICES.map((f) => f.id);
+export const fontChoice = (id) => FONT_CHOICES.find((f) => f.id === id) ?? null;
+
+/** Font families a render needs: the template's own, plus the resume's chosen body font. */
+export function fontFamiliesFor(templateFonts, font) {
+  return fontChoice(font) && !templateFonts.includes(font)
+    ? [...templateFonts, font]
+    : templateFonts;
+}
 
 export function fontFiles(family) {
   const f = TEMPLATE_FONTS[family];
