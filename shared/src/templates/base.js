@@ -301,6 +301,23 @@ const ICON_PATHS = {
   portfolio:
     '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/>',
 };
+// Section heading icons, same rules: generic shapes drawn with paths, no text.
+const SECTION_ICON_PATHS = {
+  summary:
+    '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/>',
+  experience:
+    '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12.5h18"/>',
+  projects: '<path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5M3 16.5L12 21l9-4.5"/>',
+  skills:
+    '<path d="M14.5 5.5a4 4 0 0 0-5.3 5.3L3.5 16.5a1.8 1.8 0 0 0 2.5 2.5l5.7-5.7a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.5-.5-2.4z"/>',
+  education:
+    '<path d="M2.5 9L12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c1.6 1.6 3.4 2.4 5.5 2.4s3.9-.8 5.5-2.4v-5M21.5 9v5.5"/>',
+  certifications: '<circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.3L7 21l5-2.7 5 2.7-1.5-7.7"/>',
+  custom: '<path d="M6.5 3.5h11a1 1 0 0 1 1 1V21L12 16.5 5.5 21V4.5a1 1 0 0 1 1-1z"/>',
+};
+const sectionIcon = (key) =>
+  `<svg class="h-ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SECTION_ICON_PATHS[key.startsWith('custom:') ? 'custom' : key]}</svg>`;
+
 const icon = (kind) =>
   `<svg class="ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[kind]}</svg>`;
 
@@ -434,6 +451,8 @@ export function renderResume(
     defaultAccent = null,
     accentColor = null,
     contactIcons = false,
+    // Draw an icon before each section heading (inside the h2, so headings still extract alone).
+    headingIcons = false,
     photo = null,
     fullWidth = [],
     editable = false,
@@ -463,8 +482,10 @@ export function renderResume(
       if (editable) {
         // The editor shows every visible section, with an invitation to add when it's empty.
         const heading = key.startsWith('custom:')
-          ? ed({ editable }, `${key}:title`, title, 'Section title', 'h2')
-          : `<h2>${e(title)}</h2>`;
+          ? headingIcons
+            ? `<h2>${sectionIcon(key)}${ed({ editable }, `${key}:title`, title, 'Section title')}</h2>`
+            : ed({ editable }, `${key}:title`, title, 'Section title', 'h2')
+          : `<h2>${headingIcons ? sectionIcon(key) : ''}${e(title)}</h2>`;
         const empty = body
           ? ''
           : `<p class="ed-empty" data-add="${e(key)}" role="button" tabindex="0">+ Add ${e(key.startsWith('custom:') ? 'an entry' : (ADD_LABEL[key] ?? 'an entry'))}</p>`;
@@ -474,7 +495,10 @@ export function renderResume(
         };
       }
       return body
-        ? { key, html: `<section data-section="${e(key)}"><h2>${e(title)}</h2>${body}</section>` }
+        ? {
+            key,
+            html: `<section data-section="${e(key)}"><h2>${headingIcons ? sectionIcon(key) : ''}${e(title)}</h2>${body}</section>`,
+          }
         : null;
     })
     .filter(Boolean);

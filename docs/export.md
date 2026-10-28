@@ -109,8 +109,22 @@ Certifications in a sidebar. Tests enforce that every template contains exactly 
 | Meridian 1.0.0 | Full-height dark left sidebar with icons                                                          | No    | #17323f                |
 | Atelier 1.0.0  | Colour header band, serif headings, tinted right sidebar (first in the document)                  | No    | #23304a                |
 | Prism 1.0.0    | Accent stripe, light tinted left sidebar                                                          | No    | #5b2a6e                |
+| Atlas 1.0.0    | Charcoal left sidebar with photo; icon badges on every heading                                    | Yes   | #1f6fb4                |
+| Beacon 1.0.0   | Minimal single column: name beside a contact grid, icon headings, outlined skill tags             | No    | #1f6f8b                |
+| Harbor 1.0.0   | Full-width colour header with photo; tinted right column runs the full page                       | Yes   | #174a5c                |
+| Summit 1.0.0   | Serif name beside a photo, full-width charcoal contact bar, ruled icon headings                   | Yes   | #8a1f3d                |
+| Tide 1.0.0     | Colour header with a wave edge (background image), full-width summary, two columns                | Yes   | #1f4fb4                |
+| Circuit 1.0.0  | Single column; contact panel beside the name; two-tone heading rules                              | No    | #23304a                |
+| Pulse 1.0.0    | Full-height charcoal right column that also holds the contact details; photo header               | Yes   | #0f6e66                |
+| Keystone 1.0.0 | Charcoal header block with ringed photo and accent edge; icon badge headings                      | Yes   | #b45309                |
 
-All eleven are original designs. No competitor's templates were copied.
+All nineteen are original designs. No competitor's templates were copied. The last eight take
+common layout ideas (dark sidebars, header bands, contact bars, heading icons) and give them
+their own colours, type, shapes and proportions.
+
+**Heading icons.** `headingIcons: true` puts a small drawn icon inside each section `<h2>`, one
+per section type and one for custom sections. Icons are SVG paths with `aria-hidden`, so headings
+still extract as just their words, and the export checks find them as before.
 
 **Reading order rule: no positioned text.** Chrome paints positioned elements (`position`,
 `transform`, `opacity`, `z-index`) in a later pass, and PDF text follows paint order. So any text

@@ -106,7 +106,7 @@ describe('templates registry', () => {
         expect(order).toEqual(layout.sectionOrder);
       // Sidebar templates: any full-width sections (Orbit's summary), then sidebar sections, then the
       // main column, each in layout order.
-      else if (t.id === 'orbit')
+      else if (['orbit', 'tide'].includes(t.id))
         expect(order).toEqual([
           'summary',
           'skills',
