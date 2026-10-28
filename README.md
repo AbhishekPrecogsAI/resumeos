@@ -157,6 +157,10 @@ URLs, a real `SESSION_SECRET` and a TLS-terminating proxy. See
 - **Client shows "Couldn't reach the API":** the server isn't running on `:5000`, or
   `API_PROXY_TARGET` points elsewhere.
 
+- **Changes to `shared/` (templates, rules) don't appear in the browser:** the client's Vite
+  config watches `shared/src` explicitly. If an old dev server predates that, restart
+  `npm run dev`.
+
 ## Resetting local data
 
 Development data lives in the `resumeos` database. To wipe it:
