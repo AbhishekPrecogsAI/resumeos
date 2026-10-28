@@ -5,6 +5,7 @@ import { profileCompletion } from '@resumeos/shared/completion.js';
 import { profileApi } from '../../api/profile.api.js';
 import { resumesApi } from '../../api/resumes.api.js';
 import { exportsApi } from '../../api/exports.api.js';
+import { jobsApi, JOBS_KEY } from '../../api/jobs.api.js';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { AppPage, Panel } from '../../components/layout/AppPage.jsx';
@@ -213,6 +214,57 @@ function RecentExports() {
   );
 }
 
+function RecentJobs() {
+  const list = useQuery({
+    queryKey: [...JOBS_KEY, { recent: true }],
+    queryFn: () => jobsApi.list({ limit: 5 }),
+  });
+  if (list.isPending) return <Skeleton className="h-32" />;
+  if (list.isError)
+    return (
+      <ErrorState
+        title="Couldn't load job descriptions"
+        error={list.error}
+        onRetry={list.refetch}
+        className="py-6"
+      />
+    );
+  return (
+    <Panel
+      title="Job targets"
+      footer={
+        <ButtonLink to="/app/jobs/new" variant="ghost" size="sm">
+          Compare with a job description
+        </ButtonLink>
+      }
+    >
+      {list.data.items.length === 0 ? (
+        <p className="text-sm text-muted">
+          No saved job descriptions. Paste one to see which of its terms your resume covers; saving
+          it is optional.
+        </p>
+      ) : (
+        <ul className="grid gap-2 text-sm">
+          {list.data.items.map((j) => (
+            <li key={j.id} className="flex items-baseline justify-between gap-3">
+              <Link
+                to={`/app/jobs/${j.id}`}
+                className="truncate font-medium text-ink hover:underline"
+              >
+                {j.title}
+                {j.company ? <span className="font-normal text-muted"> at {j.company}</span> : null}
+              </Link>
+              <time dateTime={j.updatedAt} className="shrink-0 text-muted">
+                {formatRelative(j.updatedAt)}
+              </time>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
 export function DashboardPage() {
   useDocumentTitle('Dashboard');
   const { user } = useAuth();
@@ -236,6 +288,7 @@ export function DashboardPage() {
         <RecentResumes />
         <ProfileChecklist />
         <RecentExports />
+        <RecentJobs />
       </div>
     </AppPage>
   );

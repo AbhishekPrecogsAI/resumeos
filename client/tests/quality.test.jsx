@@ -45,7 +45,9 @@ describe('QualityPanel', () => {
     expect(
       screen.getByRole('heading', { name: /Errors that can break the document \(1\)/ }),
     ).toBeInTheDocument();
-    const errors = screen.getByRole('heading', { name: /Errors that can break/ }).closest('section');
+    const errors = screen
+      .getByRole('heading', { name: /Errors that can break/ })
+      .closest('section');
     expect(within(errors).getByText('Missing name')).toBeInTheDocument();
     expect(screen.getByText(/Checks performed/)).toBeInTheDocument();
   });

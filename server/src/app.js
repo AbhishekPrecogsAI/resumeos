@@ -28,6 +28,8 @@ import { versionRouters } from './modules/versions/version.routes.js';
 import { versionService } from './modules/versions/version.service.js';
 import { registerVersionData } from './modules/versions/version.data.js';
 import { qualityRouter } from './modules/quality/quality.routes.js';
+import { jobRouter } from './modules/jobs/job.routes.js';
+import { registerJobData } from './modules/jobs/job.data.js';
 
 export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }) {
   const app = express();
@@ -39,6 +41,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   registerProfileData(userData);
   registerResumeData(userData);
   registerVersionData(userData);
+  registerJobData(userData);
   const pool = pdfPool ?? createBrowserPool({ chromePath: env.CHROME_PATH, logger });
   const exportsService = createExportService({ env, pool, logger });
   registerExportData(userData, exportsService);
@@ -82,6 +85,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   api.use('/resumes/:resumeId/versions', versions);
   api.use('/resumes/:resumeId/compare', compare);
   api.use('/resumes/:resumeId', qualityRouter());
+  api.use('/jobs', jobRouter());
   api.use('/resumes', resumeRouter());
   api.use('/exports', exportsRouter);
   app.use('/api/v1', api);

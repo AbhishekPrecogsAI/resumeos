@@ -37,6 +37,7 @@ const patchBody = z
     templateId: templateId.optional(),
     pageSize: pageSize.optional(),
     archived: z.boolean().optional(),
+    jobId: z.union([z.string().regex(/^[a-f0-9]{24}$/, 'Invalid id.'), z.null()]).optional(),
   })
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update.');
 const draftBody = z.strictObject({

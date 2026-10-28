@@ -89,6 +89,18 @@ export const routes = [
             lazy: page(() => import('../features/resumes/versions/ComparePage.jsx'), 'ComparePage'),
           },
           {
+            path: 'jobs',
+            lazy: page(() => import('../features/jobs/JobsPage.jsx'), 'JobsPage'),
+          },
+          {
+            path: 'jobs/new',
+            lazy: page(() => import('../features/jobs/NewJobPage.jsx'), 'NewJobPage'),
+          },
+          {
+            path: 'jobs/:jobId',
+            lazy: page(() => import('../features/jobs/JobReportPage.jsx'), 'JobReportPage'),
+          },
+          {
             path: 'settings',
             lazy: page(() => import('../features/settings/SettingsLayout.jsx'), 'SettingsLayout'),
             children: [

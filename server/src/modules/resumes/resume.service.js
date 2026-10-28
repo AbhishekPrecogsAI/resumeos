@@ -4,6 +4,7 @@ import { defaultLayout } from '@resumeos/shared/resumeModel.js';
 import { getTemplate, DEFAULT_TEMPLATE_ID } from '@resumeos/shared/templates/index.js';
 import { Resume, MAX_RESUMES_PER_USER } from './resume.model.js';
 import { ResumeVersion } from '../versions/version.model.js';
+import { jobService } from '../jobs/job.service.js';
 import { CareerProfile } from '../profiles/profile.model.js';
 import { resumeContentSchema, layoutSchema, baselinesSchema } from '../profiles/content.schema.js';
 import { HttpError } from '../../utils/HttpError.js';
@@ -117,6 +118,7 @@ export const resumeService = {
 
   async update(userId, resumeId, changes) {
     if (changes.templateId) requireTemplate(changes.templateId);
+    if (changes.jobId) await jobService.assertOwned(userId, changes.jobId);
     const set = { ...changes };
     if ('archived' in set) {
       set.archivedAt = set.archived ? new Date() : null;

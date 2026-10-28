@@ -20,6 +20,7 @@ export const DELETED_DATA = [
   'Your master profile, including evidence notes',
   'Every resume, its draft and its saved versions',
   'Export history and any export files not yet expired',
+  'Saved job descriptions and their term lists',
   'Every signed-in session, on all devices',
 ];
 
