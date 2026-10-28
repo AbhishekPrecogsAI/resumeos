@@ -46,6 +46,7 @@ export function publicExport(doc) {
     templateVersion: doc.templateVersion,
     pageSize: doc.pageSize,
     accentColor: doc.accentColor ?? null,
+    backgroundPattern: doc.backgroundPattern ?? 'none',
     pageCount: doc.pageCount,
     byteSize: doc.byteSize,
     durationMs: doc.durationMs,
@@ -77,13 +78,14 @@ async function matchingVersionId(resume, content, layout) {
   if (!resume.currentVersionId) return null;
   const v = await ResumeVersion.findOne(
     { _id: resume.currentVersionId },
-    { contentHash: 1, templateId: 1, pageSize: 1, accentColor: 1 },
+    { contentHash: 1, templateId: 1, pageSize: 1, accentColor: 1, backgroundPattern: 1 },
   ).lean();
   const same =
     v &&
     v.contentHash === contentHash({ content, layout }) &&
     v.templateId === resume.templateId &&
-    (v.accentColor ?? null) === (resume.accentColor ?? null);
+    (v.accentColor ?? null) === (resume.accentColor ?? null) &&
+    (v.backgroundPattern ?? 'none') === (resume.backgroundPattern ?? 'none');
   return same ? v._id : null;
 }
 
@@ -140,6 +142,7 @@ export function createExportService({ env, pool, logger }) {
             pageSize: size,
             timeoutMs: env.EXPORT_TIMEOUT_MS,
             accentColor: resume.accentColor ?? null,
+            pattern: resume.backgroundPattern ?? 'none',
             // The photo is included only if this resume opts in and the template supports one.
             photo:
               layout?.showPhoto && template?.photo ? await photoService.dataUrlFor(userId) : null,
@@ -179,6 +182,7 @@ export function createExportService({ env, pool, logger }) {
           templateVersion: template.version,
           pageSize: size,
           accentColor: resume.accentColor ?? null,
+          backgroundPattern: resume.backgroundPattern ?? 'none',
           pageCount: validation.pageCount,
           byteSize: rendered.buffer.length,
           durationMs: Date.now() - started,

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PATTERN_IDS } from '@resumeos/shared/templates/patterns.js';
 
 // Metadata about each export. The file itself is temporary (see expiresAt); the record stays as
 // history until the user deletes it, the resume, or their account.
@@ -15,6 +16,8 @@ const exportSchema = new mongoose.Schema(
     templateVersion: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], required: true },
     accentColor: { type: String, default: null },
+    // Decorative page background; 'none' for plain. One of PATTERN_IDS.
+    backgroundPattern: { type: String, enum: PATTERN_IDS, default: 'none' },
     pageCount: { type: Number, default: null },
     byteSize: { type: Number, default: 0 },
     durationMs: { type: Number, default: 0 },

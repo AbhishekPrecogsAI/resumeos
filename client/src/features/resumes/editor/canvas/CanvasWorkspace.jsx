@@ -237,6 +237,7 @@ export function CanvasWorkspace({
           templateId={meta.templateId}
           pageSize={meta.pageSize}
           accentColor={meta.accentColor}
+          pattern={meta.backgroundPattern}
           photo={photo}
           onTextEdit={(next, path) =>
             setDraft((d) => ({ ...d, content: next }), { coalesceKey: `canvas:${path}` })
@@ -267,6 +268,7 @@ export function CanvasWorkspace({
             content={draft.content}
             photo={draft.layout.showPhoto ? photo : null}
             accentColor={meta.accentColor}
+            pattern={meta.backgroundPattern}
             onCardClick={(t) => {
               onTemplateChange(t.id);
               setDialog(null);

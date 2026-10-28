@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PATTERN_IDS } from '@resumeos/shared/templates/patterns.js';
 
 export const MAX_RESUMES_PER_USER = 100;
 
@@ -23,6 +24,8 @@ const resumeSchema = new mongoose.Schema(
     pageSize: { type: String, enum: ['A4', 'Letter'], default: 'A4' },
     // Template accent colour; null means the template's default. Validated for contrast.
     accentColor: { type: String, default: null },
+    // Decorative page background; 'none' for plain. One of PATTERN_IDS.
+    backgroundPattern: { type: String, enum: PATTERN_IDS, default: 'none' },
     draft: {
       content: { type: mongoose.Schema.Types.Mixed, required: true },
       layout: { type: mongoose.Schema.Types.Mixed, required: true },

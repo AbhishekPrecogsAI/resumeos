@@ -54,6 +54,7 @@ export function CanvasEditor({
   templateId,
   pageSize,
   accentColor,
+  pattern,
   photo,
   onTextEdit,
   onChange,
@@ -90,10 +91,11 @@ export function CanvasEditor({
       editable: true,
       pageSize,
       accentColor,
+      pattern,
       photo,
       fontCss: templateFontCss(template.id),
     });
-  }, [renderContent, layout, templateId, pageSize, accentColor, photo]);
+  }, [renderContent, layout, templateId, pageSize, accentColor, pattern, photo]);
 
   useEffect(() => {
     const el = wrapRef.current;

@@ -34,6 +34,7 @@ export function summary(doc) {
     templateId: doc.templateId,
     pageSize: doc.pageSize,
     accentColor: doc.accentColor ?? null,
+    backgroundPattern: doc.backgroundPattern ?? 'none',
     currentVersionId: doc.currentVersionId ? String(doc.currentVersionId) : null,
     jobId: doc.jobId ? String(doc.jobId) : null,
     archived: Boolean(doc.archivedAt),
@@ -99,6 +100,7 @@ export const resumeService = {
       templateId = DEFAULT_TEMPLATE_ID,
       pageSize = 'A4',
       accentColor = null,
+      backgroundPattern = 'none',
     },
   ) {
     requireTemplate(templateId);
@@ -112,6 +114,7 @@ export const resumeService = {
       templateId,
       pageSize,
       accentColor,
+      backgroundPattern,
       sourceProfileId: profile?._id ?? null,
       draft: { content, layout: defaultLayout(content), baselines: buildBaselines(content) },
     });
@@ -195,6 +198,7 @@ export const resumeService = {
       templateId: version?.templateId ?? source.templateId,
       pageSize: version?.pageSize ?? source.pageSize,
       accentColor: version ? (version.accentColor ?? null) : (source.accentColor ?? null),
+      backgroundPattern: (version ?? source).backgroundPattern ?? 'none',
       sourceProfileId: source.sourceProfileId,
       draft: structuredClone(version?.snapshot ?? source.draft),
       qualityDismissals: structuredClone(source.qualityDismissals ?? []),

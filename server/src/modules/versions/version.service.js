@@ -30,6 +30,7 @@ export function versionSummary(doc, { exported = false } = {}) {
     templateVersion: doc.templateVersion,
     pageSize: doc.pageSize,
     accentColor: doc.accentColor ?? null,
+    backgroundPattern: doc.backgroundPattern ?? 'none',
     contentHash: doc.contentHash,
     createdAt: doc.createdAt,
     exported,
@@ -80,6 +81,7 @@ async function insertVersion(
     templateId,
     pageSize,
     accentColor = null,
+    backgroundPattern = 'none',
     parentVersionId,
     restoredFromVersionId = null,
   },
@@ -99,6 +101,7 @@ async function insertVersion(
     templateVersion: template?.version ?? 'unknown',
     pageSize,
     accentColor,
+    backgroundPattern,
     snapshot: structuredClone(snapshot),
     contentHash: stateHash(snapshot),
     createdBy: userId,
@@ -115,6 +118,7 @@ async function stateFor(userId, resume, ref) {
         templateId: resume.templateId,
         pageSize: resume.pageSize,
         accentColor: resume.accentColor ?? null,
+        backgroundPattern: resume.backgroundPattern ?? 'none',
       },
     };
   }
@@ -126,6 +130,7 @@ async function stateFor(userId, resume, ref) {
       templateId: v.templateId,
       pageSize: v.pageSize,
       accentColor: v.accentColor ?? null,
+      backgroundPattern: v.backgroundPattern ?? 'none',
     },
   };
 }
@@ -142,6 +147,7 @@ export const versionService = {
       templateId: resume.templateId,
       pageSize: resume.pageSize,
       accentColor: resume.accentColor ?? null,
+      backgroundPattern: resume.backgroundPattern ?? 'none',
       parentVersionId: resume.currentVersionId,
     });
     await Resume.updateOne({ _id: resume._id, userId }, { $set: { currentVersionId: doc._id } });
@@ -175,14 +181,15 @@ export const versionService = {
     if (!resume.currentVersionId) return false;
     const current = await ResumeVersion.findOne(
       { _id: resume.currentVersionId },
-      { contentHash: 1, templateId: 1, pageSize: 1, accentColor: 1 },
+      { contentHash: 1, templateId: 1, pageSize: 1, accentColor: 1, backgroundPattern: 1 },
     ).lean();
     return (
       Boolean(current) &&
       current.contentHash === stateHash(resume.draft) &&
       current.templateId === resume.templateId &&
       current.pageSize === resume.pageSize &&
-      (current.accentColor ?? null) === (resume.accentColor ?? null)
+      (current.accentColor ?? null) === (resume.accentColor ?? null) &&
+      (current.backgroundPattern ?? 'none') === (resume.backgroundPattern ?? 'none')
     );
   },
 
@@ -213,6 +220,7 @@ export const versionService = {
         templateId: resume.templateId,
         pageSize: resume.pageSize,
         accentColor: resume.accentColor ?? null,
+        backgroundPattern: resume.backgroundPattern ?? 'none',
         parentVersionId: parent,
       });
       created.push(auto);
@@ -226,6 +234,7 @@ export const versionService = {
       templateId: target.templateId,
       pageSize: target.pageSize,
       accentColor: target.accentColor ?? null,
+      backgroundPattern: target.backgroundPattern ?? 'none',
       parentVersionId: parent,
       restoredFromVersionId: target._id,
     });
@@ -239,6 +248,7 @@ export const versionService = {
           templateId: target.templateId,
           pageSize: target.pageSize,
           accentColor: target.accentColor ?? null,
+          backgroundPattern: target.backgroundPattern ?? 'none',
           currentVersionId: restored._id,
         },
         $inc: { draftRevision: 1 },

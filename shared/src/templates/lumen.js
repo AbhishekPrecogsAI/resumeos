@@ -71,6 +71,7 @@ export function renderLumen(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
     photo = null,
   } = {},
 ) {
@@ -85,5 +86,6 @@ export function renderLumen(
     photo,
     defaultAccent: LUMEN.accent.default,
     accentColor,
+    pattern,
   });
 }

@@ -70,6 +70,7 @@ export function renderHorizon(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -83,5 +84,6 @@ export function renderHorizon(
     contactIcons: true,
     defaultAccent: HORIZON.accent.default,
     accentColor,
+    pattern,
   });
 }

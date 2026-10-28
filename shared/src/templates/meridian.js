@@ -80,6 +80,7 @@ export function renderMeridian(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -94,5 +95,7 @@ export function renderMeridian(
     contactIcons: true,
     defaultAccent: MERIDIAN.accent.default,
     accentColor,
+    pattern,
+    pageBackground: `linear-gradient(to right, var(--accent) 0, var(--accent) ${SIDE_W}, #fff ${SIDE_W})`,
   });
 }

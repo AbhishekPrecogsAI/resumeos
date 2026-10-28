@@ -60,6 +60,7 @@ export function renderLedger(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -70,5 +71,6 @@ export function renderLedger(
     css,
     defaultAccent: LEDGER.accent.default,
     accentColor,
+    pattern,
   });
 }

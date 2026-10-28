@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { accentProblem } from '@resumeos/shared/templates/color.js';
+import { PATTERN_IDS } from '@resumeos/shared/templates/patterns.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/authenticate.js';
 import { route } from '../../utils/asyncRoute.js';
@@ -23,6 +24,7 @@ const accentColor = z.union([
   z.null(),
 ]);
 const templateId = z.string().max(40);
+const backgroundPattern = z.enum(PATTERN_IDS);
 
 const listQuery = z.strictObject({
   page: z.coerce.number().int().min(1).max(1000).default(1),
@@ -38,6 +40,7 @@ const createBody = z.strictObject({
   templateId: templateId.optional(),
   pageSize: pageSize.optional(),
   accentColor: accentColor.optional(),
+  backgroundPattern: backgroundPattern.optional(),
 });
 const patchBody = z
   .strictObject({
@@ -46,6 +49,7 @@ const patchBody = z
     templateId: templateId.optional(),
     pageSize: pageSize.optional(),
     accentColor: accentColor.optional(),
+    backgroundPattern: backgroundPattern.optional(),
     archived: z.boolean().optional(),
     jobId: z.union([z.string().regex(/^[a-f0-9]{24}$/, 'Invalid id.'), z.null()]).optional(),
   })

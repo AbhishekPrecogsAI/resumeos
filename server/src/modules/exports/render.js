@@ -30,7 +30,16 @@ function withTimeout(promise, ms) {
  */
 export async function renderPdf(
   pool,
-  { content, layout, templateId, pageSize, timeoutMs, accentColor = null, photo = null },
+  {
+    content,
+    layout,
+    templateId,
+    pageSize,
+    timeoutMs,
+    accentColor = null,
+    photo = null,
+    pattern = 'none',
+  },
 ) {
   const template = getTemplate(templateId);
   if (!template)
@@ -42,6 +51,7 @@ export async function renderPdf(
   const html = template.render(content, layout, {
     accentColor,
     photo,
+    pattern,
     pageSize,
     fontCss: serverFontCss(template.fonts),
   });

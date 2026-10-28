@@ -75,6 +75,7 @@ export function renderPrism(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -88,5 +89,7 @@ export function renderPrism(
     contactIcons: true,
     defaultAccent: PRISM.accent.default,
     accentColor,
+    pattern,
+    pageBackground: `linear-gradient(to right, var(--soft) 0, var(--soft) ${SIDE_W}, #fff ${SIDE_W})`,
   });
 }

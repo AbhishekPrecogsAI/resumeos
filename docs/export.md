@@ -158,6 +158,17 @@ CSS either. The accent is saved in versions, appears as a "Template and page set
 comparisons, is restored and branched with versions, is recorded on exports, and colours the
 name and headings in DOCX.
 
+**Background patterns.** Templates with an accent take an optional page background
+(`resume.backgroundPattern`: `none`, `network`, `dots`, `grid`, `diagonal` or `waves`;
+`shared/src/templates/patterns.js`). Each pattern is a small SVG tile, tinted from the accent and
+drawn as a CSS `background` layer on `html`. It contains no text, no links and nothing
+positioned, so it can't change extracted text or reading order. Sidebar templates pass their
+sidebar gradient as the base layer, so the pattern sits over it. Mark opacity is capped at
+`PATTERN_MAX_OPACITY` (0.16), and a test checks that body and muted text stay ≥ 4.5:1 on the
+darkest mark for every swatch. The network tile uses a fixed-seed generator, so it's identical
+on every render. The pattern is saved, compared, restored and branched with versions and recorded
+on exports, like the accent. Clarity and DOCX ignore it.
+
 **Reading order in sidebar templates.** The sidebar always comes first in the document. It
 usually ends on page 1 while the main column continues, so this order lets extractors read the
 whole sidebar, then the whole main column, on any number of pages. With the sidebar last,

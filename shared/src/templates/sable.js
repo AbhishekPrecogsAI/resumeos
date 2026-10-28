@@ -62,6 +62,7 @@ export function renderSable(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -73,5 +74,6 @@ export function renderSable(
     contactItems: true,
     defaultAccent: SABLE.accent.default,
     accentColor,
+    pattern,
   });
 }

@@ -65,6 +65,7 @@ export function TemplateGrid({
   content = sampleResume,
   photo,
   accentColor,
+  pattern = 'none',
   compact = false,
 }) {
   const [filter, setFilter] = useState('all');
@@ -131,6 +132,7 @@ export function TemplateGrid({
                     firstPageOnly
                     photo={photo === undefined ? samplePhotoFor(t) : t.photo ? photo : null}
                     accentColor={accentColor && t.accent ? accentColor : null}
+                    pattern={pattern}
                     title={`${t.name} thumbnail`}
                   />
                 </div>

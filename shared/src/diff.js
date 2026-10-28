@@ -312,6 +312,12 @@ export function diffResumes(left, right) {
       before: left.accentColor ?? null,
       after: right.accentColor ?? null,
     });
+  if ((left.backgroundPattern ?? 'none') !== (right.backgroundPattern ?? 'none'))
+    template.push({
+      field: 'backgroundPattern',
+      before: left.backgroundPattern ?? 'none',
+      after: right.backgroundPattern ?? 'none',
+    });
 
   const summary = { added: 0, removed: 0, modified: 0, reordered: 0 };
   const count = (entries) => {

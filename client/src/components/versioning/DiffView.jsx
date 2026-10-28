@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRightLeft, Minus, MoveVertical, Pencil, Plus } from 'lucide-react';
 import { formatMonth } from '@resumeos/shared/dates.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
+import { PATTERNS } from '@resumeos/shared/templates/patterns.js';
 import { Badge } from '../ui/Badge.jsx';
 import { cx } from '../../lib/cx.js';
 
@@ -40,6 +41,7 @@ const FIELD_LABELS = {
   templateId: 'Template',
   pageSize: 'Page size',
   accentColor: 'Accent colour',
+  backgroundPattern: 'Background',
 };
 
 export const STATUS = {
@@ -69,6 +71,7 @@ function StatusBadge({ status, moved }) {
 
 function formatValue(field, value) {
   if (field === 'accentColor' && !value) return 'Template default';
+  if (field === 'backgroundPattern') return PATTERNS.find((p) => p.id === value)?.name ?? value;
   if (value === null || value === undefined || value === '') return '(empty)';
   if (Array.isArray(value))
     return value.length

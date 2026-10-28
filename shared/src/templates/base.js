@@ -1,5 +1,6 @@
 import { escapeHtml as e, safeHref, displayUrl } from '../escape.js';
 import { accentPalette, accentProblem } from './color.js';
+import { patternLayer } from './patterns.js';
 import { formatRange } from '../dates.js';
 import { SECTION_TITLES, resolveSectionOrder, bulletText } from '../resumeModel.js';
 
@@ -406,6 +407,19 @@ function accentVars(defaultAccent, accentColor) {
   return `:root { --accent: ${p.accent}; --soft: ${p.soft}; --rail: ${p.rail}; --on-dark: ${p.onDark}; --deep: ${p.deep}; }\n`;
 }
 
+/**
+ * Background pattern layered over the template's own page background (e.g. a sidebar band).
+ * Only for templates with an accent; the body is made transparent so the pattern shows behind
+ * text on every page, including margins.
+ */
+function patternCss(defaultAccent, accentColor, pattern, pageBackground) {
+  if (!defaultAccent || !pattern || pattern === 'none') return '';
+  const accent = accentColor && !accentProblem(accentColor) ? accentColor : defaultAccent;
+  const layer = patternLayer(pattern, accentPalette(accent).accent);
+  if (!layer) return '';
+  return `\nhtml { background: ${layer}, ${pageBackground}; }\nbody { background: transparent; }\n`;
+}
+
 export function renderResume(
   content,
   layout = {},
@@ -423,6 +437,8 @@ export function renderResume(
     photo = null,
     fullWidth = [],
     editable = false,
+    pattern = 'none',
+    pageBackground = '#fff',
   },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
@@ -503,7 +519,7 @@ ${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g.
 <title>${e(contact.name || 'Resume')}</title>
 <style>
 ${fontCss}
-${accentVars(defaultAccent, accentColor)}${css(page, fontStack)}${editable ? EDITABLE_CSS : ''}</style></head>
+${accentVars(defaultAccent, accentColor)}${css(page, fontStack)}${patternCss(defaultAccent, accentColor, pattern, pageBackground)}${editable ? EDITABLE_CSS : ''}</style></head>
 <body${sidebar ? ' class="has-sidebar"' : ''}>
 ${body}
 </body></html>`;

@@ -87,6 +87,7 @@ export function renderVertex(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
     photo = null,
   } = {},
 ) {
@@ -102,5 +103,7 @@ export function renderVertex(
     photo,
     defaultAccent: VERTEX.accent.default,
     accentColor,
+    pattern,
+    pageBackground: `linear-gradient(to right, var(--accent) 0, var(--accent) ${SIDE_W}, #fff ${SIDE_W})`,
   });
 }

@@ -77,6 +77,7 @@ export function renderAtelier(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -90,5 +91,7 @@ export function renderAtelier(
     contactIcons: true,
     defaultAccent: ATELIER.accent.default,
     accentColor,
+    pattern,
+    pageBackground: `linear-gradient(to left, var(--soft) 0, var(--soft) ${SIDE_W}, #fff ${SIDE_W})`,
   });
 }

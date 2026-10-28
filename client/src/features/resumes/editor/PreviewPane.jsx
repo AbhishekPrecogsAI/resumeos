@@ -13,6 +13,7 @@ export function PreviewPane({
   templateId,
   pageSize,
   accentColor = null,
+  pattern = 'none',
   photo = null,
 }) {
   const [pages, setPages] = useState(1);
@@ -22,6 +23,7 @@ export function PreviewPane({
     const html = getTemplate(templateId).render(content, layout, {
       pageSize,
       accentColor,
+      pattern,
       photo,
       fontCss: templateFontCss(templateId),
     });
@@ -54,6 +56,7 @@ export function PreviewPane({
           templateId={templateId}
           pageSize={pageSize}
           accentColor={accentColor}
+          pattern={pattern}
           photo={photo}
           title="Live resume preview"
           onPageCount={setPages}

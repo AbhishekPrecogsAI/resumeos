@@ -18,6 +18,7 @@ import { resolveSectionOrder, sectionTitle } from '@resumeos/shared/resumeModel.
 import { compareWithProfile, pullFromProfile, acknowledgeProfile } from '@resumeos/shared/sync.js';
 import { TEMPLATES, getTemplate } from '@resumeos/shared/templates/index.js';
 import { AccentPicker } from '../../../components/editor/AccentPicker.jsx';
+import { PatternPicker } from '../../../components/editor/PatternPicker.jsx';
 import { photoApi, PHOTO_KEY } from '../../../api/photo.api.js';
 import { LIMITS } from '@resumeos/shared/limits.js';
 import { resumesApi } from '../../../api/resumes.api.js';
@@ -210,6 +211,7 @@ function ResumeEditor({ resume, profile }) {
     templateId: resume.templateId,
     pageSize: resume.pageSize,
     accentColor: resume.accentColor ?? null,
+    backgroundPattern: resume.backgroundPattern ?? 'none',
     targetRole: resume.targetRole,
   });
   const [selected, setSelected] = useState('contact');
@@ -645,11 +647,18 @@ function ResumeEditor({ resume, profile }) {
             <option value="Letter">US Letter</option>
           </select>
           {getTemplate(meta.templateId)?.accent && (
-            <AccentPicker
-              value={meta.accentColor}
-              defaultAccent={getTemplate(meta.templateId).accent.default}
-              onChange={(accentColor) => updateMeta.mutate({ accentColor })}
-            />
+            <>
+              <AccentPicker
+                value={meta.accentColor}
+                defaultAccent={getTemplate(meta.templateId).accent.default}
+                onChange={(accentColor) => updateMeta.mutate({ accentColor })}
+              />
+              <PatternPicker
+                value={meta.backgroundPattern}
+                accent={meta.accentColor ?? getTemplate(meta.templateId).accent.default}
+                onChange={(backgroundPattern) => updateMeta.mutate({ backgroundPattern })}
+              />
+            </>
           )}
           <Button
             variant="ghost"
@@ -848,6 +857,7 @@ function ResumeEditor({ resume, profile }) {
                     templateId={meta.templateId}
                     pageSize={meta.pageSize}
                     accentColor={meta.accentColor}
+                    pattern={meta.backgroundPattern}
                     photo={previewPhoto}
                   />
                 </div>

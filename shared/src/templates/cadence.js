@@ -62,6 +62,7 @@ export function renderCadence(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
   } = {},
 ) {
   return renderResume(content, layout, {
@@ -72,5 +73,6 @@ export function renderCadence(
     css,
     defaultAccent: CADENCE.accent.default,
     accentColor,
+    pattern,
   });
 }

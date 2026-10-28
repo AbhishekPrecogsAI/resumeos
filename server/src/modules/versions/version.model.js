@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PATTERN_IDS } from '@resumeos/shared/templates/patterns.js';
 
 export const MAX_VERSIONS_PER_RESUME = 100;
 
@@ -17,6 +18,8 @@ const versionSchema = new mongoose.Schema(
     templateVersion: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], required: true },
     accentColor: { type: String, default: null },
+    // Decorative page background; 'none' for plain. One of PATTERN_IDS.
+    backgroundPattern: { type: String, enum: PATTERN_IDS, default: 'none' },
     snapshot: {
       content: { type: mongoose.Schema.Types.Mixed, required: true },
       layout: { type: mongoose.Schema.Types.Mixed, required: true },

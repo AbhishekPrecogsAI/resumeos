@@ -80,6 +80,7 @@ export function renderOrbit(
     fontStack = FONT_STACK,
     editable = false,
     accentColor = null,
+    pattern = 'none',
     photo = null,
   } = {},
 ) {
@@ -96,5 +97,6 @@ export function renderOrbit(
     photo,
     defaultAccent: ORBIT.accent.default,
     accentColor,
+    pattern,
   });
 }
