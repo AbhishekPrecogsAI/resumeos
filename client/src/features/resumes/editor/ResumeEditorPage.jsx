@@ -52,6 +52,7 @@ import { ProfileSyncPanel } from './ProfileSyncPanel.jsx';
 import { PreviewPane } from './PreviewPane.jsx';
 import { ShortcutsDialog } from './ShortcutsDialog.jsx';
 import { ExportDialog } from './ExportDialog.jsx';
+import { CanvasWorkspace } from './canvas/CanvasWorkspace.jsx';
 import { QualityPanel } from './QualityPanel.jsx';
 import { runQualityChecks } from '@resumeos/shared/quality/engine.js';
 import { applyFix } from '@resumeos/shared/quality/fixes.js';
@@ -217,6 +218,22 @@ function ResumeEditor({ resume, profile }) {
   const [dismissals, setDismissals] = useState(resume.qualityDismissals ?? []);
   const [helpOpen, setHelpOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  // "canvas": edit on the page itself (default). "form": structured forms beside a preview.
+  const [view, setViewState] = useState(() => {
+    try {
+      return localStorage.getItem('resumeos:editorView') === 'form' ? 'form' : 'canvas';
+    } catch {
+      return 'canvas';
+    }
+  });
+  const setView = (v) => {
+    setViewState(v);
+    try {
+      localStorage.setItem('resumeos:editorView', v);
+    } catch {
+      /* storage unavailable */
+    }
+  };
   const [exportOpen, setExportOpen] = useState(false);
   const [saveVersionOpen, setSaveVersionOpen] = useState(false);
   const [pendingSectionDelete, setPendingSectionDelete] = useState(null);
@@ -555,6 +572,30 @@ function ResumeEditor({ resume, profile }) {
           onRetry={autosave.retry}
         />
         <VersionIndicator resumeId={resume.id} draft={autosave.data} />
+        <div
+          role="radiogroup"
+          aria-label="Editor view"
+          className="inline-flex rounded-md border border-rule p-0.5"
+        >
+          {[
+            ['canvas', 'Page'],
+            ['form', 'Form'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={view === value}
+              onClick={() => setView(value)}
+              className={cx(
+                'rounded-[5px] px-2.5 py-1 text-sm',
+                view === value ? 'bg-sunken font-medium text-ink' : 'text-muted hover:text-ink',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -662,134 +703,159 @@ function ResumeEditor({ resume, profile }) {
         </div>
       )}
 
-      <div
-        role="tablist"
-        aria-label="Editor view"
-        className="flex gap-1 border-b border-rule px-4 xl:hidden"
-      >
-        {['edit', 'preview', 'checks'].map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={mobileTab === tab}
-            onClick={() => setMobileTab(tab)}
-            className={cx(
-              '-mb-px border-b-2 px-3 py-2 text-sm',
-              mobileTab === tab
-                ? 'border-accent font-medium text-ink'
-                : 'border-transparent text-muted',
-            )}
-          >
-            {tab === 'edit'
-              ? 'Edit'
-              : tab === 'preview'
-                ? 'Preview'
-                : `Checks (${report.counts.total})`}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid flex-1 xl:grid-cols-[16rem_minmax(0,1fr)_minmax(0,34rem)] lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside
-          className={cx(
-            'border-rule px-3 py-5 lg:border-r',
-            mobileTab === 'edit' ? 'block' : 'hidden xl:block',
-          )}
-        >
-          <button
-            type="button"
-            aria-expanded={navOpen}
-            aria-controls="resume-section-nav"
-            onClick={() => setNavOpen((v) => !v)}
-            className="w-full rounded-md px-2 py-2 text-left text-sm font-medium text-ink hover:bg-sunken lg:hidden"
-          >
-            Sections: {selectedTitle}
-          </button>
-          {/* Rendered once; collapsible below the lg breakpoint. */}
-          <div
-            id="resume-section-nav"
-            className={cx('mt-2 lg:mt-0 lg:block', navOpen ? 'block' : 'hidden')}
-          >
-            {navigator}
-          </div>
-        </aside>
-
-        <section
-          aria-labelledby="section-heading"
-          className={cx(
-            'min-w-0 px-4 py-6 sm:px-6',
-            mobileTab === 'edit' ? 'block' : 'hidden xl:block',
-          )}
-        >
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2 id="section-heading" className="text-lg font-semibold text-ink">
-              {selectedTitle}
-            </h2>
-            {sectionHidden && <Badge>Hidden from this resume</Badge>}
-          </div>
-          <ProfileSyncPanel changes={selectedChanges} onPull={pull} onKeep={keep} />
-          {editor}
-        </section>
-
-        <section
-          aria-label={rightPanel === 'checks' ? 'Quality checks' : 'Preview'}
-          className={cx(
-            'min-w-0 border-rule bg-sunken/40 px-4 py-6 sm:px-6 xl:border-l',
-            mobileTab !== 'edit' ? 'block lg:col-span-2 xl:col-span-1' : 'hidden xl:block',
-          )}
-        >
+      {view === 'canvas' ? (
+        <CanvasWorkspace
+          draft={autosave.data}
+          setDraft={setDraft}
+          meta={meta}
+          onTemplateChange={(templateId) => updateMeta.mutate({ templateId })}
+          photo={photo.data?.dataUrl ?? null}
+          hasPhoto={Boolean(photo.data)}
+          report={report}
+          quality={{
+            onJump: (f) => {
+              setView('form');
+              jumpTo(f);
+            },
+            onFix: fix,
+            onDismiss: dismiss,
+            onRestore: restoreFinding,
+          }}
+          profileChanges={changes.length}
+          onShowForm={() => setView('form')}
+        />
+      ) : (
+        <>
           <div
             role="tablist"
-            aria-label="Side panel"
-            className="mb-4 hidden gap-1 border-b border-rule xl:flex"
+            aria-label="Editor panels"
+            className="flex gap-1 border-b border-rule px-4 xl:hidden"
           >
-            {[
-              ['preview', 'Preview'],
-              ['checks', `Checks (${report.counts.total})`],
-            ].map(([value, label]) => (
+            {['edit', 'preview', 'checks'].map((tab) => (
               <button
-                key={value}
+                key={tab}
                 type="button"
                 role="tab"
-                aria-selected={rightPanel === value}
-                onClick={() => {
-                  setSidePanel(value);
-                  if (mobileTab !== 'edit') setMobileTab(value);
-                }}
+                aria-selected={mobileTab === tab}
+                onClick={() => setMobileTab(tab)}
                 className={cx(
                   '-mb-px border-b-2 px-3 py-2 text-sm',
-                  rightPanel === value
+                  mobileTab === tab
                     ? 'border-accent font-medium text-ink'
                     : 'border-transparent text-muted',
                 )}
               >
-                {label}
+                {tab === 'edit'
+                  ? 'Edit'
+                  : tab === 'preview'
+                    ? 'Preview'
+                    : `Checks (${report.counts.total})`}
               </button>
             ))}
           </div>
-          {rightPanel === 'checks' ? (
-            <QualityPanel
-              report={report}
-              onJump={jumpTo}
-              onFix={fix}
-              onDismiss={dismiss}
-              onRestore={restoreFinding}
-            />
-          ) : (
-            <div className="xl:sticky xl:top-32">
-              <PreviewPane
-                content={previewDraft.content}
-                layout={previewDraft.layout}
-                templateId={meta.templateId}
-                pageSize={meta.pageSize}
-                accentColor={meta.accentColor}
-                photo={previewPhoto}
-              />
-            </div>
-          )}
-        </section>
-      </div>
+
+          <div className="grid flex-1 xl:grid-cols-[16rem_minmax(0,1fr)_minmax(0,34rem)] lg:grid-cols-[16rem_minmax(0,1fr)]">
+            <aside
+              className={cx(
+                'border-rule px-3 py-5 lg:border-r',
+                mobileTab === 'edit' ? 'block' : 'hidden xl:block',
+              )}
+            >
+              <button
+                type="button"
+                aria-expanded={navOpen}
+                aria-controls="resume-section-nav"
+                onClick={() => setNavOpen((v) => !v)}
+                className="w-full rounded-md px-2 py-2 text-left text-sm font-medium text-ink hover:bg-sunken lg:hidden"
+              >
+                Sections: {selectedTitle}
+              </button>
+              {/* Rendered once; collapsible below the lg breakpoint. */}
+              <div
+                id="resume-section-nav"
+                className={cx('mt-2 lg:mt-0 lg:block', navOpen ? 'block' : 'hidden')}
+              >
+                {navigator}
+              </div>
+            </aside>
+
+            <section
+              aria-labelledby="section-heading"
+              className={cx(
+                'min-w-0 px-4 py-6 sm:px-6',
+                mobileTab === 'edit' ? 'block' : 'hidden xl:block',
+              )}
+            >
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <h2 id="section-heading" className="text-lg font-semibold text-ink">
+                  {selectedTitle}
+                </h2>
+                {sectionHidden && <Badge>Hidden from this resume</Badge>}
+              </div>
+              <ProfileSyncPanel changes={selectedChanges} onPull={pull} onKeep={keep} />
+              {editor}
+            </section>
+
+            <section
+              aria-label={rightPanel === 'checks' ? 'Quality checks' : 'Preview'}
+              className={cx(
+                'min-w-0 border-rule bg-sunken/40 px-4 py-6 sm:px-6 xl:border-l',
+                mobileTab !== 'edit' ? 'block lg:col-span-2 xl:col-span-1' : 'hidden xl:block',
+              )}
+            >
+              <div
+                role="tablist"
+                aria-label="Side panel"
+                className="mb-4 hidden gap-1 border-b border-rule xl:flex"
+              >
+                {[
+                  ['preview', 'Preview'],
+                  ['checks', `Checks (${report.counts.total})`],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={rightPanel === value}
+                    onClick={() => {
+                      setSidePanel(value);
+                      if (mobileTab !== 'edit') setMobileTab(value);
+                    }}
+                    className={cx(
+                      '-mb-px border-b-2 px-3 py-2 text-sm',
+                      rightPanel === value
+                        ? 'border-accent font-medium text-ink'
+                        : 'border-transparent text-muted',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {rightPanel === 'checks' ? (
+                <QualityPanel
+                  report={report}
+                  onJump={jumpTo}
+                  onFix={fix}
+                  onDismiss={dismiss}
+                  onRestore={restoreFinding}
+                />
+              ) : (
+                <div className="xl:sticky xl:top-32">
+                  <PreviewPane
+                    content={previewDraft.content}
+                    layout={previewDraft.layout}
+                    templateId={meta.templateId}
+                    pageSize={meta.pageSize}
+                    accentColor={meta.accentColor}
+                    photo={previewPhoto}
+                  />
+                </div>
+              )}
+            </section>
+          </div>
+        </>
+      )}
 
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
       <SaveVersionDialog

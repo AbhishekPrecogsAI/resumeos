@@ -51,7 +51,13 @@ li { margin: 1.5pt 0; padding-left: 1pt; }
 export function renderClarity(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK } = {},
+  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK, editable = false } = {},
 ) {
-  return renderResume(content, layout, { pageSize, fontCss, fontStack, css });
+  return renderResume(content, layout, {
+    editable,
+    pageSize,
+    fontCss,
+    fontStack,
+    css,
+  });
 }

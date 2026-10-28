@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { renderRoute } from './render.jsx';
 import { mockApi, SIGNED_IN } from './fetchMock.js';
@@ -28,6 +28,9 @@ function resumeBody(overrides = {}) {
     },
   };
 }
+
+// These cover the form view; the page (canvas) view has its own tests in canvas.test.jsx.
+beforeEach(() => localStorage.setItem('resumeos:editorView', 'form'));
 
 describe('profile page', () => {
   it('autosaves edits with the loaded revision', async () => {
@@ -102,7 +105,7 @@ describe('new resume', () => {
     fireEvent.change(await screen.findByLabelText(/Target role/), {
       target: { value: 'Platform Engineer' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create resume' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create and start editing' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/app/resumes/r1/edit'));
     expect(calls.find((c) => c.method === 'POST').body).toMatchObject({
       title: 'Platform Engineer resume',

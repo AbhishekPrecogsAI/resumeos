@@ -74,9 +74,17 @@ li::marker { color: var(--accent); }
 export function renderOrbit(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK, accentColor = null, photo = null } = {},
+  {
+    pageSize = 'A4',
+    fontCss = '',
+    fontStack = FONT_STACK,
+    editable = false,
+    accentColor = null,
+    photo = null,
+  } = {},
 ) {
   return renderResume(content, layout, {
+    editable,
     pageSize,
     fontCss,
     fontStack,

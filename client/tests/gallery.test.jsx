@@ -11,11 +11,11 @@ describe('template gallery', () => {
     renderRoute('/templates');
     expect(await screen.findByText(`${TEMPLATES.length} templates`)).toBeInTheDocument();
     for (const t of TEMPLATES)
-      expect(screen.getByRole('heading', { name: t.name, level: 2 })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: 'Supports a photo' }));
+      expect(screen.getByRole('heading', { name: t.name, level: 3 })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'With photo' }));
     const withPhoto = TEMPLATES.filter((t) => t.photo);
     expect(screen.getByText(`${withPhoto.length} templates`)).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Clarity', level: 2 })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Clarity', level: 3 })).not.toBeInTheDocument();
   });
 
   it('opens a detail view with trade-offs and a link to use it', async () => {

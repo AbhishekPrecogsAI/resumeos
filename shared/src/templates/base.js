@@ -14,7 +14,28 @@ function link(url, text) {
   return href ? `<a href="${e(href)}">${label}</a>` : label;
 }
 
-function bullets(list) {
+/*
+ * Editable mode (the on-page editor). Every field is wrapped in a span carrying a stable path
+ * made of entry ids, e.g. "experience:exp_1:title" or "experience:exp_1:bullets:b_3:text".
+ * Empty fields render with a placeholder. When `ctx.editable` is false, every helper returns
+ * exactly what the plain renderer always produced, so exports are unaffected.
+ */
+const ph = (text) => e(text);
+function ed(ctx, path, value, placeholder, tag = 'span', attrs = '') {
+  return `<${tag} data-edit="${e(path)}" data-ph="${ph(placeholder)}"${attrs}>${e(value ?? '')}</${tag}>`;
+}
+
+function bullets(list, ctx = {}, base = '') {
+  if (ctx.editable) {
+    const items = list ?? [];
+    if (!items.length) return '';
+    return `<ul>${items
+      .map(
+        (b) =>
+          `<li data-bullet="${e(`${base}:bullets:${b.id}`)}">${ed(ctx, `${base}:bullets:${b.id}:text`, bulletText(b), 'Describe what you did and what changed')}</li>`,
+      )
+      .join('')}</ul>`;
+  }
   const items = (list ?? []).map(bulletText).filter((text) => text.trim() !== '');
   if (!items.length) return '';
   return `<ul>${items.map((text) => `<li>${e(text)}</li>`).join('')}</ul>`;
@@ -33,32 +54,96 @@ function entryHead({ title, org, meta, dates }) {
   }</div>${dates ? `<div class="dates">${e(dates)}</div>` : ''}</div>`;
 }
 
-const renderers = {
-  summary: (c) => (c.summary?.trim() ? `<p class="summary">${e(c.summary)}</p>` : ''),
+/** Editable entry head: every part is its own field; dates open a picker. */
+function entryHeadEditable(ctx, base, { title, org, meta = [], dates, datesKey }) {
+  const parts = [`<strong>${ed(ctx, `${base}:${title.key}`, title.value, title.ph)}</strong>`];
+  if (org) parts.push(`<span>${ed(ctx, `${base}:${org.key}`, org.value, org.ph)}</span>`);
+  const metaHtml = meta.length
+    ? `<span class="meta">${meta.map((m) => ed(ctx, `${base}:${m.key}`, m.value, m.ph)).join('<span class="sep"> / </span>')}</span>`
+    : '';
+  return `<div class="entry-head"><div class="entry-title">${parts.join('<span class="sep">, </span>')}${metaHtml}</div><div class="dates" data-dates="${e(datesKey)}" role="button" tabindex="0">${e(dates || 'Add dates')}</div></div>`;
+}
 
-  experience: (c, hidden) =>
+const article = (ctx, key, inner) =>
+  ctx.editable
+    ? `<article class="entry" data-entry="${e(key)}">${inner}</article>`
+    : `<article class="entry">${inner}</article>`;
+
+const renderers = {
+  summary: (c, hidden, ctx = {}) =>
+    ctx.editable
+      ? ed(
+          ctx,
+          'summary',
+          c.summary,
+          'Two to four sentences about who you are and what you do best',
+          'p',
+          ' class="summary"',
+        )
+      : c.summary?.trim()
+        ? `<p class="summary">${e(c.summary)}</p>`
+        : '',
+
+  experience: (c, hidden, ctx = {}) =>
     visibleItems(c.experience, hidden)
-      .map(
-        (x) =>
-          `<article class="entry">${entryHead({
-            title: x.title,
-            org: x.company,
-            meta: [x.location, x.employmentType].filter(Boolean).join(' / '),
-            dates: formatRange(x.startDate, x.endDate, { current: x.current }),
-          })}${bullets(x.bullets)}</article>`,
-      )
+      .map((x) => {
+        const base = `experience:${x.id}`;
+        const dates = formatRange(x.startDate, x.endDate, { current: x.current });
+        if (ctx.editable) {
+          return article(
+            ctx,
+            base,
+            `${entryHeadEditable(ctx, base, {
+              title: { key: 'title', value: x.title, ph: 'Job title' },
+              org: { key: 'company', value: x.company, ph: 'Company' },
+              meta: [
+                { key: 'location', value: x.location, ph: 'Location' },
+                { key: 'employmentType', value: x.employmentType, ph: 'Type' },
+              ],
+              dates,
+              datesKey: base,
+            })}${bullets(x.bullets, ctx, base)}`,
+          );
+        }
+        return `<article class="entry">${entryHead({
+          title: x.title,
+          org: x.company,
+          meta: [x.location, x.employmentType].filter(Boolean).join(' / '),
+          dates,
+        })}${bullets(x.bullets)}</article>`;
+      })
       .join(''),
 
-  projects: (c, hidden) =>
+  projects: (c, hidden, ctx = {}) =>
     visibleItems(c.projects, hidden)
       .map((p) => {
+        const base = `projects:${p.id}`;
+        const dates = formatRange(p.startDate, p.endDate, { current: p.current });
+        if (ctx.editable) {
+          return article(
+            ctx,
+            base,
+            `${entryHeadEditable(ctx, base, { title: { key: 'name', value: p.name, ph: 'Project name' }, dates, datesKey: base })}${ed(
+              ctx,
+              `${base}:description`,
+              p.description,
+              'What it is and why it matters',
+              'p',
+            )}${ed(ctx, `${base}:technologies`, (p.technologies ?? []).join(', '), 'Technologies, comma separated', 'p', ' class="tech"')}<p class="links">${ed(
+              ctx,
+              `${base}:url`,
+              p.url,
+              'Project URL',
+            )}<span class="sep"> | </span>${ed(ctx, `${base}:repositoryUrl`, p.repositoryUrl, 'Repository URL')}</p>${bullets(p.bullets, ctx, base)}`,
+          );
+        }
         const links = [p.url && link(p.url), p.repositoryUrl && link(p.repositoryUrl)]
           .filter(Boolean)
           .join('<span class="sep"> | </span>');
         const tech = (p.technologies ?? []).filter(Boolean).join(', ');
         return `<article class="entry">${entryHead({
           title: p.name,
-          dates: formatRange(p.startDate, p.endDate, { current: p.current }),
+          dates,
         })}${p.description ? `<p>${e(p.description)}</p>` : ''}${
           tech ? `<p class="tech">${e(tech)}</p>` : ''
         }${links ? `<p class="links">${links}</p>` : ''}${bullets(p.bullets)}</article>`;
@@ -68,12 +153,31 @@ const renderers = {
   skills: (c, hidden, opts = {}) => {
     const groups = new Map();
     for (const s of visibleItems(c.skills, hidden)) {
-      if (!s.name?.trim()) continue;
+      if (!opts.editable && !s.name?.trim()) continue;
       const key = s.category?.trim() || 'Skills';
       if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(s.name.trim());
+      groups.get(key).push(opts.editable ? s : s.name.trim());
     }
     if (!groups.size) return '';
+    if (opts.editable) {
+      const skill = (s) =>
+        ed(
+          opts,
+          `skills:${s.id}:name`,
+          s.name,
+          'Skill',
+          'span',
+          opts.skillChips ? ' class="chip"' : '',
+        );
+      return `<dl class="skills${opts.skillChips ? ' chips' : ''}" data-entry="skills">${[...groups]
+        .map(
+          ([cat, list]) =>
+            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${encodeURIComponent(cat)}`, cat, 'Category')}</dt><dd>${list
+              .map(skill)
+              .join(opts.skillChips ? ' ' : '<span class="sep">, </span>')}</dd></div>`,
+        )
+        .join('')}</dl>`;
+    }
     if (opts.skillChips) {
       // Chips are separate elements with real spaces between them, so extracted text stays readable.
       return `<dl class="skills chips">${[...groups]
@@ -88,42 +192,85 @@ const renderers = {
       .join('')}</dl>`;
   },
 
-  education: (c, hidden) =>
+  education: (c, hidden, ctx = {}) =>
     visibleItems(c.education, hidden)
-      .map(
-        (x) =>
-          `<article class="entry">${entryHead({
-            title: [x.degree, x.field].filter(Boolean).join(', '),
-            org: x.institution,
-            meta: x.location,
-            dates: formatRange(x.startDate, x.endDate, { current: x.current }),
-          })}${x.notes ? `<p>${e(x.notes)}</p>` : ''}</article>`,
-      )
+      .map((x) => {
+        const base = `education:${x.id}`;
+        const dates = formatRange(x.startDate, x.endDate, { current: x.current });
+        if (ctx.editable) {
+          return article(
+            ctx,
+            base,
+            `${entryHeadEditable(ctx, base, {
+              title: { key: 'degree', value: x.degree, ph: 'Degree' },
+              org: { key: 'institution', value: x.institution, ph: 'School or university' },
+              meta: [
+                { key: 'field', value: x.field, ph: 'Field of study' },
+                { key: 'location', value: x.location, ph: 'Location' },
+              ],
+              dates,
+              datesKey: base,
+            })}${ed(ctx, `${base}:notes`, x.notes, 'Honours, thesis or relevant coursework', 'p')}`,
+          );
+        }
+        return `<article class="entry">${entryHead({
+          title: [x.degree, x.field].filter(Boolean).join(', '),
+          org: x.institution,
+          meta: x.location,
+          dates,
+        })}${x.notes ? `<p>${e(x.notes)}</p>` : ''}</article>`;
+      })
       .join(''),
 
-  certifications: (c, hidden) =>
+  certifications: (c, hidden, ctx = {}) =>
     visibleItems(c.certifications, hidden)
-      .map(
-        (x) =>
-          `<article class="entry">${entryHead({
-            title: x.name,
-            org: x.issuer,
-            dates: formatRange(x.issuedDate, x.expiresDate),
-          })}${x.url ? `<p class="links">${link(x.url)}</p>` : ''}</article>`,
-      )
+      .map((x) => {
+        const base = `certifications:${x.id}`;
+        const dates = formatRange(x.issuedDate, x.expiresDate);
+        if (ctx.editable) {
+          return article(
+            ctx,
+            base,
+            `${entryHeadEditable(ctx, base, {
+              title: { key: 'name', value: x.name, ph: 'Certification' },
+              org: { key: 'issuer', value: x.issuer, ph: 'Issuer' },
+              dates,
+              datesKey: base,
+            })}<p class="links">${ed(ctx, `${base}:url`, x.url, 'Verification URL')}</p>`,
+          );
+        }
+        return `<article class="entry">${entryHead({
+          title: x.name,
+          org: x.issuer,
+          dates,
+        })}${x.url ? `<p class="links">${link(x.url)}</p>` : ''}</article>`;
+      })
       .join(''),
 };
 
-function renderCustom(section, hidden) {
+function renderCustom(section, hidden, ctx = {}) {
   return visibleItems(section.items, hidden)
-    .map(
-      (x) =>
-        `<article class="entry">${entryHead({
-          title: x.title,
-          org: x.subtitle,
-          dates: formatRange(x.startDate, x.endDate, { current: x.current }),
-        })}${x.description ? `<p>${e(x.description)}</p>` : ''}${bullets(x.bullets)}</article>`,
-    )
+    .map((x) => {
+      const base = `custom:${section.id}:${x.id}`;
+      const dates = formatRange(x.startDate, x.endDate, { current: x.current });
+      if (ctx.editable) {
+        return article(
+          ctx,
+          base,
+          `${entryHeadEditable(ctx, base, {
+            title: { key: 'title', value: x.title, ph: 'Title' },
+            org: { key: 'subtitle', value: x.subtitle, ph: 'Organisation' },
+            dates,
+            datesKey: base,
+          })}${ed(ctx, `${base}:description`, x.description, 'Description', 'p')}${bullets(x.bullets, ctx, base)}`,
+        );
+      }
+      return `<article class="entry">${entryHead({
+        title: x.title,
+        org: x.subtitle,
+        dates,
+      })}${x.description ? `<p>${e(x.description)}</p>` : ''}${bullets(x.bullets)}</article>`;
+    })
     .join('');
 }
 
@@ -144,7 +291,44 @@ const ICON_PATHS = {
 const icon = (kind) =>
   `<svg class="ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[kind]}</svg>`;
 
-function contactLine(contact, { contactItems = false, contactIcons = false } = {}) {
+const CONTACT_PLACEHOLDERS = {
+  location: 'City, Country',
+  email: 'Email',
+  phone: 'Phone',
+  website: 'Website',
+  linkedin: 'LinkedIn URL',
+  github: 'GitHub URL',
+  portfolio: 'Portfolio URL',
+};
+
+function contactLine(
+  contact,
+  { contactItems = false, contactIcons = false, editable = false } = {},
+) {
+  if (editable) {
+    // Show the common fields even when empty (as placeholders); show the rest only when filled.
+    const kinds = [
+      'location',
+      'email',
+      'phone',
+      'linkedin',
+      'github',
+      'website',
+      'portfolio',
+    ].filter((k) => ['location', 'email', 'phone', 'linkedin'].includes(k) || contact[k]);
+    const parts = kinds.map((kind) => [
+      kind,
+      ed({ editable }, `contact:${kind}`, contact[kind], CONTACT_PLACEHOLDERS[kind]),
+    ]);
+    const items = contactIcons
+      ? parts.map(
+          ([kind, html]) => `<span class="ci ci-${kind}">${icon(kind)}<span>${html}</span></span>`,
+        )
+      : contactItems
+        ? parts.map(([, html]) => `<span class="ci">${html}</span>`)
+        : parts.map(([, html]) => html);
+    return items.join('<span class="sep"> | </span>');
+  }
   const parts = [
     ['location', contact.location && e(contact.location)],
     ['email', contact.email && link(`mailto:${contact.email}`, contact.email)],
@@ -166,6 +350,30 @@ function contactLine(contact, { contactItems = false, contactIcons = false } = {
 }
 
 // Only small base64 JPEG/PNG data URLs are ever placed in an <img>; anything else is dropped.
+const ADD_LABEL = {
+  summary: 'a summary',
+  experience: 'a role',
+  projects: 'a project',
+  skills: 'skills',
+  education: 'education',
+  certifications: 'a certification',
+};
+
+// Editor-only styles: field highlights, placeholders and click targets. Never in exports.
+const EDITABLE_CSS = `
+[data-edit] { outline: none; border-radius: 2px; cursor: text; transition: background-color 0.12s; min-width: 1ch; }
+[data-edit]:hover { background-color: rgba(46, 63, 184, 0.07); }
+[data-edit]:focus { background-color: rgba(46, 63, 184, 0.1); box-shadow: 0 0 0 1.5px rgba(46, 63, 184, 0.55); }
+[data-edit]:empty::before { content: attr(data-ph); color: #9aa1ab; font-weight: 400; font-style: italic; }
+p[data-edit]:empty, h2[data-edit]:empty { min-height: 1.2em; }
+.dates[data-dates] { cursor: pointer; border-radius: 2px; }
+.dates[data-dates]:hover { background-color: rgba(46, 63, 184, 0.07); }
+.ed-empty { margin: 2pt 0 0; color: #7a828d; font-style: italic; cursor: pointer; }
+.ed-empty:hover { color: #2e3fb8; }
+[data-entry].ed-active { outline: 1.5px dashed rgba(46, 63, 184, 0.45); outline-offset: 3pt; border-radius: 3pt; }
+a { pointer-events: none; }
+`;
+
 const PHOTO_URL = /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/]+={0,2}$/;
 export const isPhotoDataUrl = (value) =>
   typeof value === 'string' && value.length < 700_000 && PHOTO_URL.test(value);
@@ -202,6 +410,7 @@ export function renderResume(
     contactIcons = false,
     photo = null,
     fullWidth = [],
+    editable = false,
   },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
@@ -218,10 +427,23 @@ export function renderResume(
         const section = (content.customSections ?? []).find((s) => `custom:${s.id}` === key);
         if (!section) return '';
         title = section.title;
-        body = renderCustom(section, hiddenItems);
+        body = renderCustom(section, hiddenItems, { editable });
       } else {
         title = SECTION_TITLES[key];
-        body = renderers[key](content, hiddenItems, { skillChips });
+        body = renderers[key](content, hiddenItems, { skillChips, editable });
+      }
+      if (editable) {
+        // The editor shows every visible section, with an invitation to add when it's empty.
+        const heading = key.startsWith('custom:')
+          ? ed({ editable }, `${key}:title`, title, 'Section title', 'h2')
+          : `<h2>${e(title)}</h2>`;
+        const empty = body
+          ? ''
+          : `<p class="ed-empty" data-add="${e(key)}" role="button" tabindex="0">+ Add ${e(key.startsWith('custom:') ? 'an entry' : (ADD_LABEL[key] ?? 'an entry'))}</p>`;
+        return {
+          key,
+          html: `<section data-section="${e(key)}">${heading}${body}${empty}</section>`,
+        };
       }
       return body
         ? { key, html: `<section data-section="${e(key)}"><h2>${e(title)}</h2>${body}</section>` }
@@ -231,9 +453,9 @@ export function renderResume(
 
   const photoTag = isPhotoDataUrl(photo) ? `<img class="photo" src="${photo}" alt="">\n` : '';
   const header = `<header${photoTag ? ' class="with-photo"' : ''}>
-${photoTag}<h1>${e(contact.name || '')}</h1>
-${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
-<p class="contact">${contactLine(contact, { contactItems, contactIcons })}</p>
+${photoTag}${editable ? ed({ editable }, 'contact:name', contact.name, 'Your name', 'h1') : `<h1>${e(contact.name || '')}</h1>`}
+${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g. Backend engineer', 'p', ' class="headline"') : content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
+<p class="contact">${contactLine(contact, { contactItems, contactIcons, editable })}</p>
 </header>`;
 
   let body;
@@ -269,7 +491,7 @@ ${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
 <title>${e(contact.name || 'Resume')}</title>
 <style>
 ${fontCss}
-${accentVars(defaultAccent, accentColor)}${css(page, fontStack)}</style></head>
+${accentVars(defaultAccent, accentColor)}${css(page, fontStack)}${editable ? EDITABLE_CSS : ''}</style></head>
 <body${sidebar ? ' class="has-sidebar"' : ''}>
 ${body}
 </body></html>`;

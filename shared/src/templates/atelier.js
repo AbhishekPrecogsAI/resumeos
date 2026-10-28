@@ -71,9 +71,16 @@ li::marker { color: var(--accent); }
 export function renderAtelier(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK, accentColor = null } = {},
+  {
+    pageSize = 'A4',
+    fontCss = '',
+    fontStack = FONT_STACK,
+    editable = false,
+    accentColor = null,
+  } = {},
 ) {
   return renderResume(content, layout, {
+    editable,
     pageSize,
     fontCss,
     fontStack,

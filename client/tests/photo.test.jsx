@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderRoute } from './render.jsx';
 import { mockApi, SIGNED_IN } from './fetchMock.js';
@@ -34,6 +34,9 @@ const base = (templateId, photo) => ({
     { resume: { ...resume(templateId), draftRevision: 2, draft: JSON.parse(init.body) } },
   ],
 });
+
+// These cover the form view; the page (canvas) view has its own tests in canvas.test.jsx.
+beforeEach(() => localStorage.setItem('resumeos:editorView', 'form'));
 
 describe('show photo toggle', () => {
   it('turns the photo on for this resume and saves it in the layout', async () => {

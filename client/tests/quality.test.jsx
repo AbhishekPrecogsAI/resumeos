@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { renderWithProviders, renderRoute } from './render.jsx';
 import { mockApi, SIGNED_IN } from './fetchMock.js';
@@ -28,6 +28,9 @@ function content() {
   ];
   return c;
 }
+
+// These cover the form view; the page (canvas) view has its own tests in canvas.test.jsx.
+beforeEach(() => localStorage.setItem('resumeos:editorView', 'form'));
 
 describe('QualityPanel', () => {
   it('groups findings by severity with counts and no score', () => {

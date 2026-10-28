@@ -1,62 +1,18 @@
-import { useMemo, useState } from 'react';
-import { Columns2, Image as ImageIcon, Palette, Rows3 } from 'lucide-react';
+import { useState } from 'react';
 import { TEMPLATES } from '@resumeos/shared/templates/index.js';
 import { ACCENT_SWATCHES } from '@resumeos/shared/templates/color.js';
 import { sampleResume, SAMPLE_LABEL } from '@resumeos/shared/sample/sampleResume.js';
-import { SAMPLE_PHOTO } from '@resumeos/shared/sample/samplePhoto.js';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
+import {
+  TemplateGrid,
+  TemplateFeatures,
+  samplePhotoFor,
+} from '../../components/templates/TemplateGrid.jsx';
 import { TemplatePreview } from '../../components/preview/TemplatePreview.jsx';
 import { ButtonLink } from '../../components/ui/Button.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { Dialog } from '../../components/ui/Dialog.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { cx } from '../../lib/cx.js';
-
-const FILTERS = [
-  { id: 'all', label: 'All', test: () => true },
-  { id: 'one', label: 'One column', test: (t) => t.columns === 1 },
-  { id: 'two', label: 'Two columns', test: (t) => t.columns === 2 },
-  { id: 'photo', label: 'Supports a photo', test: (t) => Boolean(t.photo) },
-  { id: 'accent', label: 'Accent colours', test: (t) => Boolean(t.accent) },
-];
-
-const samplePhotoFor = (t) => (t.photo ? SAMPLE_PHOTO : null);
-
-function Features({ t }) {
-  return (
-    <ul className="flex flex-wrap gap-1.5" aria-label="Features">
-      <li>
-        <Badge>
-          {t.columns === 1 ? (
-            <Rows3 className="size-3" aria-hidden="true" />
-          ) : (
-            <Columns2 className="size-3" aria-hidden="true" />
-          )}
-          {t.columns === 1 ? 'One column' : 'Two columns'}
-        </Badge>
-      </li>
-      {t.photo && (
-        <li>
-          <Badge>
-            <ImageIcon className="size-3" aria-hidden="true" /> Photo
-          </Badge>
-        </li>
-      )}
-      {t.accent && (
-        <li>
-          <Badge>
-            <Palette className="size-3" aria-hidden="true" /> Accent colours
-          </Badge>
-        </li>
-      )}
-      {t.id === 'clarity' && (
-        <li>
-          <Badge tone="added">Safest for ATS</Badge>
-        </li>
-      )}
-    </ul>
-  );
-}
 
 function AccentSwatches({ template, value, onChange }) {
   const options = [
@@ -146,7 +102,7 @@ function TemplateDetail({ template: t, onClose }) {
           </p>
         </div>
         <div className="grid content-start gap-5">
-          <Features t={t} />
+          <TemplateFeatures t={t} />
           <dl className="grid gap-4">
             {[
               ['Best for', t.bestFor],
@@ -173,88 +129,33 @@ function TemplateDetail({ template: t, onClose }) {
 
 export function TemplatesPage() {
   useDocumentTitle('Templates');
-  const [filter, setFilter] = useState('all');
   const [openId, setOpenId] = useState(null);
-  const visible = useMemo(
-    () => TEMPLATES.filter(FILTERS.find((f) => f.id === filter).test),
-    [filter],
-  );
   const open = TEMPLATES.find((t) => t.id === openId);
 
   return (
     <>
       <PageHeader
         title="Resume templates"
-        lead="Classic and modern designs with icons, photos, sidebars and accent colours. Every one passes the same export checks before it ships, and each lists its trade-offs."
+        lead="Pick a design, then type straight onto the page. Classic and modern templates with icons, photos, sidebars and colour options; every one passes the same export checks and lists its trade-offs."
       />
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div role="radiogroup" aria-label="Filter templates" className="mb-8 flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              role="radio"
-              aria-checked={filter === f.id}
-              onClick={() => setFilter(f.id)}
-              className={cx(
-                'rounded-full border px-4 py-1.5 text-sm transition-colors',
-                filter === f.id
-                  ? 'border-accent bg-accent text-on-accent'
-                  : 'border-rule-strong bg-surface text-ink hover:bg-sunken',
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
-          <span className="self-center text-sm text-muted" aria-live="polite">
-            {visible.length} {visible.length === 1 ? 'template' : 'templates'}
-          </span>
-        </div>
-
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {visible.map((t) => (
-            <li
-              key={t.id}
-              className="group flex flex-col overflow-hidden rounded-xl border border-rule bg-surface transition-shadow hover:shadow-paper"
-            >
+        <TemplateGrid
+          onCardClick={(t) => setOpenId(t.id)}
+          renderActions={(t) => (
+            <>
+              <ButtonLink to={`/app/resumes/new?template=${t.id}`} size="sm">
+                Use template
+              </ButtonLink>
               <button
                 type="button"
                 onClick={() => setOpenId(t.id)}
-                className="block bg-sunken p-4 text-left"
-                aria-label={`Preview ${t.name}`}
+                className="h-8 rounded-md px-3 text-sm font-medium text-accent hover:bg-sunken"
               >
-                <div className="theme-light pointer-events-none overflow-hidden rounded-md shadow-paper">
-                  <TemplatePreview
-                    content={sampleResume}
-                    templateId={t.id}
-                    firstPageOnly
-                    photo={samplePhotoFor(t)}
-                    title={`${t.name} thumbnail, sample data`}
-                  />
-                </div>
+                Preview and details
               </button>
-              <div className="flex flex-1 flex-col gap-3 p-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-ink">{t.name}</h2>
-                  <p className="text-sm text-muted">{t.style}</p>
-                </div>
-                <Features t={t} />
-                <div className="mt-auto flex flex-wrap gap-2 pt-1">
-                  <ButtonLink to={`/app/resumes/new?template=${t.id}`} size="sm">
-                    Use template
-                  </ButtonLink>
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(t.id)}
-                    className="h-8 rounded-md px-3 text-sm font-medium text-accent hover:bg-sunken"
-                  >
-                    Preview and details
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+            </>
+          )}
+        />
         <p className="mt-8 text-sm text-muted">
           Applying through an applicant tracking system? Single-column templates, and Clarity in
           particular, are the safer choice. Two-column designs and photos suit referrals, networking
