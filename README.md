@@ -6,7 +6,7 @@ job-specific resumes from it, with deterministic quality checks and reliable exp
 **Status:** Release candidate 1 (Phases 0–10). See [`docs/release-checklist.md`](docs/release-checklist.md) for verified results and the blockers before public launch.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 [`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
-[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md); versions in [`docs/versioning.md`](docs/versioning.md); quality rules in [`docs/quality.md`](docs/quality.md); job matching in [`docs/jobs.md`](docs/jobs.md); applications in [`docs/applications.md`](docs/applications.md); deployment in [`docs/deployment.md`](docs/deployment.md); tests in [`docs/test-plan.md`](docs/test-plan.md).
+[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md); versions in [`docs/versioning.md`](docs/versioning.md); quality rules in [`docs/quality.md`](docs/quality.md); job matching in [`docs/jobs.md`](docs/jobs.md); applications in [`docs/applications.md`](docs/applications.md); share links in [`docs/sharing.md`](docs/sharing.md); deployment in [`docs/deployment.md`](docs/deployment.md); tests in [`docs/test-plan.md`](docs/test-plan.md).
 
 ## Stack
 

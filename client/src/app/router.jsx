@@ -10,6 +10,13 @@ const page = (loader, name) => async () => ({ Component: (await loader())[name] 
 const pub = (file, name) => page(() => import(`../features/public/${file}.jsx`), name);
 
 export const routes = [
+  // A shared resume stands on its own: no site navigation, nothing that needs a session.
+  {
+    path: 'r/:token',
+    errorElement: <RouteError />,
+    hydrateFallbackElement: <div className="min-h-dvh" />,
+    lazy: page(() => import('../features/share/SharedResumePage.jsx'), 'SharedResumePage'),
+  },
   {
     element: <PublicLayout />,
     errorElement: <RouteError />,

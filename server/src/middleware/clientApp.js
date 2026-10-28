@@ -55,6 +55,8 @@ export function clientApp(distDir) {
   router.use(express.static(dir, { index: false, maxAge: '1h' }));
   router.get(/^\/(?!api\/|health\/).*/, (req, res) => {
     res.set('cache-control', 'no-cache');
+    // Shared resume pages are personal; keep them out of search engines.
+    if (req.path.startsWith('/r/')) res.set('x-robots-tag', 'noindex, nofollow');
     res.type('html').send(indexHtml);
   });
   return { router, scriptHashes: inlineScriptHashes(indexHtml) };

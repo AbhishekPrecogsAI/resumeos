@@ -14,6 +14,8 @@ const PUBLIC = new Set([
   'POST /auth/logout',
   'POST /auth/forgot-password',
   'POST /auth/reset-password',
+  'GET /shared/:token',
+  'GET /shared/:token/pdf',
 ]);
 // Body-less state changes that take no input, so they need no validator.
 const NO_INPUT = new Set([

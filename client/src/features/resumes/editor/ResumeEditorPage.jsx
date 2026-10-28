@@ -8,6 +8,7 @@ import {
   FileDown,
   History,
   Save,
+  Share2,
   Keyboard,
   Plus,
   Redo2,
@@ -53,6 +54,7 @@ import { ProfileSyncPanel } from './ProfileSyncPanel.jsx';
 import { PreviewPane } from './PreviewPane.jsx';
 import { ShortcutsDialog } from './ShortcutsDialog.jsx';
 import { ExportDialog } from './ExportDialog.jsx';
+import { ShareDialog } from './ShareDialog.jsx';
 import { CanvasWorkspace } from './canvas/CanvasWorkspace.jsx';
 import { QualityPanel } from './QualityPanel.jsx';
 import { runQualityChecks } from '@resumeos/shared/quality/engine.js';
@@ -237,6 +239,7 @@ function ResumeEditor({ resume, profile }) {
     }
   };
   const [exportOpen, setExportOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [saveVersionOpen, setSaveVersionOpen] = useState(false);
   const [pendingSectionDelete, setPendingSectionDelete] = useState(null);
   const [resolving, setResolving] = useState(false);
@@ -680,6 +683,9 @@ function ResumeEditor({ resume, profile }) {
           >
             <History className="size-4" aria-hidden="true" />
           </Link>
+          <Button variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
+            <Share2 className="size-4" aria-hidden="true" /> Share
+          </Button>
           <Button size="sm" onClick={() => setExportOpen(true)}>
             <FileDown className="size-4" aria-hidden="true" /> Export
           </Button>
@@ -871,6 +877,12 @@ function ResumeEditor({ resume, profile }) {
       <SaveVersionDialog
         open={saveVersionOpen}
         onClose={() => setSaveVersionOpen(false)}
+        resumeId={resume.id}
+        flush={autosave.flush}
+      />
+      <ShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
         resumeId={resume.id}
         flush={autosave.flush}
       />

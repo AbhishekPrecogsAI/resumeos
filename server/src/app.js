@@ -36,6 +36,8 @@ import { registerJobData } from './modules/jobs/job.data.js';
 import { applicationRouter } from './modules/applications/application.routes.js';
 import { registerApplicationData } from './modules/applications/application.data.js';
 import { applicationService } from './modules/applications/application.service.js';
+import { shareRouter, sharedRouter, registerShareData } from './modules/shares/share.routes.js';
+import { createShareService } from './modules/shares/share.service.js';
 
 export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }) {
   const app = express();
@@ -50,13 +52,16 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   registerVersionData(userData);
   registerJobData(userData);
   registerApplicationData(userData);
+  registerShareData(userData);
   const pool = pdfPool ?? createBrowserPool({ chromePath: env.CHROME_PATH, logger });
   const exportsService = createExportService({ env, pool, logger });
   registerExportData(userData, exportsService);
+  const shares = createShareService({ env, pool, logger });
   resumeService.deleteHooks = [
     (userId, resumeId) => exportsService.removeForResume(userId, resumeId),
     (userId, resumeId) => versionService.removeForResume(userId, resumeId),
     (userId, resumeId) => applicationService.unlinkResume(userId, resumeId),
+    (userId, resumeId) => shares.removeForResume(userId, resumeId),
   ];
   const { versions, compare } = versionRouters();
   const { resumeExport, exportsRouter } = exportRouters({ exportsService, limits });
@@ -102,11 +107,13 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   mount('/resumes/:resumeId/export', resumeExport);
   mount('/resumes/:resumeId/versions', versions);
   mount('/resumes/:resumeId/compare', compare);
+  mount('/resumes/:resumeId/shares', shareRouter({ shares }));
   mount('/resumes/:resumeId', qualityRouter());
   mount('/jobs', jobRouter());
   mount('/applications', applicationRouter());
   mount('/resumes', resumeRouter());
   mount('/exports', exportsRouter);
+  mount('/shared', sharedRouter({ shares, limits }));
   app.use('/api/v1', api);
 
   if (client) app.use(client.router);

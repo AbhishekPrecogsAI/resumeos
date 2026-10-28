@@ -53,6 +53,9 @@ async function populate(u) {
     resumeId: resume.id,
     resumeVersionId: version.id,
   });
+  expect(
+    (await c.post(`/api/v1/resumes/${resume.id}/shares`).send({ allowDownload: true })).status,
+  ).toBe(201);
   await agent(app)
     .post('/api/v1/auth/login')
     .send({ email: u.credentials.email, password: u.credentials.password });
@@ -86,6 +89,7 @@ describe('account deletion is complete', () => {
         'resumes',
         'resumeversions',
         'sessions',
+        'sharelinks',
         'users',
       ].sort(),
     );
@@ -101,6 +105,7 @@ describe('account deletion is complete', () => {
         'exports',
         'jobDescriptions',
         'applications',
+        'shareLinks',
       ]),
     );
 
@@ -111,7 +116,7 @@ describe('account deletion is complete', () => {
     expect(await documentsReferencing(victim.user.id)).toEqual({});
 
     // The other user's data is untouched, including their export file.
-    expect(Object.keys(await documentsReferencing(bystander.user.id)).length).toBe(8);
+    expect(Object.keys(await documentsReferencing(bystander.user.id)).length).toBe(9);
     expect(await readdir(dir)).toHaveLength(1);
   });
 });

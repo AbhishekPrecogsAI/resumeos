@@ -23,6 +23,7 @@ export const DELETED_DATA = [
   'Export history and any export files not yet expired',
   'Saved job descriptions and their term lists',
   'Your application records and notes',
+  'Every share link, which stops working immediately',
   'Every signed-in session, on all devices',
 ];
 
