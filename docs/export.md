@@ -96,15 +96,35 @@ Templates share one markup renderer (`shared/src/templates/base.js`). Single-col
 differ only in CSS. Sidebar templates also ask the renderer to place Skills, Education and
 Certifications in a sidebar. Tests enforce that every template contains exactly the same words.
 
-| Template       | Layout                                                                           | Notes                                                                       |
-| -------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Clarity 1.0.0  | Single column, serif                                                             | The default and the safest for applicant tracking systems                   |
-| Ledger 1.0.0   | Sans-serif, headings in a margin column                                          | Identical markup to Clarity                                                 |
-| Horizon 1.0.0  | Single column, timeline rail, skill chips, contact pills                         | Decoration is pure CSS; text order unchanged                                |
-| Meridian 1.0.0 | Full-height dark left sidebar (name, contact, skills, education, certifications) | Full-bleed page with column padding cloned on every page                    |
-| Atelier 1.0.0  | Colour header band, serif headings, tinted right sidebar                         | The sidebar comes first in the document even though it's shown on the right |
+| Template       | Layout                                                                           | Accent default         |
+| -------------- | -------------------------------------------------------------------------------- | ---------------------- |
+| Clarity 1.0.0  | Single column, serif; the safest for applicant tracking systems                  | None (black by design) |
+| Ledger 1.0.0   | Sans-serif, headings in a margin column; identical markup to Clarity             | #1f4e5f                |
+| Horizon 1.0.0  | Single column, timeline rail, skill chips, contact pills                         | #0f6e66                |
+| Cadence 1.0.0  | Single column, dates in a left column with an accent rule                        | #1f4fb4                |
+| Sable 1.0.0    | Compact single column (9pt), contact block on the right, two-column skills       | #8a1f3d                |
+| Meridian 1.0.0 | Full-height dark left sidebar                                                    | #17323f                |
+| Atelier 1.0.0  | Colour header band, serif headings, tinted right sidebar (first in the document) | #23304a                |
+| Prism 1.0.0    | Accent stripe, light tinted left sidebar                                         | #5b2a6e                |
 
-All five are original designs. No competitor's templates were copied.
+All eight are original designs. No competitor's templates were copied.
+
+**Accent colours.** Every template except Clarity takes an accent (`resume.accentColor`; `null`
+means the template's default). Accents are restricted to readable colours: eight
+contrast-checked swatches, or a custom hex that must reach ≥ 4.5:1 against white
+(`shared/src/templates/color.js`). Templates never use arbitrary colours. They read CSS
+variables derived from the accent:
+
+- `--soft`: a light tint for panels and chips;
+- `--rail`: a mid tint for lines;
+- `--on-dark`: light text on accent backgrounds, ≥ 4.5:1;
+- `--deep`: a dark shade for text on `--soft`, ≥ 4.5:1.
+
+Tests check these ratios for every swatch and for 300 generated colours. An invalid or too-light
+value can't reach the page: the renderer falls back to the template default, so it can't inject
+CSS either. The accent is saved in versions, appears as a "Template and page settings" change in
+comparisons, is restored and branched with versions, is recorded on exports, and colours the
+name and headings in DOCX.
 
 **Reading order in sidebar templates.** The sidebar always comes first in the document. It
 usually ends on page 1 while the main column continues, so this order lets extractors read the
