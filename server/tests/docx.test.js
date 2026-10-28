@@ -13,7 +13,8 @@ import {
 } from './helpers.js';
 import { renderDocx } from '../src/modules/exports/docx.js';
 import { validateDocx } from '../src/modules/exports/validateDocx.js';
-import { getTemplate, TEMPLATES } from '@resumeos/shared/templates/index.js';
+import { TEMPLATES } from '@resumeos/shared/templates/index.js';
+import { docxReferenceHtml } from '../src/modules/exports/docx.js';
 import { defaultLayout } from '@resumeos/shared/resumeModel.js';
 import { FIXTURES } from './fixtures/resumes.js';
 
@@ -22,7 +23,7 @@ const build = async (content, opts = {}) => {
   const templateId = opts.templateId ?? 'clarity';
   const pageSize = opts.pageSize ?? 'A4';
   const buffer = await renderDocx({ content, layout, templateId, pageSize });
-  return { buffer, html: getTemplate(templateId).render(content, layout, { pageSize }) };
+  return { buffer, html: docxReferenceHtml(content, layout, pageSize) };
 };
 
 describe('DOCX rendering and validation', () => {

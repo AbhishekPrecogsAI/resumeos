@@ -18,6 +18,7 @@ import { validatePdf, parsePdf } from '../src/modules/exports/validate.js';
 import { contentDisposition } from '../src/modules/exports/export.service.js';
 import { ExportRecord } from '../src/modules/exports/export.model.js';
 import { defaultLayout } from '@resumeos/shared/resumeModel.js';
+import { TEMPLATES } from '@resumeos/shared/templates/index.js';
 import { FIXTURES } from './fixtures/resumes.js';
 
 const hasChrome = Boolean(findChrome(process.env.CHROME_PATH));
@@ -140,19 +141,28 @@ describe.skipIf(!hasChrome)('PDF rendering and validation', () => {
     });
   });
 
-  it('Ledger (heading column) still extracts every section in reading order', async () => {
-    for (const content of [FIXTURES.sample, FIXTURES.unicodeAndLong, FIXTURES.multiPage]) {
-      const out = await renderPdf(pool, {
-        content,
-        layout: defaultLayout(content),
-        templateId: 'ledger',
-        pageSize: 'A4',
-        timeoutMs: 30_000,
-      });
-      const v = await validatePdf(out.buffer, out);
-      expect(v.checks.filter((c) => c.result !== 'pass')).toEqual([]);
-    }
-  });
+  it.each(TEMPLATES.map((t) => t.id))(
+    '%s passes every export check on every fixture',
+    async (templateId) => {
+      for (const [name, content] of Object.entries(FIXTURES)) {
+        for (const pageSize of ['A4', 'Letter']) {
+          const out = await renderPdf(pool, {
+            content,
+            layout: defaultLayout(content),
+            templateId,
+            pageSize,
+            timeoutMs: 30_000,
+          });
+          const v = await validatePdf(out.buffer, out);
+          expect([name, pageSize, v.checks.filter((c) => c.result !== 'pass')]).toEqual([
+            name,
+            pageSize,
+            [],
+          ]);
+        }
+      }
+    },
+  );
 
   it('layout regression: sample text lines are stable', async () => {
     const out = await render(FIXTURES.sample);

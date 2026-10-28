@@ -13,6 +13,11 @@ import { formatRange } from '@resumeos/shared/dates.js';
 import { safeHref, displayUrl } from '@resumeos/shared/escape.js';
 import { SECTION_TITLES, resolveSectionOrder, bulletText } from '@resumeos/shared/resumeModel.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
+import { renderClarity } from '@resumeos/shared/templates/clarity.js';
+
+/** DOCX is single-column in layout order for every template, so validate against that render. */
+export const docxReferenceHtml = (content, layout, pageSize) =>
+  renderClarity(content, layout, { pageSize });
 
 // Page geometry in twentieths of a point (twips). Margins match the PDF template (14mm × 16mm).
 const PAGE = { A4: { width: 11906, height: 16838 }, Letter: { width: 12240, height: 15840 } };

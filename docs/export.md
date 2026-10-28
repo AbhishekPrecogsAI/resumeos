@@ -92,14 +92,33 @@ A failed export is recorded but not offered for download.
 
 ## Templates
 
-Templates share one markup renderer (`shared/src/templates/base.js`) and differ only in CSS.
-Every template therefore has identical reading order and text, which a shared test enforces.
+Templates share one markup renderer (`shared/src/templates/base.js`). Single-column templates
+differ only in CSS. Sidebar templates also ask the renderer to place Skills, Education and
+Certifications in a sidebar. Tests enforce that every template contains exactly the same words.
 
-| Template      | Layout                                       | Notes                                                                                                                                                                                              |
-| ------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Clarity 1.0.0 | Single column, serif                         | The default; best for applicant tracking systems.                                                                                                                                                  |
-| Ledger 1.0.0  | Sans-serif, headings in a 30mm margin column | Each heading precedes its content in the document; PDF tests confirm extraction order on all fixtures. It's still a visual two-column layout, so untested parsers may differ, as the gallery says. |
+| Template       | Layout                                                                           | Notes                                                                       |
+| -------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Clarity 1.0.0  | Single column, serif                                                             | The default and the safest for applicant tracking systems                   |
+| Ledger 1.0.0   | Sans-serif, headings in a margin column                                          | Identical markup to Clarity                                                 |
+| Horizon 1.0.0  | Single column, timeline rail, skill chips, contact pills                         | Decoration is pure CSS; text order unchanged                                |
+| Meridian 1.0.0 | Full-height dark left sidebar (name, contact, skills, education, certifications) | Full-bleed page with column padding cloned on every page                    |
+| Atelier 1.0.0  | Colour header band, serif headings, tinted right sidebar                         | The sidebar comes first in the document even though it's shown on the right |
 
-Ledger was added after Clarity passed every export check across the edge-case fixtures. The
-refactor to a shared renderer was verified byte-for-byte against Clarity's previous output, and
-the Clarity text-layout snapshot is unchanged.
+All five are original designs. No competitor's templates were copied.
+
+**Reading order in sidebar templates.** The sidebar always comes first in the document. It
+usually ends on page 1 while the main column continues, so this order lets extractors read the
+whole sidebar, then the whole main column, on any number of pages. With the sidebar last,
+extraction interleaved the columns page by page; the export checks caught this during
+development.
+
+**Text extraction model.** Lines are rebuilt in pdf.js content-stream order, not by grouping
+text at the same height across the page, which merged side-by-side columns. The Clarity snapshot
+was updated for this: right-aligned dates now extract after the title-and-location block, which
+is how pdf.js reads them.
+
+**Tested:** every template passes every PDF export check on every fixture (sample, Unicode and
+long text, minimal, nine-role multi-page) at both A4 and US Letter.
+
+**DOCX** is single-column in layout order for every template and is validated against the
+single-column reference render.

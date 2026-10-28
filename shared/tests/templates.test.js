@@ -80,11 +80,73 @@ describe('bullets', () => {
 });
 
 describe('templates registry', () => {
-  it('every template renders the same reading order and text', async () => {
+  it('every template contains exactly the same words', async () => {
     const { TEMPLATES } = await import('../src/templates/index.js');
+    const words = (html) =>
+      html
+        .replace(/<style>[\s\S]*?<\/style>/, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/[,|]/g, ' ') // chips and stacked contacts drop visible separators
+        .split(/\s+/)
+        .filter(Boolean)
+        .sort();
+    const [first, ...rest] = TEMPLATES.map((t) => words(t.render(sampleResume, {})));
+    for (const w of rest) expect(w).toEqual(first);
+  });
+
+  it('templates without a sidebar keep the layout order in the document', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    const layout = {
+      sectionOrder: ['skills', 'experience', 'summary', 'projects', 'education', 'certifications'],
+    };
+    for (const t of TEMPLATES) {
+      const markup = t.render(sampleResume, layout).replace(/<style>[\s\S]*?<\/style>/, '');
+      const order = [...markup.matchAll(/<section data-section="([^"]+)"/g)].map((m) => m[1]);
+      if (!t.render(sampleResume, {}).includes('<aside class="sidebar">'))
+        expect(order).toEqual(layout.sectionOrder);
+      // Sidebar templates: sidebar sections first (in layout order), then the main column (in layout order).
+      else
+        expect(order).toEqual([
+          'skills',
+          'education',
+          'certifications',
+          'experience',
+          'summary',
+          'projects',
+        ]);
+    }
+  });
+
+  it('Clarity and Ledger share identical markup', async () => {
+    const { getTemplate } = await import('../src/templates/index.js');
     const strip = (html) => html.replace(/<style>[\s\S]*?<\/style>/, '');
-    const [first, ...rest] = TEMPLATES.map((t) => strip(t.render(sampleResume, {})));
-    for (const html of rest) expect(html).toBe(first);
+    expect(strip(getTemplate('ledger').render(sampleResume, {}))).toBe(
+      strip(getTemplate('clarity').render(sampleResume, {})),
+    );
+  });
+
+  it('sidebar templates place the sidebar first in the document', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    for (const t of TEMPLATES.filter((x) => x.columns === 2 && x.id !== 'ledger')) {
+      const html = t.render(sampleResume, {});
+      expect(html.indexOf('<aside class="sidebar">')).toBeLessThan(
+        html.indexOf('<main class="main">'),
+      );
+    }
+  });
+
+  it('escapes user text in chips and contact items', async () => {
+    const { getTemplate } = await import('../src/templates/index.js');
+    const content = {
+      ...emptyContent(),
+      contact: { name: 'A', location: '<img src=x onerror=1>' },
+      skills: [{ id: 'sk_1', name: '<script>x</script>', category: 'C' }],
+    };
+    for (const id of ['horizon', 'meridian', 'atelier']) {
+      const html = getTemplate(id).render(content, {});
+      expect(html).not.toMatch(/<script|<img/i);
+      expect(html).toContain('&lt;script&gt;');
+    }
   });
 
   it('declares metadata needed by the gallery and exports', async () => {

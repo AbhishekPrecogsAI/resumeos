@@ -41,29 +41,41 @@ export async function parsePdf(buffer) {
     for (let p = 1; p <= doc.numPages; p += 1) {
       const page = await doc.getPage(p);
       const { items } = await page.getTextContent();
-      // Group text runs into lines by their baseline y coordinate.
-      const rows = new Map();
+      // Rebuild lines in content-stream order, as pdf.js and most extractors read text. A new
+      // line starts when the baseline moves or text jumps back left; a space is inserted at
+      // visible gaps. Grouping by height across the page instead would merge side-by-side
+      // columns into one garbled line.
+      let text = '';
+      let prev = null;
+      const flush = () => {
+        const t = text.replace(/\s+/g, ' ').trim();
+        if (t) lines.push({ page: p, text: t });
+        text = '';
+      };
       for (const item of items) {
         if (!('str' in item)) continue;
-        const y = Math.round(item.transform[5]);
-        if (!rows.has(y)) rows.set(y, []);
-        rows.get(y).push(item);
-      }
-      for (const y of [...rows.keys()].sort((a, b) => b - a)) {
-        // Insert a space where there's a visible gap between runs, as text extractors do.
-        let text = '';
-        let prevEnd = null;
-        for (const item of rows.get(y).sort((a, b) => a.transform[4] - b.transform[4])) {
-          const x = item.transform[4];
-          const gap = prevEnd === null ? 0 : x - prevEnd;
-          if (gap > Math.max(1, item.height * 0.15) && !/\s$/.test(text) && !/^\s/.test(item.str))
+        const x = item.transform[4];
+        const y = item.transform[5];
+        if (prev) {
+          const newLine =
+            Math.abs(y - prev.y) > Math.max(2, (item.height || prev.height) * 0.5) ||
+            x < prev.end - 1;
+          if (newLine) flush();
+          else if (
+            x - prev.end > Math.max(1, item.height * 0.15) &&
+            !/\s$/.test(text) &&
+            !/^\s/.test(item.str)
+          )
             text += ' ';
-          text += item.str;
-          prevEnd = x + item.width;
         }
-        text = text.replace(/\s+/g, ' ').trim();
-        if (text) lines.push({ page: p, text });
+        text += item.str;
+        if (item.str) prev = { y, end: x + item.width, height: item.height };
+        if (item.hasEOL) {
+          flush();
+          prev = null;
+        }
       }
+      flush();
       for (const a of await page.getAnnotations())
         if (a.subtype === 'Link' && a.url) links.push(a.url);
     }

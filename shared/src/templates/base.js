@@ -64,7 +64,7 @@ const renderers = {
       })
       .join(''),
 
-  skills: (c, hidden) => {
+  skills: (c, hidden, opts = {}) => {
     const groups = new Map();
     for (const s of visibleItems(c.skills, hidden)) {
       if (!s.name?.trim()) continue;
@@ -73,6 +73,15 @@ const renderers = {
       groups.get(key).push(s.name.trim());
     }
     if (!groups.size) return '';
+    if (opts.skillChips) {
+      // Chips are separate elements with real spaces between them, so extracted text stays readable.
+      return `<dl class="skills chips">${[...groups]
+        .map(
+          ([cat, names]) =>
+            `<div><dt>${e(cat)}</dt><dd>${names.map((n) => `<span class="chip">${e(n)}</span>`).join(' ')}</dd></div>`,
+        )
+        .join('')}</dl>`;
+    }
     return `<dl class="skills">${[...groups]
       .map(([cat, names]) => `<div><dt>${e(cat)}</dt><dd>${e(names.join(', '))}</dd></div>`)
       .join('')}</dl>`;
@@ -117,7 +126,7 @@ function renderCustom(section, hidden) {
     .join('');
 }
 
-function contactLine(contact) {
+function contactLine(contact, { contactItems = false } = {}) {
   const parts = [
     contact.location && e(contact.location),
     contact.email && link(`mailto:${contact.email}`, contact.email),
@@ -127,7 +136,10 @@ function contactLine(contact) {
     contact.github && link(contact.github),
     contact.portfolio && link(contact.portfolio),
   ].filter(Boolean);
-  return parts.join('<span class="sep"> | </span>');
+  // contactItems wraps each part so templates can stack them or add icons-free styling.
+  return (contactItems ? parts.map((p) => `<span class="ci">${p}</span>`) : parts).join(
+    '<span class="sep"> | </span>',
+  );
 }
 
 /**
@@ -138,7 +150,15 @@ function contactLine(contact) {
 export function renderResume(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack, css },
+  {
+    pageSize = 'A4',
+    fontCss = '',
+    fontStack,
+    css,
+    sidebar = null,
+    skillChips = false,
+    contactItems = false,
+  },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
   const hiddenSections = new Set(layout.hiddenSections ?? []);
@@ -157,11 +177,40 @@ export function renderResume(
         body = renderCustom(section, hiddenItems);
       } else {
         title = SECTION_TITLES[key];
-        body = renderers[key](content, hiddenItems);
+        body = renderers[key](content, hiddenItems, { skillChips });
       }
-      return body ? `<section data-section="${e(key)}"><h2>${e(title)}</h2>${body}</section>` : '';
+      return body
+        ? { key, html: `<section data-section="${e(key)}"><h2>${e(title)}</h2>${body}</section>` }
+        : null;
     })
-    .join('');
+    .filter(Boolean);
+
+  const header = `<header>
+<h1>${e(contact.name || '')}</h1>
+${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
+<p class="contact">${contactLine(contact, { contactItems })}</p>
+</header>`;
+
+  let body;
+  if (!sidebar) {
+    body = `${header}\n${sections.map((s) => s.html).join('')}`;
+  } else {
+    // Two columns. The sidebar always comes first in the document, even when it's displayed on
+    // the right (CSS grid placement). The sidebar usually ends on page 1 while the main column
+    // continues, so this order lets extractors read the whole sidebar, then the whole main
+    // column, on any number of pages, instead of interleaving the columns page by page.
+    const inSide = new Set(sidebar.keys);
+    const side = sections
+      .filter((s) => inSide.has(s.key))
+      .map((s) => s.html)
+      .join('');
+    const main = sections
+      .filter((s) => !inSide.has(s.key))
+      .map((s) => s.html)
+      .join('');
+    const aside = `<aside class="sidebar">${sidebar.header === 'sidebar' ? header : ''}${side}</aside>`;
+    body = `${sidebar.header === 'sidebar' ? '' : header}\n<div class="columns sidebar-${sidebar.side}">${aside}<main class="main">${main}</main></div>`;
+  }
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -170,12 +219,7 @@ export function renderResume(
 <style>
 ${fontCss}
 ${css(page, fontStack)}</style></head>
-<body>
-<header>
-<h1>${e(contact.name || '')}</h1>
-${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
-<p class="contact">${contactLine(contact)}</p>
-</header>
-${sections}
+<body${sidebar ? ' class="has-sidebar"' : ''}>
+${body}
 </body></html>`;
 }

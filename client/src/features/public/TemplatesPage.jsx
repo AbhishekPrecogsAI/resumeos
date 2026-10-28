@@ -7,7 +7,7 @@ import { ButtonLink } from '../../components/ui/Button.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { cx } from '../../lib/cx.js';
 
-function PageSizeSwitch({ value, onChange }) {
+function PageSizeSwitch({ value, onChange, group }) {
   return (
     <fieldset className="flex items-center gap-3">
       <legend className="sr-only">Preview page size</legend>
@@ -25,7 +25,7 @@ function PageSizeSwitch({ value, onChange }) {
           >
             <input
               type="radio"
-              name="page-size"
+              name={`page-size-${group}`}
               value={size}
               checked={value === size}
               onChange={() => onChange(size)}
@@ -47,14 +47,30 @@ export function TemplatesPage() {
     <>
       <PageHeader
         title="Templates"
-        lead="We ship one template until it is excellent in preview and export. Each template lists its trade-offs, so you can choose knowingly."
-      />
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        lead="Every template passes the same export checks before it ships, and each one lists its trade-offs. For applications through an applicant tracking system, single-column templates are the safer choice."
+      >
+        <nav aria-label="Templates on this page" className="mt-6 flex flex-wrap gap-2">
+          {TEMPLATES.map((t) => (
+            <a
+              key={t.id}
+              href={`#tpl-${t.id}`}
+              className="rounded-md border border-rule-strong px-3 py-1.5 text-sm text-ink hover:bg-sunken"
+            >
+              {t.name}
+              <span className="text-muted">
+                {' '}
+                ({t.columns === 1 ? 'one column' : 'two columns'})
+              </span>
+            </a>
+          ))}
+        </nav>
+      </PageHeader>
+      <div className="mx-auto grid max-w-6xl gap-20 px-4 py-14 sm:px-6">
         {TEMPLATES.map((t) => (
           <article
             key={t.id}
             aria-labelledby={`tpl-${t.id}`}
-            className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]"
+            className="grid scroll-mt-20 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]"
           >
             <div>
               <h2 id={`tpl-${t.id}`} className="text-2xl font-semibold text-ink">
@@ -86,7 +102,7 @@ export function TemplatesPage() {
             </div>
             <div>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <PageSizeSwitch value={pageSize} onChange={setPageSize} />
+                <PageSizeSwitch value={pageSize} onChange={setPageSize} group={t.id} />
                 <p className="text-xs text-faint">{SAMPLE_LABEL}</p>
               </div>
               <div className="overflow-hidden rounded-sm shadow-paper">

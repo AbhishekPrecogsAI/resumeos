@@ -10,7 +10,7 @@ import { renderPdf } from './render.js';
 import { validatePdf } from './validate.js';
 import { renderDocx } from './docx.js';
 import { validateDocx } from './validateDocx.js';
-import { getTemplate as templateFor } from '@resumeos/shared/templates/index.js';
+import { docxReferenceHtml } from './docx.js';
 
 export const FORMATS = {
   pdf: { ext: 'pdf', mime: 'application/pdf', label: 'PDF' },
@@ -114,8 +114,9 @@ export function createExportService({ env, pool, logger }) {
       let validation;
       try {
         if (format === 'docx') {
-          // The HTML render is the reference for what the document must contain.
-          const html = templateFor(resume.templateId).render(content, layout, { pageSize: size });
+          // DOCX is always one column in layout order, so the single-column render is the
+          // reference for what it must contain and in which order.
+          const html = docxReferenceHtml(content, layout, size);
           rendered = {
             buffer: await renderDocx({
               content,
