@@ -28,7 +28,7 @@ export function EmptyState({ icon: Icon, title, description, action, className }
   );
 }
 
-export function ErrorState({ title = "This didn't load", error, onRetry, className }) {
+export function ErrorState({ title = "This didn't load", error, onRetry, className, children }) {
   const message = error?.message ?? 'An unexpected error occurred.';
   return (
     <div
@@ -49,6 +49,7 @@ export function ErrorState({ title = "This didn't load", error, onRetry, classNa
           Try again
         </Button>
       )}
+      {children}
     </div>
   );
 }

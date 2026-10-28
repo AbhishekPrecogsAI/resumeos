@@ -38,3 +38,19 @@ describe('public routes', () => {
     expect(container.textContent).not.toMatch(/ATS[- ]proof|guaranteed|100x/i);
   });
 });
+
+describe('stale code after a deploy or edit', () => {
+  it('recognises how each browser reports a module that no longer matches', async () => {
+    const { isStaleCodeError } = await import('../src/app/RouteError.jsx');
+    for (const message of [
+      "The requested module '/src/x.js' does not provide an export named 'notYetAdded'",
+      'Failed to fetch dynamically imported module: http://localhost/assets/a.js',
+      'Importing a module script failed.',
+      'error loading dynamically imported module',
+    ])
+      expect([message, isStaleCodeError({ message })]).toEqual([message, true]);
+    expect(
+      isStaleCodeError({ message: "Cannot read properties of undefined (reading 'map')" }),
+    ).toBe(false);
+  });
+});
