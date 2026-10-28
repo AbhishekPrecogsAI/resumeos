@@ -36,7 +36,10 @@ export async function renderPdf(pool, { content, layout, templateId, pageSize, t
       'UNKNOWN_TEMPLATE',
       'This resume uses a template that no longer exists.',
     );
-  const html = template.render(content, layout, { pageSize, fontCss: serverFontCss() });
+  const html = template.render(content, layout, {
+    pageSize,
+    fontCss: serverFontCss(template.fonts),
+  });
 
   const work = pool.withPage(async (page) => {
     await page.setViewportSize({

@@ -30,6 +30,9 @@ import { registerVersionData } from './modules/versions/version.data.js';
 import { qualityRouter } from './modules/quality/quality.routes.js';
 import { jobRouter } from './modules/jobs/job.routes.js';
 import { registerJobData } from './modules/jobs/job.data.js';
+import { applicationRouter } from './modules/applications/application.routes.js';
+import { registerApplicationData } from './modules/applications/application.data.js';
+import { applicationService } from './modules/applications/application.service.js';
 
 export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }) {
   const app = express();
@@ -42,12 +45,14 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   registerResumeData(userData);
   registerVersionData(userData);
   registerJobData(userData);
+  registerApplicationData(userData);
   const pool = pdfPool ?? createBrowserPool({ chromePath: env.CHROME_PATH, logger });
   const exportsService = createExportService({ env, pool, logger });
   registerExportData(userData, exportsService);
   resumeService.deleteHooks = [
     (userId, resumeId) => exportsService.removeForResume(userId, resumeId),
     (userId, resumeId) => versionService.removeForResume(userId, resumeId),
+    (userId, resumeId) => applicationService.unlinkResume(userId, resumeId),
   ];
   const { versions, compare } = versionRouters();
   const { resumeExport, exportsRouter } = exportRouters({ exportsService, limits });
@@ -86,6 +91,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   api.use('/resumes/:resumeId/compare', compare);
   api.use('/resumes/:resumeId', qualityRouter());
   api.use('/jobs', jobRouter());
+  api.use('/applications', applicationRouter());
   api.use('/resumes', resumeRouter());
   api.use('/exports', exportsRouter);
   app.use('/api/v1', api);

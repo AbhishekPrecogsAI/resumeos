@@ -14,7 +14,7 @@ export function PreviewPane({ content, layout, templateId, pageSize }) {
   const print = () => {
     const html = getTemplate(templateId).render(content, layout, {
       pageSize,
-      fontCss: templateFontCss,
+      fontCss: templateFontCss(templateId),
     });
     if (!printHtml(html))
       toast.error("Couldn't open the print preview", 'Allow pop-ups for this site and try again.');

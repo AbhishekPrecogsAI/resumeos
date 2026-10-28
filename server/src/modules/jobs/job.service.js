@@ -5,6 +5,7 @@ import { Resume } from '../resumes/resume.model.js';
 import { ResumeVersion } from '../versions/version.model.js';
 import { CareerProfile } from '../profiles/profile.model.js';
 import { HttpError } from '../../utils/HttpError.js';
+import { ApplicationRecord } from '../applications/application.model.js';
 
 const notFound = () =>
   new HttpError(404, 'NOT_FOUND', "That job description doesn't exist or isn't yours.");
@@ -137,6 +138,10 @@ export const jobService = {
     const result = await JobDescription.deleteOne({ _id: jobId, userId });
     if (!result.deletedCount) throw notFound();
     await Resume.updateMany({ userId, jobId }, { $set: { jobId: null } });
+    await ApplicationRecord.updateMany(
+      { userId, jobDescriptionId: jobId },
+      { $set: { jobDescriptionId: null } },
+    );
   },
 
   async match(userId, jobId, { resumeId, versionId }) {

@@ -74,3 +74,32 @@ A failed export is recorded but not offered for download.
 - The layout regression test (`exports.test.js` snapshot) compares extracted text lines, not
   pixels. It depends on the Chrome version and bundled font; update it deliberately with
   `npx vitest -u` after reviewing the diff.
+
+## DOCX export
+
+- Built with the `docx` library from the same content, visibility and section order as the PDF
+  (`server/src/modules/exports/docx.js`).
+- Plain, reflowable Word structure: a Title-style name, Heading 1 section headings, real
+  bullet lists, dates right-aligned with a tab stop, and clickable hyperlinks. No tables or text
+  boxes. Page size and margins match the PDF.
+- Fonts aren't embedded. Each template names a common system font for DOCX (Clarity: Georgia,
+  Ledger: Arial), so the Word file looks simpler than the PDF. The editor says so.
+- **Validation** (`validateDocx.js`): the file is reopened with mammoth, and the same content
+  checks as PDF run against the template's HTML render: text present, every heading and bullet
+  found, section order, no duplicate headings, no placeholders, links preserved. Page count and
+  overflow aren't measured because Word reflows text, and the validation method says so.
+- Needs no browser, so DOCX works even when Chrome isn't installed.
+
+## Templates
+
+Templates share one markup renderer (`shared/src/templates/base.js`) and differ only in CSS.
+Every template therefore has identical reading order and text, which a shared test enforces.
+
+| Template      | Layout                                       | Notes                                                                                                                                                                                              |
+| ------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clarity 1.0.0 | Single column, serif                         | The default; best for applicant tracking systems.                                                                                                                                                  |
+| Ledger 1.0.0  | Sans-serif, headings in a 30mm margin column | Each heading precedes its content in the document; PDF tests confirm extraction order on all fixtures. It's still a visual two-column layout, so untested parsers may differ, as the gallery says. |
+
+Ledger was added after Clarity passed every export check across the edge-case fixtures. The
+refactor to a shared renderer was verified byte-for-byte against Clarity's previous output, and
+the Clarity text-layout snapshot is unchanged.

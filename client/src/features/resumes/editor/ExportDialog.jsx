@@ -13,6 +13,8 @@ import { cx } from '../../../lib/cx.js';
 
 export const exportsKey = (resumeId) => ['exports', { resumeId }];
 
+const FORMAT_LABEL = { pdf: 'PDF', docx: 'Word (DOCX)' };
+
 const RESULT = {
   pass: { icon: CheckCircle2, className: 'text-added', label: 'Passed' },
   warn: { icon: AlertTriangle, className: 'text-warn', label: 'Warning' },
@@ -68,6 +70,7 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
   const [result, setResult] = useState(null);
   const [key, setKey] = useState(newKey);
   const template = getTemplate(meta.templateId);
+  const [format, setFormat] = useState('pdf');
 
   const history = useQuery({
     queryKey: exportsKey(resume.id),
@@ -82,7 +85,7 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
         throw new Error(
           "Your latest edits couldn't be saved, so the export would be out of date. Fix the save problem and try again.",
         );
-      return exportsApi.create(resume.id, { format: 'pdf', pageSize }, { idempotencyKey: key });
+      return exportsApi.create(resume.id, { format, pageSize }, { idempotencyKey: key });
     },
     onSuccess: (record) => {
       setResult(record);
@@ -104,7 +107,7 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
       open={open}
       onClose={close}
       size="lg"
-      title="Export PDF"
+      title="Export"
       description={`${meta.title}: ${template?.name ?? meta.templateId} template, version ${template?.version ?? '?'}. Exports the last saved draft.`}
     >
       {!result ? (
@@ -121,11 +124,16 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
             </SelectField>
             <SelectField
               label="Format"
-              value="pdf"
-              onChange={() => {}}
-              hint="Word (DOCX) export isn't available yet."
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              hint={
+                format === 'docx'
+                  ? 'Plain, editable Word layout with the same content and order. It uses a standard system font, so it looks simpler than the PDF.'
+                  : 'Matches the preview exactly.'
+              }
             >
               <option value="pdf">PDF</option>
+              <option value="docx">Word (DOCX)</option>
             </SelectField>
           </div>
           {saveStatus === 'conflict' && (
@@ -138,10 +146,12 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
             <Button
               onClick={() => create.mutate()}
               loading={create.isPending}
-              loadingLabel="Generating PDF"
+              loadingLabel={`Generating ${FORMAT_LABEL[format]}`}
               disabled={saveStatus === 'conflict'}
             >
-              {create.isPending ? 'Generating and checking…' : 'Generate PDF'}
+              {create.isPending
+                ? 'Generating and checking…'
+                : `Generate ${format === 'pdf' ? 'PDF' : 'DOCX'}`}
             </Button>
           </div>
         </div>
@@ -150,7 +160,10 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
           <div role="status" className="flex flex-wrap items-center gap-2">
             <Badge tone={status.tone}>{status.label}</Badge>
             <span className="text-sm text-muted">
-              {result.pageCount} {result.pageCount === 1 ? 'page' : 'pages'},{' '}
+              {FORMAT_LABEL[result.format] ?? 'PDF'},{' '}
+              {result.pageCount
+                ? `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}, `
+                : ''}
               {Math.max(1, Math.round(result.byteSize / 1024))} KB,{' '}
               {result.pageSize === 'Letter' ? 'US Letter' : 'A4'}
             </span>
@@ -165,7 +178,8 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
                 href={exportsApi.downloadUrl(result.id)}
                 className="inline-flex h-10 items-center gap-2 rounded-md bg-accent px-4 font-medium text-on-accent hover:bg-accent-hover"
               >
-                <Download className="size-4" aria-hidden="true" /> Download PDF
+                <Download className="size-4" aria-hidden="true" /> Download{' '}
+                {result.format === 'docx' ? 'DOCX' : 'PDF'}
               </a>
             ) : (
               <p className="text-sm text-danger">
@@ -188,7 +202,8 @@ export function ExportDialog({ open, onClose, resume, meta, flush, saveStatus })
                   <time dateTime={x.createdAt} title={formatDateTime(x.createdAt)}>
                     {formatRelative(x.createdAt)}
                   </time>
-                  , draft revision {x.draftRevision}, {x.pageSize === 'Letter' ? 'Letter' : 'A4'},{' '}
+                  , {x.format === 'docx' ? 'DOCX' : 'PDF'}, draft revision {x.draftRevision},{' '}
+                  {x.pageSize === 'Letter' ? 'Letter' : 'A4'},{' '}
                   {STATUS_TEXT[x.validation.status].label.toLowerCase()}
                 </span>
                 {x.downloadAvailable ? (

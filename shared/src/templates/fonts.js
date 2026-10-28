@@ -1,8 +1,5 @@
-// Font files embedded in resume templates. The client and server each map `file` to a URL
-// (bundled asset in the browser, file:// path for PDF rendering) so both render identically.
-export const TEMPLATE_FONT_FAMILY = 'Source Serif 4';
-export const TEMPLATE_FONT_PACKAGE = '@fontsource/source-serif-4';
-
+// Font files embedded in resume templates. The client and server each map a file to a URL
+// (bundled asset in the browser, data: URI for PDF rendering) so both render identically.
 const RANGES = {
   latin:
     'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD',
@@ -12,19 +9,41 @@ const RANGES = {
     'U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB',
 };
 
-export const TEMPLATE_FONT_FILES = [400, 600, 700].flatMap((weight) =>
-  Object.entries(RANGES).map(([subset, unicodeRange]) => ({
-    weight,
-    subset,
-    unicodeRange,
-    file: `source-serif-4-${subset}-${weight}-normal.woff2`,
-  })),
-);
+export const TEMPLATE_FONTS = {
+  'Source Serif 4': {
+    package: '@fontsource/source-serif-4',
+    prefix: 'source-serif-4',
+    weights: [400, 600, 700],
+  },
+  'IBM Plex Sans': {
+    package: '@fontsource/ibm-plex-sans',
+    prefix: 'ibm-plex-sans',
+    weights: [400, 500, 600],
+  },
+};
 
-/** Build @font-face rules. `urlFor(file)` returns the URL for a file in the package's files/ dir. */
-export function buildFontCss(urlFor) {
-  return TEMPLATE_FONT_FILES.map(
-    (f) =>
-      `@font-face{font-family:'${TEMPLATE_FONT_FAMILY}';font-style:normal;font-weight:${f.weight};font-display:block;src:url('${urlFor(f.file)}') format('woff2');unicode-range:${f.unicodeRange};}`,
-  ).join('\n');
+export function fontFiles(family) {
+  const f = TEMPLATE_FONTS[family];
+  if (!f) throw new Error(`Unknown template font: ${family}`);
+  return f.weights.flatMap((weight) =>
+    Object.entries(RANGES).map(([subset, unicodeRange]) => ({
+      family,
+      package: f.package,
+      weight,
+      subset,
+      unicodeRange,
+      file: `${f.prefix}-${subset}-${weight}-normal.woff2`,
+    })),
+  );
+}
+
+/** @font-face rules for the given families. `urlFor(file, packageName)` resolves each file. */
+export function buildFontCss(families, urlFor) {
+  return families
+    .flatMap(fontFiles)
+    .map(
+      (f) =>
+        `@font-face{font-family:'${f.family}';font-style:normal;font-weight:${f.weight};font-display:block;src:url('${urlFor(f.file, f.package)}') format('woff2');unicode-range:${f.unicodeRange};}`,
+    )
+    .join('\n');
 }

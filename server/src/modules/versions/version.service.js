@@ -6,6 +6,7 @@ import { ResumeVersion, MAX_VERSIONS_PER_RESUME } from './version.model.js';
 import { Resume } from '../resumes/resume.model.js';
 import { ExportRecord } from '../exports/export.model.js';
 import { HttpError } from '../../utils/HttpError.js';
+import { ApplicationRecord } from '../applications/application.model.js';
 import { staleRevision } from '../../utils/revision.js';
 
 const resumeNotFound = () =>
@@ -242,6 +243,10 @@ export const versionService = {
     const resume = await loadResume(userId, resumeId);
     const v = await loadVersion(userId, resume._id, versionId);
     await ResumeVersion.deleteOne({ _id: v._id });
+    await ApplicationRecord.updateMany(
+      { userId, resumeVersionId: v._id },
+      { $set: { resumeVersionId: null } },
+    );
     if (String(resume.currentVersionId) === String(v._id)) {
       const latest = await ResumeVersion.findOne({ resumeId: resume._id }, { _id: 1 })
         .sort({ versionNumber: -1 })

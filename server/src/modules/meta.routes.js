@@ -14,9 +14,11 @@ export function metaRouter({ version }) {
         'profile',
         'resumes',
         'export:pdf',
+        'export:docx',
         'versions',
         'quality',
         'jobs',
+        'applications',
       ],
     });
   });

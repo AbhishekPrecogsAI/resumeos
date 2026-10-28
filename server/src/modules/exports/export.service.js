@@ -8,6 +8,18 @@ import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { ExportRecord } from './export.model.js';
 import { renderPdf } from './render.js';
 import { validatePdf } from './validate.js';
+import { renderDocx } from './docx.js';
+import { validateDocx } from './validateDocx.js';
+import { getTemplate as templateFor } from '@resumeos/shared/templates/index.js';
+
+export const FORMATS = {
+  pdf: { ext: 'pdf', mime: 'application/pdf', label: 'PDF' },
+  docx: {
+    ext: 'docx',
+    mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    label: 'Word document',
+  },
+};
 import { Resume } from '../resumes/resume.model.js';
 import { ResumeVersion } from '../versions/version.model.js';
 import { HttpError } from '../../utils/HttpError.js';
@@ -43,7 +55,7 @@ export function publicExport(doc) {
 }
 
 /** ASCII-safe filename plus an RFC 5987 UTF-8 variant for the original name. */
-export function contentDisposition(baseName) {
+export function contentDisposition(baseName, ext = 'pdf') {
   const clean =
     String(baseName || 'resume')
       .replace(/[\r\n"\\/]/g, ' ')
@@ -55,7 +67,7 @@ export function contentDisposition(baseName) {
       .replace(/[^A-Za-z0-9 ._-]/g, '')
       .trim()
       .replace(/\s+/g, '-') || 'resume';
-  return `attachment; filename="${ascii}.pdf"; filename*=UTF-8''${encodeURIComponent(clean.replace(/\s+/g, '-'))}.pdf`;
+  return `attachment; filename="${ascii}.${ext}"; filename*=UTF-8''${encodeURIComponent(clean.replace(/\s+/g, '-'))}.${ext}`;
 }
 
 /** The saved version this export corresponds to, only if the draft is identical to it. */
@@ -73,11 +85,12 @@ async function matchingVersionId(resume, content, layout) {
 export function createExportService({ env, pool, logger }) {
   const dir = resolve(env.EXPORT_TEMP_DIR);
   const ttlMs = env.EXPORT_TTL_MINUTES * 60_000;
-  const filePath = (key) => join(dir, `${key}.pdf`);
+  // Files are named <random key>.<format extension>.
+  const filePath = (key, format = 'pdf') => join(dir, `${key}.${FORMATS[format]?.ext ?? 'pdf'}`);
 
   async function removeFile(doc) {
     if (!doc.fileStorageKey) return;
-    await unlink(filePath(doc.fileStorageKey)).catch((err) => {
+    await unlink(filePath(doc.fileStorageKey, doc.format)).catch((err) => {
       if (err.code !== 'ENOENT') throw err;
     });
   }
@@ -98,31 +111,49 @@ export function createExportService({ env, pool, logger }) {
 
       const started = Date.now();
       let rendered;
+      let validation;
       try {
-        rendered = await renderPdf(pool, {
-          content,
-          layout,
-          templateId: resume.templateId,
-          pageSize: size,
-          timeoutMs: env.EXPORT_TIMEOUT_MS,
-        });
+        if (format === 'docx') {
+          // The HTML render is the reference for what the document must contain.
+          const html = templateFor(resume.templateId).render(content, layout, { pageSize: size });
+          rendered = {
+            buffer: await renderDocx({
+              content,
+              layout,
+              templateId: resume.templateId,
+              pageSize: size,
+            }),
+            html,
+          };
+        } else {
+          rendered = await renderPdf(pool, {
+            content,
+            layout,
+            templateId: resume.templateId,
+            pageSize: size,
+            timeoutMs: env.EXPORT_TIMEOUT_MS,
+          });
+        }
       } catch (err) {
         if (err instanceof HttpError) throw err;
-        logger.error('pdf render failed', { name: err.name, code: err.code });
+        logger.error('export render failed', { format, name: err.name, code: err.code });
         throw new HttpError(
           503,
           'EXPORT_UNAVAILABLE',
-          "The PDF couldn't be generated right now. Try again in a moment.",
+          `The ${FORMATS[format].label} couldn't be generated right now. Try again in a moment.`,
         );
       }
-      const validation = await validatePdf(rendered.buffer, {
-        html: rendered.html,
-        overflow: rendered.overflow,
-      });
+      validation =
+        format === 'docx'
+          ? await validateDocx(rendered.buffer, { html: rendered.html })
+          : await validatePdf(rendered.buffer, {
+              html: rendered.html,
+              overflow: rendered.overflow,
+            });
 
       const key = randomBytes(18).toString('base64url');
       await mkdir(dir, { recursive: true, mode: 0o700 });
-      await writeFile(filePath(key), rendered.buffer, { mode: 0o600 });
+      await writeFile(filePath(key, format), rendered.buffer, { mode: 0o600 });
 
       try {
         const doc = await ExportRecord.create({
@@ -146,7 +177,7 @@ export function createExportService({ env, pool, logger }) {
         });
         return { record: publicExport(doc), reused: false };
       } catch (err) {
-        await unlink(filePath(key)).catch(() => {});
+        await unlink(filePath(key, format)).catch(() => {});
         if (err?.code === 11000 && idempotencyKey) {
           const existing = await ExportRecord.findOne({ userId, idempotencyKey }).lean();
           if (existing) return { record: publicExport(existing), reused: true };
@@ -186,7 +217,7 @@ export function createExportService({ env, pool, logger }) {
           'This file is no longer available. Exports are kept for a short time; export again to get a new copy.',
         );
       }
-      const path = filePath(doc.fileStorageKey);
+      const path = filePath(doc.fileStorageKey, doc.format);
       const info = await stat(path).catch(() => null);
       if (!info)
         throw new HttpError(
@@ -202,7 +233,11 @@ export function createExportService({ env, pool, logger }) {
       return {
         stream: createReadStream(path),
         size: info.size,
-        disposition: contentDisposition(name ? `${name} resume` : doc.resumeTitle),
+        mime: FORMATS[doc.format].mime,
+        disposition: contentDisposition(
+          name ? `${name} resume` : doc.resumeTitle,
+          FORMATS[doc.format].ext,
+        ),
       };
     },
 
@@ -249,7 +284,7 @@ export function createExportService({ env, pool, logger }) {
       const cutoff = Date.now() - ttlMs;
       let removed = 0;
       for (const name of names) {
-        const match = /^([A-Za-z0-9_-]+)\.pdf$/.exec(name);
+        const match = /^([A-Za-z0-9_-]+)\.(pdf|docx)$/.exec(name);
         if (!match) continue;
         const info = await stat(join(dir, name)).catch(() => null);
         if (!info || info.mtimeMs > cutoff) continue;

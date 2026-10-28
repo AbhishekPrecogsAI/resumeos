@@ -74,6 +74,7 @@ export async function parsePdf(buffer) {
 }
 
 const check = (id, label, result, detail) => ({ id, label, result, detail });
+const PDF_METHOD = 'pdfjs text extraction and layout measurement in headless Chrome';
 
 /**
  * Run export acceptance checks on a generated PDF. Every check is reported, including passes,
@@ -90,7 +91,7 @@ export async function validatePdf(buffer, { html, overflow }) {
       isPdf ? `${Math.round(buffer.length / 1024)} KB` : 'The file is empty or not a PDF.',
     ),
   );
-  if (!isPdf) return summarize(checks, null);
+  if (!isPdf) return summarize(checks, null, PDF_METHOD);
 
   let parsed;
   try {
@@ -112,11 +113,41 @@ export async function validatePdf(buffer, { html, overflow }) {
         `The parser couldn't open the file (${err.name}).`,
       ),
     );
-    return summarize(checks, null);
+    return summarize(checks, null, PDF_METHOD);
   }
 
+  checks.push(
+    ...contentChecks({ lines: parsed.lines, links: parsed.links, html, formatLabel: 'PDF' }),
+  );
+
+  const overflowed = overflow?.pageOverflow || overflow?.offenders?.length;
+  checks.push(
+    overflowed
+      ? check(
+          'POSSIBLE_CONTENT_OVERFLOW',
+          'Nothing runs off the page',
+          'warn',
+          `Content may extend past the right margin${overflow.offenders.length ? `: "${overflow.offenders.join('", "')}"` : ''}. Long unbroken text such as URLs is the usual cause.`,
+        )
+      : check(
+          'POSSIBLE_CONTENT_OVERFLOW',
+          'Nothing runs off the page',
+          'pass',
+          'No content wider than the printable area was detected.',
+        ),
+  );
+
+  return summarize(checks, parsed, PDF_METHOD);
+}
+
+/**
+ * Checks shared by every export format: extractable text, expected content, section order,
+ * duplicates, placeholders and links. `lines` are extracted text lines; `links` are URLs found.
+ */
+export function contentChecks({ lines, links, html, formatLabel }) {
+  const checks = [];
   const expected = expectationsFromHtml(html);
-  const fullText = parsed.lines.map((l) => l.text).join('\n');
+  const fullText = lines.map((l) => l.text).join('\n');
   const flat = normalizeText(fullText);
 
   checks.push(
@@ -186,7 +217,7 @@ export async function validatePdf(buffer, { html, overflow }) {
   );
 
   const lineCounts = new Map();
-  for (const l of parsed.lines)
+  for (const l of lines)
     lineCounts.set(normalizeText(l.text), (lineCounts.get(normalizeText(l.text)) ?? 0) + 1);
   const duplicated = expected.headings.filter((h) => (lineCounts.get(normalizeText(h)) ?? 0) > 1);
   checks.push(
@@ -214,7 +245,7 @@ export async function validatePdf(buffer, { html, overflow }) {
       : check('PLACEHOLDER_TEXT', 'No placeholder text', 'pass', 'None found.'),
   );
 
-  const found = new Set(parsed.links.map((u) => safeHref(u)).filter(Boolean));
+  const found = new Set(links.map((u) => safeHref(u)).filter(Boolean));
   const lostLinks = expected.links.filter((u) => !found.has(u));
   checks.push(
     lostLinks.length
@@ -222,7 +253,7 @@ export async function validatePdf(buffer, { html, overflow }) {
           'LINKS_PRESERVED',
           'Links are clickable',
           'warn',
-          `${lostLinks.length} of ${expected.links.length} links aren't clickable in the PDF: ${lostLinks.join(', ')}.`,
+          `${lostLinks.length} of ${expected.links.length} links aren't clickable in the ${formatLabel}: ${lostLinks.join(', ')}.`,
         )
       : check(
           'LINKS_PRESERVED',
@@ -234,27 +265,10 @@ export async function validatePdf(buffer, { html, overflow }) {
         ),
   );
 
-  const overflowed = overflow?.pageOverflow || overflow?.offenders?.length;
-  checks.push(
-    overflowed
-      ? check(
-          'POSSIBLE_CONTENT_OVERFLOW',
-          'Nothing runs off the page',
-          'warn',
-          `Content may extend past the right margin${overflow.offenders.length ? `: "${overflow.offenders.join('", "')}"` : ''}. Long unbroken text such as URLs is the usual cause.`,
-        )
-      : check(
-          'POSSIBLE_CONTENT_OVERFLOW',
-          'Nothing runs off the page',
-          'pass',
-          'No content wider than the printable area was detected.',
-        ),
-  );
-
-  return summarize(checks, parsed);
+  return checks;
 }
 
-function summarize(checks, parsed) {
+export function summarize(checks, parsed, method) {
   const status = checks.some((c) => c.result === 'fail')
     ? 'failed'
     : checks.some((c) => c.result === 'warn')
@@ -265,6 +279,6 @@ function summarize(checks, parsed) {
     checks,
     pageCount: parsed?.pageCount ?? null,
     checkedAt: new Date().toISOString(),
-    method: 'pdfjs text extraction and layout measurement in headless Chrome',
+    method,
   };
 }

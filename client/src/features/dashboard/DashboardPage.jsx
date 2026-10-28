@@ -6,6 +6,12 @@ import { profileApi } from '../../api/profile.api.js';
 import { resumesApi } from '../../api/resumes.api.js';
 import { exportsApi } from '../../api/exports.api.js';
 import { jobsApi, JOBS_KEY } from '../../api/jobs.api.js';
+import {
+  applicationsApi,
+  APPLICATIONS_KEY,
+  formatDay,
+  localToday,
+} from '../../api/applications.api.js';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { AppPage, Panel } from '../../components/layout/AppPage.jsx';
@@ -188,7 +194,10 @@ function RecentExports() {
                 >
                   {x.resumeTitle}
                 </Link>
-                <span className="text-muted"> PDF, {EXPORT_STATUS[x.validation.status]}</span>
+                <span className="text-muted">
+                  {' '}
+                  {x.format === 'docx' ? 'DOCX' : 'PDF'}, {EXPORT_STATUS[x.validation.status]}
+                </span>
               </span>
               <span className="flex items-baseline gap-3">
                 <time dateTime={x.createdAt} className="text-muted">
@@ -198,7 +207,7 @@ function RecentExports() {
                   <a
                     href={exportsApi.downloadUrl(x.id)}
                     className="font-medium text-accent underline underline-offset-2"
-                    aria-label={`Download PDF of ${x.resumeTitle}`}
+                    aria-label={`Download ${x.format === 'docx' ? 'DOCX' : 'PDF'} of ${x.resumeTitle}`}
                   >
                     Download
                   </a>
@@ -210,6 +219,38 @@ function RecentExports() {
           ))}
         </ul>
       )}
+    </Panel>
+  );
+}
+
+function FollowUps() {
+  const today = localToday();
+  const due = useQuery({
+    queryKey: [...APPLICATIONS_KEY, { due: today }],
+    queryFn: () => applicationsApi.due(today),
+  });
+  if (due.isPending || due.isError || !due.data.length) return null;
+  return (
+    <Panel
+      title="Follow-ups due"
+      description="Applications whose follow-up date has arrived."
+      className="md:col-span-2"
+      footer={
+        <ButtonLink to="/app/applications" variant="ghost" size="sm">
+          All applications
+        </ButtonLink>
+      }
+    >
+      <ul className="grid gap-2 text-sm">
+        {due.data.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-baseline justify-between gap-3">
+            <span className="text-ink">
+              {a.role} <span className="text-muted">at {a.company}</span>
+            </span>
+            <span className="text-muted">Follow up {formatDay(a.nextFollowUpAt)}</span>
+          </li>
+        ))}
+      </ul>
     </Panel>
   );
 }
@@ -285,6 +326,7 @@ export function DashboardPage() {
       }
     >
       <div className="grid gap-6 md:grid-cols-2">
+        <FollowUps />
         <RecentResumes />
         <ProfileChecklist />
         <RecentExports />

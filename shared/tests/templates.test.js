@@ -78,3 +78,28 @@ describe('bullets', () => {
     expect(html).not.toContain('[object Object]');
   });
 });
+
+describe('templates registry', () => {
+  it('every template renders the same reading order and text', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    const strip = (html) => html.replace(/<style>[\s\S]*?<\/style>/, '');
+    const [first, ...rest] = TEMPLATES.map((t) => strip(t.render(sampleResume, {})));
+    for (const html of rest) expect(html).toBe(first);
+  });
+
+  it('declares metadata needed by the gallery and exports', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    for (const t of TEMPLATES) {
+      expect(t).toEqual(
+        expect.objectContaining({
+          id: expect.any(String),
+          version: expect.stringMatching(/^\d+\.\d+\.\d+$/),
+          fonts: expect.any(Array),
+          docxFont: expect.any(String),
+          tradeOffs: expect.any(String),
+          parsingNotes: expect.any(String),
+        }),
+      );
+    }
+  });
+});

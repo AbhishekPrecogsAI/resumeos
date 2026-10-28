@@ -5,6 +5,7 @@ import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/authenticate.js';
 import { route } from '../../utils/asyncRoute.js';
 import { HttpError } from '../../utils/HttpError.js';
+import { FORMATS } from './export.service.js';
 
 const objectId = z.string().regex(/^[a-f0-9]{24}$/, 'Invalid id.');
 const createBody = z.strictObject({
@@ -39,11 +40,11 @@ export function exportRouters({ exportsService, limits }) {
     validate({ params: z.strictObject({ resumeId: objectId }), body: createBody }),
     route(async (req, res) => {
       const { format, pageSize } = req.valid.body;
-      if (format !== 'pdf') {
+      if (!Object.hasOwn(FORMATS, format)) {
         throw new HttpError(
           400,
           'UNSUPPORTED_FORMAT',
-          `Export format "${String(format).slice(0, 20)}" isn't supported. Supported: pdf.`,
+          `Export format "${String(format).slice(0, 20)}" isn't supported. Supported: ${Object.keys(FORMATS).join(', ')}.`,
         );
       }
       const { record, reused } = await exportsService.create(
@@ -77,7 +78,7 @@ export function exportRouters({ exportsService, limits }) {
     route(async (req, res) => {
       const file = await exportsService.openDownload(req.auth.user._id, req.valid.params.exportId);
       res.set({
-        'content-type': 'application/pdf',
+        'content-type': file.mime,
         'content-length': String(file.size),
         'content-disposition': file.disposition,
         'cache-control': 'private, no-store',

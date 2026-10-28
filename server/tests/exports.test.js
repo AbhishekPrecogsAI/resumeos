@@ -140,6 +140,20 @@ describe.skipIf(!hasChrome)('PDF rendering and validation', () => {
     });
   });
 
+  it('Ledger (heading column) still extracts every section in reading order', async () => {
+    for (const content of [FIXTURES.sample, FIXTURES.unicodeAndLong, FIXTURES.multiPage]) {
+      const out = await renderPdf(pool, {
+        content,
+        layout: defaultLayout(content),
+        templateId: 'ledger',
+        pageSize: 'A4',
+        timeoutMs: 30_000,
+      });
+      const v = await validatePdf(out.buffer, out);
+      expect(v.checks.filter((c) => c.result !== 'pass')).toEqual([]);
+    }
+  });
+
   it('layout regression: sample text lines are stable', async () => {
     const out = await render(FIXTURES.sample);
     const { lines } = await parsePdf(out.buffer);
@@ -232,9 +246,13 @@ describe.skipIf(!hasChrome)('export API', () => {
 
   it('rejects unsupported formats and bad idempotency keys', async () => {
     const { client, resume } = await userWithResume();
-    const docx = await client.post(`/api/v1/resumes/${resume.id}/export`).send({ format: 'docx' });
-    expect(docx.status).toBe(400);
-    expect(docx.body.error.code).toBe('UNSUPPORTED_FORMAT');
+    const odt = await client.post(`/api/v1/resumes/${resume.id}/export`).send({ format: 'odt' });
+    expect(odt.status).toBe(400);
+    expect(odt.body.error.code).toBe('UNSUPPORTED_FORMAT');
+    expect(
+      (await client.post(`/api/v1/resumes/${resume.id}/export`).send({ format: 'constructor' }))
+        .status,
+    ).toBe(400);
     expect(
       (
         await client

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react';
+import { ClipboardPlus, Trash2 } from 'lucide-react';
 import { jobsApi, jobKey, JOBS_KEY } from '../../api/jobs.api.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { AppPage } from '../../components/layout/AppPage.jsx';
@@ -11,6 +11,7 @@ import { LoadingState, ErrorState } from '../../components/ui/States.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { TermsEditor } from './TermsEditor.jsx';
 import { CoverageReport } from './CoverageReport.jsx';
+import { ApplicationDialog } from '../applications/ApplicationDialog.jsx';
 
 export function JobReportPage() {
   const { jobId } = useParams();
@@ -18,6 +19,7 @@ export function JobReportPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [recording, setRecording] = useState(false);
   const job = useQuery({ queryKey: jobKey(jobId), queryFn: () => jobsApi.get(jobId) });
   useDocumentTitle(job.data ? job.data.title : 'Job description');
 
@@ -69,9 +71,14 @@ export function JobReportPage() {
       title={j.title}
       description={j.company ? `at ${j.company}` : undefined}
       actions={
-        <Button variant="ghost" onClick={() => setConfirmDelete(true)}>
-          <Trash2 className="size-4" aria-hidden="true" /> Delete
-        </Button>
+        <>
+          <Button variant="secondary" onClick={() => setRecording(true)}>
+            <ClipboardPlus className="size-4" aria-hidden="true" /> Record an application
+          </Button>
+          <Button variant="ghost" onClick={() => setConfirmDelete(true)}>
+            <Trash2 className="size-4" aria-hidden="true" /> Delete
+          </Button>
+        </>
       }
     >
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
@@ -104,6 +111,13 @@ export function JobReportPage() {
         </section>
       </div>
 
+      {recording && (
+        <ApplicationDialog
+          open
+          onClose={() => setRecording(false)}
+          initial={{ company: j.company, role: j.title, jobDescriptionId: j.id, status: 'planned' }}
+        />
+      )}
       <Dialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}

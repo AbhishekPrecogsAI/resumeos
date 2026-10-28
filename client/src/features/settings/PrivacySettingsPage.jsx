@@ -21,6 +21,7 @@ export const DELETED_DATA = [
   'Every resume, its draft and its saved versions',
   'Export history and any export files not yet expired',
   'Saved job descriptions and their term lists',
+  'Your application records and notes',
   'Every signed-in session, on all devices',
 ];
 

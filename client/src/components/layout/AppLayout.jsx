@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { Briefcase, FileText, LayoutDashboard, Menu, Settings, UserRound, X } from 'lucide-react';
+import {
+  Briefcase,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  Menu,
+  Settings,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useTheme } from '../../hooks/useTheme.jsx';
 import { Logo } from './Logo.jsx';
@@ -14,6 +23,7 @@ export const APP_NAV = [
   { to: '/app/profile', label: 'Master profile', icon: UserRound },
   { to: '/app/resumes', label: 'Resumes', icon: FileText },
   { to: '/app/jobs', label: 'Job descriptions', icon: Briefcase },
+  { to: '/app/applications', label: 'Applications', icon: ClipboardList },
   { to: '/app/settings', label: 'Settings', icon: Settings },
 ];
 

@@ -27,7 +27,7 @@ export function TemplatePreview({
 
   const html = useMemo(() => {
     const template = getTemplate(templateId) ?? getTemplate(DEFAULT_TEMPLATE_ID);
-    return template.render(content, layout, { pageSize, fontCss: templateFontCss });
+    return template.render(content, layout, { pageSize, fontCss: templateFontCss(templateId) });
   }, [content, layout, templateId, pageSize]);
 
   useEffect(() => {

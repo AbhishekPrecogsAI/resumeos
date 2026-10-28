@@ -10,7 +10,7 @@ const exportSchema = new mongoose.Schema(
     resumeVersionId: { type: mongoose.Schema.Types.ObjectId, default: null },
     draftRevision: { type: Number, required: true },
     contentHash: { type: String, required: true },
-    format: { type: String, enum: ['pdf'], required: true },
+    format: { type: String, enum: ['pdf', 'docx'], required: true },
     templateId: { type: String, required: true },
     templateVersion: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], required: true },

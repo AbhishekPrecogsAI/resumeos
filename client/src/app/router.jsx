@@ -101,6 +101,13 @@ export const routes = [
             lazy: page(() => import('../features/jobs/JobReportPage.jsx'), 'JobReportPage'),
           },
           {
+            path: 'applications',
+            lazy: page(
+              () => import('../features/applications/ApplicationsPage.jsx'),
+              'ApplicationsPage',
+            ),
+          },
+          {
             path: 'settings',
             lazy: page(() => import('../features/settings/SettingsLayout.jsx'), 'SettingsLayout'),
             children: [
