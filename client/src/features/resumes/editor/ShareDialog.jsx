@@ -180,7 +180,7 @@ function ShareRow({ resumeId, share, highlight }) {
  * Create and manage read-only links to this resume. Each link has its own options, so the owner
  * can give one recruiter a downloadable copy and post another with contact details hidden.
  */
-export function ShareDialog({ open, onClose, resumeId, flush }) {
+export function ShareDialog({ open, onClose, resumeId, resumeTitle, flush }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [form, setForm] = useState(EMPTY_FORM);
@@ -190,12 +190,12 @@ export function ShareDialog({ open, onClose, resumeId, flush }) {
   const shares = useQuery({
     queryKey: sharesKey(resumeId),
     queryFn: () => sharesApi.list(resumeId),
-    enabled: open,
+    enabled: open && Boolean(resumeId),
   });
   const versions = useQuery({
     queryKey: versionsKey(resumeId),
     queryFn: () => versionsApi.list(resumeId),
-    enabled: open,
+    enabled: open && Boolean(resumeId),
   });
 
   const create = useMutation({
@@ -226,6 +226,7 @@ export function ShareDialog({ open, onClose, resumeId, flush }) {
 
   const close = () => {
     setNewId(null);
+    setForm(EMPTY_FORM);
     create.reset();
     onClose();
   };
@@ -235,7 +236,7 @@ export function ShareDialog({ open, onClose, resumeId, flush }) {
       open={open}
       onClose={close}
       size="lg"
-      title="Share this resume"
+      title={resumeTitle ? `Share "${resumeTitle}"` : 'Share this resume'}
       description="Anyone with a link can view the resume. They can't edit it or see anything you've hidden."
     >
       <form

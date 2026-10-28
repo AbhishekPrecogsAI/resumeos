@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { renderRoute, renderWithProviders } from './render.jsx';
-import { mockApi, SIGNED_OUT } from './fetchMock.js';
+import { mockApi, SIGNED_IN, SIGNED_OUT } from './fetchMock.js';
 import { ShareDialog } from '../src/features/resumes/editor/ShareDialog.jsx';
 import { sampleResume } from '@resumeos/shared/sample/sampleResume.js';
 import { defaultLayout } from '@resumeos/shared/resumeModel.js';
@@ -165,5 +165,40 @@ describe('shared resume page', () => {
     });
     renderRoute(`/r/${TOKEN}`);
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+  });
+});
+
+describe('resumes list', () => {
+  it('opens the share dialog for the chosen resume', async () => {
+    const { calls } = mockApi({
+      ...SIGNED_IN,
+      'GET /api/v1/resumes': [
+        200,
+        {
+          items: [
+            {
+              id: 'r1',
+              title: 'Backend roles',
+              templateId: 'orbit',
+              pageSize: 'A4',
+              archived: false,
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+          total: 1,
+          page: 1,
+          limit: 20,
+        },
+      ],
+      ...VERSIONS,
+      'GET /api/v1/resumes/r1/shares': [200, { shares: [share()] }],
+    });
+    renderRoute('/app/resumes');
+    fireEvent.click(await screen.findByRole('button', { name: 'Share Backend roles' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Share "Backend roles"' }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Recruiter at Acme')).toBeInTheDocument();
+    expect(calls.some((c) => c.path === '/api/v1/resumes/r1/shares')).toBe(true);
   });
 });

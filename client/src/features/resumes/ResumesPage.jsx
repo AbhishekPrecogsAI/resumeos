@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, FileText, History, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Copy, FileText, History, Pencil, Plus, Share2, Trash2 } from 'lucide-react';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { resumesApi } from '../../api/resumes.api.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
@@ -14,6 +14,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { formatRelative, formatDateTime } from '../../lib/formatters.js';
 import { RESUMES_KEY } from './resumeQueries.js';
+import { ShareDialog } from './editor/ShareDialog.jsx';
 
 const PAGE_SIZE = 20;
 
@@ -22,6 +23,7 @@ export function ResumesPage() {
   const [page, setPage] = useState(1);
   const [includeArchived, setIncludeArchived] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [sharing, setSharing] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const toast = useToast();
@@ -143,6 +145,14 @@ export function ResumesPage() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => setSharing(r)}
+                    aria-label={`Share ${r.title}`}
+                  >
+                    <Share2 className="size-4" aria-hidden="true" /> Share
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => duplicate.mutate(r)}
                     disabled={duplicate.isPending}
                     aria-label={`Duplicate ${r.title}`}
@@ -198,6 +208,12 @@ export function ResumesPage() {
         </>
       )}
 
+      <ShareDialog
+        open={Boolean(sharing)}
+        onClose={() => setSharing(null)}
+        resumeId={sharing?.id}
+        resumeTitle={sharing?.title}
+      />
       <Dialog
         open={Boolean(pendingDelete)}
         onClose={() => setPendingDelete(null)}

@@ -1,7 +1,7 @@
 # Share links
 
 A share link gives anyone who has it a read-only view of one resume, at `/r/<token>`. The owner
-creates links from **Share** in the editor and can have up to 20 per resume, each with its own
+creates links from **Share** in the editor or on the resumes list and can have up to 20 per resume, each with its own
 options.
 
 ## Options
