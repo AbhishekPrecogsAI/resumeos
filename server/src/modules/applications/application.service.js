@@ -133,7 +133,7 @@ export const applicationService = {
     const doc = await ApplicationRecord.findOneAndUpdate(
       { _id: id, userId },
       { $set: { ...fields, ...links } },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     ).lean();
     return publicApplication(doc);
   },

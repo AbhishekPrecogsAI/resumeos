@@ -49,7 +49,7 @@ async function writeContent(userId, expected, content) {
   const doc = await CareerProfile.findOneAndUpdate(
     { userId, revision: expected },
     { $set: { content: valid, schemaVersion: PROFILE_SCHEMA_VERSION }, $inc: { revision: 1 } },
-    { new: true },
+    { returnDocument: 'after' },
   );
   if (!doc) {
     const current = await CareerProfile.findOne({ userId }, { revision: 1 }).lean();

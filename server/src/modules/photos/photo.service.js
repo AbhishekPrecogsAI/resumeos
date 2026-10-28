@@ -77,7 +77,7 @@ export const photoService = {
     const doc = await ProfilePhoto.findOneAndUpdate(
       { userId },
       { $set: { mime: info.mime, data: buffer, width: info.width, height: info.height } },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     ).lean();
     return {
       dataUrl: toDataUrl(doc),

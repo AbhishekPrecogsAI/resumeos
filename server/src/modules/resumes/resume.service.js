@@ -135,7 +135,7 @@ export const resumeService = {
     const doc = await Resume.findOneAndUpdate(
       { _id: resumeId, userId },
       { $set: set },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     ).lean();
     if (!doc) throw notFound();
     return detail(doc);
@@ -161,7 +161,7 @@ export const resumeService = {
         $set: { draft: { content: content.data, layout: layout.data, baselines: baselines.data } },
         $inc: { draftRevision: 1 },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean();
     if (!doc) {
       const current = await Resume.findOne({ _id: resumeId, userId }, { draftRevision: 1 }).lean();

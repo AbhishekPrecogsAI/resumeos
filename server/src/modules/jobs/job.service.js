@@ -119,7 +119,7 @@ export const jobService = {
     const doc = await JobDescription.findOneAndUpdate(
       { _id: jobId, userId },
       { $set: set },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean();
     if (!doc) throw notFound();
     return jobDetail(doc);

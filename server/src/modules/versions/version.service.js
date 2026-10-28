@@ -52,7 +52,7 @@ async function nextNumber(userId, resumeId) {
   const r = await Resume.findOneAndUpdate(
     { _id: resumeId, userId },
     { $inc: { versionCounter: 1 } },
-    { new: true, projection: { versionCounter: 1 } },
+    { returnDocument: 'after', projection: { versionCounter: 1 } },
   ).lean();
   if (!r) throw resumeNotFound();
   return r.versionCounter;
@@ -243,7 +243,7 @@ export const versionService = {
         },
         $inc: { draftRevision: 1 },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean();
     if (!updated) {
       // The draft changed while restoring (another tab saved). Undo our inserts and report the conflict.

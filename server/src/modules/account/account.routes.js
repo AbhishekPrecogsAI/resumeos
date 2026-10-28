@@ -23,7 +23,7 @@ export function accountRouter({ auth, sessions, userData, limits, logger }) {
       const user = await User.findByIdAndUpdate(
         req.auth.user._id,
         { $set: set },
-        { new: true, runValidators: true },
+        { returnDocument: 'after', runValidators: true },
       );
       res.json({ user: publicUser(user) });
     }),
