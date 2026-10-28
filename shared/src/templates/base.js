@@ -159,6 +159,12 @@ const renderers = {
       groups.get(key).push(opts.editable ? s : s.name.trim());
     }
     if (!groups.size) return '';
+    // No skill has a category: list them without a group label, which would only repeat the
+    // section heading ("Skills" under "Skills").
+    const uncategorised =
+      groups.size === 1 &&
+      groups.has('Skills') &&
+      !visibleItems(c.skills, hidden).some((s) => s.category?.trim());
     if (opts.editable) {
       const skill = (s) =>
         ed(
@@ -172,11 +178,17 @@ const renderers = {
       return `<dl class="skills${opts.skillChips ? ' chips' : ''}" data-entry="skills">${[...groups]
         .map(
           ([cat, list]) =>
-            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${encodeURIComponent(cat)}`, cat, 'Category')}</dt><dd>${list
+            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${encodeURIComponent(cat)}`, uncategorised ? '' : cat, 'Category (optional)')}</dt><dd>${list
               .map(skill)
               .join(opts.skillChips ? ' ' : '<span class="sep">, </span>')}</dd></div>`,
         )
         .join('')}</dl>`;
+    }
+    if (uncategorised) {
+      const names = groups.get('Skills');
+      return opts.skillChips
+        ? `<p class="skills-list">${names.map((n) => `<span class="chip">${e(n)}</span>`).join(' ')}</p>`
+        : `<p class="skills-list">${e(names.join(', '))}</p>`;
     }
     if (opts.skillChips) {
       // Chips are separate elements with real spaces between them, so extracted text stays readable.

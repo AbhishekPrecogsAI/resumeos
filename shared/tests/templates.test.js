@@ -228,3 +228,22 @@ describe('template CSS guards', () => {
     }
   });
 });
+
+describe('uncategorised skills', () => {
+  it('render without a group label that would repeat the "Skills" heading', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    const content = {
+      ...emptyContent(),
+      contact: { name: 'A' },
+      skills: [
+        { id: 'sk_1', name: 'React', category: '' },
+        { id: 'sk_2', name: 'AWS', category: '' },
+      ],
+    };
+    for (const t of TEMPLATES) {
+      const html = t.render(content, {}).replace(/<style>[\s\S]*?<\/style>/, '');
+      expect([t.id, html.includes('<dt>Skills</dt>')]).toEqual([t.id, false]);
+      expect(html).toMatch(/React/);
+    }
+  });
+});
