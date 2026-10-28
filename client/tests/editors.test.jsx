@@ -185,4 +185,20 @@ describe('SkillsEditor', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(current().map((s) => s.name)).toEqual(['Go', 'PostgreSQL', 'Node.js']);
   });
+
+  it('sets an optional level, and stores nothing when cleared', () => {
+    renderWithProviders(
+      <Controlled
+        Component={SkillsEditor}
+        prop="skills"
+        initial={[{ id: 'sk_1', name: 'Go', category: '', context: '', evidenceIds: [] }]}
+      />,
+    );
+    // The same control appears in the mobile and desktop rows; either one sets the level.
+    const [level] = screen.getAllByLabelText('Skill 1 level');
+    fireEvent.change(level, { target: { value: '4' } });
+    expect(current()[0].level).toBe(4);
+    fireEvent.change(level, { target: { value: '' } });
+    expect(current()[0]).not.toHaveProperty('level');
+  });
 });

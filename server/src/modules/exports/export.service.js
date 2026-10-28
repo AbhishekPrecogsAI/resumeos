@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { mkdir, writeFile, unlink, stat, readdir } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import mongoose from 'mongoose';
@@ -90,7 +90,15 @@ async function matchingVersionId(resume, content, layout) {
   return same ? v._id : null;
 }
 
+// Fit results by everything that changes the PDF: a repeat click on an unchanged resume renders
+// nothing. Bounded; oldest entries go first.
+const FIT_CACHE_MAX = 500;
+
 export function createExportService({ env, pool, logger }) {
+  const fitCache = new Map();
+  // One measurement at a time per user; a repeat of the same one waits for it instead.
+  const fitRunning = new Map(); // userId → { key, promise }
+
   const dir = resolve(env.EXPORT_TEMP_DIR);
   const ttlMs = env.EXPORT_TTL_MINUTES * 60_000;
   // Files are named <random key>.<format extension>.
@@ -216,6 +224,35 @@ export function createExportService({ env, pool, logger }) {
       const { content, layout } = resume.draft;
       const photo =
         layout?.showPhoto && template?.photo ? await photoService.dataUrlFor(userId) : null;
+      const key = [
+        resume._id,
+        resume.draftRevision,
+        resume.templateId,
+        template?.version,
+        resume.pageSize,
+        resume.accentColor ?? '',
+        resume.backgroundPattern ?? 'none',
+        photo ? createHash('sha256').update(photo).digest('hex').slice(0, 16) : 'none',
+      ].join('|');
+      const respond = (result) => ({
+        alreadyFits: result.alreadyFits,
+        pages: result.pages,
+        draftRevision: resume.draftRevision,
+        settings: result.layout
+          ? { spacing: result.layout.spacing ?? 'normal', fontScale: result.layout.fontScale ?? 1 }
+          : null,
+      });
+      if (fitCache.has(key)) return respond(fitCache.get(key));
+
+      const running = fitRunning.get(String(userId));
+      if (running?.key === key) return respond(await running.promise);
+      if (running)
+        throw new HttpError(
+          429,
+          'FIT_IN_PROGRESS',
+          'Another resume is being measured. Wait for it to finish, then try again.',
+        );
+
       const countPages = async (candidate) => {
         const rendered = await renderPdf(pool, {
           content,
@@ -229,10 +266,8 @@ export function createExportService({ env, pool, logger }) {
         });
         return (await parsePdf(rendered.buffer)).pageCount;
       };
-      let result;
-      try {
-        result = await fitToOnePage(layout ?? {}, countPages);
-      } catch (err) {
+      // Errors are mapped here, so anyone waiting on the same measurement gets the same answer.
+      const promise = fitToOnePage(layout ?? {}, countPages).catch((err) => {
         if (err instanceof HttpError) throw err;
         logger.error('fit to one page failed', { name: err.name, code: err.code });
         throw new HttpError(
@@ -240,15 +275,17 @@ export function createExportService({ env, pool, logger }) {
           'EXPORT_UNAVAILABLE',
           "The page couldn't be measured right now. Try again in a moment.",
         );
+      });
+      fitRunning.set(String(userId), { key, promise });
+      let result;
+      try {
+        result = await promise;
+      } finally {
+        fitRunning.delete(String(userId));
       }
-      return {
-        alreadyFits: result.alreadyFits,
-        pages: result.pages,
-        draftRevision: resume.draftRevision,
-        settings: result.layout
-          ? { spacing: result.layout.spacing ?? 'normal', fontScale: result.layout.fontScale ?? 1 }
-          : null,
-      };
+      fitCache.set(key, result);
+      if (fitCache.size > FIT_CACHE_MAX) fitCache.delete(fitCache.keys().next().value);
+      return respond(result);
     },
 
     async list(userId, { page, limit, resumeId }) {

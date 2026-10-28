@@ -10,7 +10,7 @@ import {
   removeSkill,
   deleteEntry,
   moveEntry,
-  cycleLanguageLevel,
+  cycleLevel,
 } from '@resumeos/shared/editing.js';
 import { templateFontCss } from '../../../../lib/templateFonts.js';
 import { DatePopover } from './DatePopover.jsx';
@@ -226,7 +226,7 @@ export function CanvasEditor({
       }
       const level = ev.target.closest?.('[data-level]');
       if (level) {
-        structural({ content: cycleLanguageLevel(contentRef.current, level.dataset.level) });
+        structural({ content: cycleLevel(contentRef.current, level.dataset.level) });
         return;
       }
       const add = ev.target.closest?.('[data-add]');

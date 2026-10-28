@@ -14,7 +14,6 @@ describe('renderClarity', () => {
         'education',
         'certifications',
         'languages',
-        'interests',
       ],
     });
     const order = [...html.matchAll(/data-section="([^"]+)"/g)].map((m) => m[1]);
@@ -26,7 +25,6 @@ describe('renderClarity', () => {
       'education',
       'certifications',
       'languages',
-      'interests',
     ]);
   });
 
@@ -116,7 +114,6 @@ describe('templates registry', () => {
         'education',
         'certifications',
         'languages',
-        'interests',
       ],
     };
     for (const t of TEMPLATES) {
@@ -133,7 +130,6 @@ describe('templates registry', () => {
           'education',
           'certifications',
           'languages',
-          'interests',
           'experience',
           'projects',
         ]);
@@ -143,7 +139,6 @@ describe('templates registry', () => {
           'education',
           'certifications',
           'languages',
-          'interests',
           'experience',
           'summary',
           'projects',
@@ -158,7 +153,7 @@ describe('templates registry', () => {
       html
         .replace(/<style>[\s\S]*?<\/style>/, '')
         .replace('class="langs dots"', 'class="langs"')
-        .replace(/<svg class="dots"[\s\S]*?<\/svg>/g, '');
+        .replace(/<svg class="meter dots"[\s\S]*?<\/svg>/g, '');
     expect(strip(getTemplate('ledger').render(sampleResume, {}))).toBe(
       strip(getTemplate('clarity').render(sampleResume, {})),
     );

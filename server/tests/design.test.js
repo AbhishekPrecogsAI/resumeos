@@ -62,12 +62,8 @@ async function setup() {
 describe('languages and interests in stored content', () => {
   it('copies them from the profile into new resumes and validates levels', async () => {
     const { resume, save } = await setup();
-    expect(resume.draft.content.languages.map((l) => l.name)).toEqual([
-      'Swedish',
-      'English',
-      'Portuguese',
-    ]);
-    expect(resume.draft.content.interests).toHaveLength(3);
+    expect(resume.draft.content.languages.map((l) => l.name)).toEqual(['Swedish', 'English']);
+    expect(resume.draft.content.interests).toEqual([]);
     const bad = await save(resume.draft.layout, {
       ...resume.draft.content,
       languages: [{ id: 'lang_1', name: 'Dutch', level: 'expert' }],
@@ -238,4 +234,152 @@ describe('fit to one page', () => {
     expect((await other.client.post(`${base}/fit-one-page`).send({})).status).toBe(404);
     expect((await client.post(`${base}/fit-one-page`).send({ fontScale: 0.5 })).status).toBe(400);
   });
+});
+
+describe('fit to one page: cost controls', () => {
+  // Same app, but counting PDF renders.
+  let counting;
+  let countingApp;
+  beforeAll(() => {
+    counting = {
+      renders: 0,
+      withPage(fn) {
+        this.renders += 1;
+        return pool.withPage(fn);
+      },
+      close: async () => {},
+    };
+    countingApp = buildApp({ env: makeEnv({ EXPORT_TEMP_DIR: dir }), pdfPool: counting });
+  });
+
+  async function twoResumes() {
+    const u = await registerUser(countingApp);
+    await u.client.put('/api/v1/profile').set('if-match', '0').send({ content: sampleResume });
+    const make = async () =>
+      (await u.client.post('/api/v1/resumes').send({ title: 'R', templateId: 'clarity' })).body
+        .resume;
+    return { ...u, a: await make(), b: await make() };
+  }
+
+  it.skipIf(!hasChrome)(
+    'a repeat on an unchanged resume renders nothing',
+    async () => {
+      const { client, a } = await twoResumes();
+      const url = `/api/v1/resumes/${a.id}/fit-one-page`;
+      const first = await client.post(url).send({});
+      expect(first.status).toBe(200);
+      const after = counting.renders;
+      expect(after).toBeGreaterThan(0);
+      const again = await client.post(url).send({});
+      expect(again.body).toEqual(first.body);
+      expect(counting.renders).toBe(after);
+
+      // Any change to what the PDF depends on measures again.
+      await client.patch(`/api/v1/resumes/${a.id}`).send({ pageSize: 'Letter' });
+      await client.post(url).send({});
+      expect(counting.renders).toBeGreaterThan(after);
+    },
+    60_000,
+  );
+
+  it.skipIf(!hasChrome)(
+    'one measurement at a time per person; the same one is shared',
+    async () => {
+      const { client, a, b } = await twoResumes();
+      const before = counting.renders;
+      const [x, y] = await Promise.all([
+        client.post(`/api/v1/resumes/${a.id}/fit-one-page`).send({}),
+        client.post(`/api/v1/resumes/${a.id}/fit-one-page`).send({}),
+      ]);
+      expect([x.status, y.status]).toEqual([200, 200]);
+      expect(counting.renders - before).toBe(1); // sample fits: one render, shared
+      const slow = client.post(`/api/v1/resumes/${b.id}/fit-one-page`).send({});
+      const other = await twoResumes(); // a different person isn't blocked
+      const [first, second, third] = await Promise.all([
+        slow,
+        client.post(`/api/v1/resumes/${a.id}/fit-one-page`).send({}),
+        other.client.post(`/api/v1/resumes/${other.a.id}/fit-one-page`).send({}),
+      ]);
+      expect(first.status).toBe(200);
+      // Resume a is cached, so it answers without waiting for b.
+      expect(second.status).toBe(200);
+      expect(third.status).toBe(200);
+    },
+    60_000,
+  );
+
+  it('has its own, tighter rate limit', async () => {
+    const { rateLimits } = await import('../src/middleware/rateLimit.js');
+    const limits = rateLimits({ RATE_LIMIT_DISABLED: false });
+    expect(typeof limits.fit).toBe('function');
+    expect(limits.fit).not.toBe(limits.export);
+  });
+});
+
+describe('skill levels', () => {
+  it('stores 1–5, rejects anything else, and keeps unlevelled skills unchanged', async () => {
+    const { resume, save, client, base } = await setup();
+    const skills = resume.draft.content.skills;
+    expect(skills[0]).not.toHaveProperty('level');
+    const content = {
+      ...resume.draft.content,
+      skills: [{ ...skills[0], level: 4 }, ...skills.slice(1)],
+    };
+    expect((await save(resume.draft.layout, content)).status).toBe(200);
+    const stored = (await client.get(base)).body.resume.draft.content.skills;
+    expect(stored[0].level).toBe(4);
+    expect(stored[1]).not.toHaveProperty('level');
+    for (const level of [0, 6, 2.5, '3'])
+      expect(
+        (
+          await save(resume.draft.layout, {
+            ...resume.draft.content,
+            skills: [{ ...skills[0], level }],
+          })
+        ).status,
+      ).toBe(400);
+  });
+
+  it.skipIf(!hasChrome)(
+    'every template passes the export checks with levelled skills and languages',
+    async () => {
+      const content = {
+        ...FIXTURES.sample,
+        skills: FIXTURES.sample.skills.map((s, i) => ({ ...s, level: (i % 5) + 1 })),
+      };
+      for (const t of TEMPLATES) {
+        const out = await renderPdf(pool, {
+          content,
+          layout: defaultLayout(content),
+          templateId: t.id,
+          pageSize: 'A4',
+          timeoutMs: 30_000,
+        });
+        const v = await validatePdf(out.buffer, out);
+        expect([t.id, v.checks.filter((c) => c.result !== 'pass')]).toEqual([t.id, []]);
+      }
+    },
+    240_000,
+  );
+});
+
+describe('the sample resume', () => {
+  // Gallery thumbnails show page one. Adding languages once pushed four templates to two pages
+  // unnoticed; this keeps the sample honest about fitting.
+  it.skipIf(!hasChrome)(
+    'fits on one page in every template',
+    async () => {
+      for (const t of TEMPLATES) {
+        const out = await renderPdf(pool, {
+          content: sampleResume,
+          layout: defaultLayout(sampleResume),
+          templateId: t.id,
+          pageSize: 'A4',
+          timeoutMs: 30_000,
+        });
+        expect([t.id, (await validatePdf(out.buffer, out)).pageCount]).toEqual([t.id, 1]);
+      }
+    },
+    240_000,
+  );
 });

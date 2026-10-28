@@ -117,6 +117,36 @@ describe('page view editor', () => {
     );
   });
 
+  it("older resumes don't show empty new sections on the page until added from Layout", async () => {
+    const old = resume();
+    old.draft.content.languages = [];
+    old.draft.content.interests = [];
+    old.draft.layout.sectionOrder = old.draft.layout.sectionOrder.filter(
+      (k) => k !== 'languages' && k !== 'interests',
+    );
+    const { calls } = mockApi(api({ 'GET /api/v1/resumes/r1': [200, { resume: old }] }));
+    renderRoute('/app/resumes/r1/edit');
+    const page = await screen.findByTitle(/Resume page/);
+    expect(page.getAttribute('srcdoc')).not.toContain('data-section="languages"');
+    expect(page.getAttribute('srcdoc')).not.toContain('data-section="interests"');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Layout' }));
+    const dialog = screen.getByRole('dialog', { name: 'Layout' });
+    const row = within(dialog).getByText('Languages').closest('li');
+    fireEvent.click(within(row).getByRole('button', { name: /Add to page/ }));
+    await waitFor(() => expect(calls.some((c) => c.method === 'PUT')).toBe(true), {
+      timeout: 3000,
+    });
+    const saved = calls.find((c) => c.method === 'PUT').body;
+    expect(saved.layout.sectionOrder).toContain('languages');
+    expect(saved.content.languages).toHaveLength(1);
+    await waitFor(() =>
+      expect(screen.getByTitle(/Resume page/).getAttribute('srcdoc')).toContain(
+        'data-section="languages"',
+      ),
+    );
+  });
+
   it('adds a custom section with a first entry', async () => {
     const { calls } = mockApi(api());
     renderRoute('/app/resumes/r1/edit');

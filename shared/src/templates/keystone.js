@@ -98,6 +98,7 @@ export function renderKeystone(
     skillChips: true,
     contactIcons: true,
     headingIcons: true,
+    levelStyle: 'bar',
     photo,
     defaultAccent: KEYSTONE.accent.default,
     accentColor,

@@ -94,6 +94,9 @@ export const SECTION_SCHEMAS = {
     category: text(80),
     context: text(LIMITS.shortText),
     evidenceIds: ids(LIMITS.evidencePerBullet),
+    // Optional with no default, so skills saved before levels existed keep the same shape (and
+    // sync fingerprint) until a level is set.
+    level: z.number().int().min(1).max(5).optional(),
   }),
   education: z.strictObject({
     id,

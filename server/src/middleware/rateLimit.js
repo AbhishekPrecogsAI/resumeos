@@ -25,5 +25,7 @@ export function rateLimits(env) {
     sensitive: createLimiter({ windowMs: 15 * 60_000, limit: 10, disabled }),
     // PDF rendering is CPU-heavy.
     export: createLimiter({ windowMs: 5 * 60_000, limit: 20, disabled }),
+    // Fit to one page renders up to five PDFs per request (unless cached).
+    fit: createLimiter({ windowMs: 5 * 60_000, limit: 10, disabled }),
   };
 }

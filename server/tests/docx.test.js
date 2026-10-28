@@ -52,7 +52,6 @@ describe('DOCX rendering and validation', () => {
       'Education',
       'Certifications',
       'Languages',
-      'Interests',
     ]);
     expect(html).toContain('<p><strong>Swedish</strong> (Native)</p>');
     expect(html).toContain('<li>Led migration of the shipment-tracking API');

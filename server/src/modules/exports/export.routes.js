@@ -61,7 +61,7 @@ export function exportRouters({ exportsService, limits }) {
   resumeFit.post(
     '/',
     requireAuth,
-    limits.export,
+    limits.fit,
     validate({ params: z.strictObject({ resumeId: objectId }), body: z.strictObject({}) }),
     route(async (req, res) =>
       res.json(await exportsService.fitOnePage(req.auth.user._id, req.valid.params.resumeId)),

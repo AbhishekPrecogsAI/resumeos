@@ -80,7 +80,7 @@ describe.skipIf(!hasChrome)('PDF rendering and validation', () => {
     expect(v.checks.find((c) => c.id === 'EXPORT_TEXT_ORDER_WARNING')).toMatchObject({
       result: 'pass',
       detail:
-        'Skills → Experience → Summary → Projects → Education → Certifications → Languages → Interests, with every bullet under its heading.',
+        'Skills → Experience → Summary → Projects → Education → Certifications → Languages, with every bullet under its heading.',
     });
   });
 

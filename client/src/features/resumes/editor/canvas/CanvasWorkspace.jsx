@@ -11,8 +11,8 @@ import {
   Rows3,
 } from 'lucide-react';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
-import { resolveSectionOrder, sectionTitle } from '@resumeos/shared/resumeModel.js';
-import { addCustomSection } from '@resumeos/shared/editing.js';
+import { notYetAdded, resolveSectionOrder, sectionTitle } from '@resumeos/shared/resumeModel.js';
+import { addCustomSection, addEntry } from '@resumeos/shared/editing.js';
 import { Button } from '../../../../components/ui/Button.jsx';
 import { Dialog } from '../../../../components/ui/Dialog.jsx';
 import { Checkbox } from '../../../../components/ui/Field.jsx';
@@ -69,6 +69,35 @@ function LayoutDialog({ open, onClose, draft, setDraft, templateId, hasPhoto }) 
         {order.map((key, i) => {
           const title = sectionTitle(content, key);
           const isHidden = hidden.has(key);
+          if (notYetAdded(content, layout, key))
+            return (
+              <li
+                key={key}
+                className="flex items-center gap-2 rounded-md border border-dashed border-rule px-3 py-2"
+              >
+                <span className="flex-1 text-muted">{title}</span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setDraft((d) => {
+                      const out = addEntry(d.content, key);
+                      return {
+                        ...d,
+                        content: out.content,
+                        layout: {
+                          ...d.layout,
+                          sectionOrder: resolveSectionOrder(out.content, d.layout),
+                        },
+                      };
+                    });
+                    onClose();
+                  }}
+                >
+                  <Plus className="size-4" aria-hidden="true" /> Add to page
+                </Button>
+              </li>
+            );
           return (
             <li
               key={key}
@@ -135,10 +164,10 @@ function LayoutDialog({ open, onClose, draft, setDraft, templateId, hasPhoto }) 
       >
         <Plus className="size-4" aria-hidden="true" /> Add a custom section
       </Button>
-      {template?.columns === 2 && template.id !== 'ledger' && (
+      {template?.sideSections && (
         <p className="text-sm text-muted">
-          In {template.name}, Skills, Education and Certifications always sit in the sidebar; the
-          order applies within each column.
+          In {template.name}, the order applies within each column. Choose which column a section
+          uses in Design.
         </p>
       )}
       {template?.photo && (

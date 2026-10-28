@@ -304,9 +304,21 @@ export function setDates(content, entryKey, { start, end, current }) {
   return next;
 }
 
-/** Step a language to the next level, strongest first, then back to no level. */
-export function cycleLanguageLevel(content, entryKey) {
+/**
+ * Step a level meter on: languages go strongest first then back to none; skills go 1–5 then
+ * back to none (no level stored).
+ */
+export function cycleLevel(content, entryKey) {
+  const [section, id] = entryKey.split(':');
   const next = clone(content);
+  if (section === 'skills') {
+    const skill = (next.skills ?? []).find((s) => s.id === id);
+    if (!skill) return content;
+    const value = (skill.level ?? 0) + 1;
+    if (value > 5) delete skill.level;
+    else skill.level = value;
+    return next;
+  }
   const loc = locateEntry(next, entryKey);
   if (!loc || loc.kind !== 'languages') return content;
   const x = loc.list[loc.index];

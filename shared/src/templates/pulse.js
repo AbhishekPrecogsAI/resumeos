@@ -109,6 +109,7 @@ export function renderPulse(
     skillChips: true,
     contactIcons: true,
     headingIcons: true,
+    levelStyle: 'bar',
     photo,
     defaultAccent: PULSE.accent.default,
     accentColor,

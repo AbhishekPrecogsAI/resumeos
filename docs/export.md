@@ -136,6 +136,26 @@ skills, otherwise as a comma-separated line. Their styles are added only when a 
 either section, so other output is unchanged. Job matching counts languages; interests are left
 out because they'd produce false matches.
 
+**Skill levels.** A skill can have an optional `level` from 1 to 5 (Beginner to Expert), with
+no default, so skills saved earlier keep their exact shape and profile sync isn't disturbed. On
+templates with an accent, once any skill has a level, each skill group renders as rows of name
+and meter. Atlas, Pulse, Circuit and Keystone draw bars; the others draw dots. Meters are inline
+SVG with no text, so extracted text is identical with or without levels (tested across all
+templates), and applicant tracking systems read only the skill names. Clarity and DOCX don't
+show levels. The rows are spans, not divs, because templates style `.skills div` (Beacon even
+sets `display: contents`). Rows and languages flow into columns where there's room. Meters take
+the accent on white pages and the text colour in coloured sidebars.
+
+**Sections added later.** Languages and Interests aren't in the saved section order of resumes
+created before them. The page editor hides them there while they're empty; the Layout dialog
+offers **Add to page**. New resumes include them in their order. Previews and exports are
+unaffected, since empty sections never print.
+
+**The sample fits one page.** Gallery thumbnails show page one, so a test renders the sample
+in every template and requires one page. Adding three languages and three interests once
+pushed four templates to two pages unnoticed; the sample now has two languages and no
+interests, and tests use their own fuller data.
+
 **Design settings.** Stored in the resume layout, so versions, compare, share links and exports
 all carry them. They're optional, and a layout that never set them keeps the same shape and hash.
 
@@ -155,7 +175,10 @@ drafts. DOCX uses the chosen font's closest Word font (Arial or Georgia).
 **Fit to one page.** `POST /resumes/:id/fit-one-page` renders the saved draft as real PDFs:
 first compact spacing, then 95%, 90% and 85% text, never larger than the resume already has. It
 returns the first settings whose PDF is one page, or says nothing fits. It saves nothing; the
-editor applies the result as an ordinary, undoable edit. An earlier version estimated pages in
+editor applies the result as an ordinary, undoable edit. Each request can render five PDFs, so it
+has its own rate limit (10 per 5 minutes), results are cached by everything that changes the
+PDF (draft revision, template and version, page size, accent, background, photo), and each
+person can run one measurement at a time; a repeat of the same one shares it. An earlier version estimated pages in
 the browser, but a comparison against PDFs showed 4 wrong answers in 30, all saying "fits" when
 it didn't, because page breaks inside entries push content onto the next page. The preview's
 page count is still an estimate, labelled as one.

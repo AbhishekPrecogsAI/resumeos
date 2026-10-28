@@ -4,7 +4,7 @@ import { formatMonth } from '@resumeos/shared/dates.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { PATTERNS } from '@resumeos/shared/templates/patterns.js';
 import { fontChoice } from '@resumeos/shared/templates/fonts.js';
-import { SECTION_TITLES } from '@resumeos/shared/resumeModel.js';
+import { SECTION_TITLES, languageLevel, skillLevel } from '@resumeos/shared/resumeModel.js';
 import { Badge } from '../ui/Badge.jsx';
 import { cx } from '../../lib/cx.js';
 
@@ -48,6 +48,7 @@ const FIELD_LABELS = {
   fontScale: 'Text size',
   spacing: 'Spacing',
   placement: 'Section columns',
+  level: 'Level',
 };
 
 export const STATUS = {
@@ -77,6 +78,10 @@ function StatusBadge({ status, moved }) {
 
 function formatValue(field, value) {
   if (field === 'accentColor' && !value) return 'Template default';
+  if (field === 'level')
+    return (
+      (typeof value === 'number' ? skillLevel(value) : languageLevel(value))?.label ?? 'No level'
+    );
   if (field === 'font') return value ? (fontChoice(value)?.label ?? value) : 'Template default';
   if (field === 'fontScale') return `${Math.round(value * 100)}%`;
   if (field === 'spacing') return value.charAt(0).toUpperCase() + value.slice(1);

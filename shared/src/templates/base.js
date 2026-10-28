@@ -2,7 +2,14 @@ import { escapeHtml as e, safeHref, displayUrl } from '../escape.js';
 import { accentPalette, accentProblem } from './color.js';
 import { patternLayer } from './patterns.js';
 import { formatRange } from '../dates.js';
-import { SECTION_TITLES, resolveSectionOrder, bulletText, languageLevel } from '../resumeModel.js';
+import {
+  SECTION_TITLES,
+  resolveSectionOrder,
+  bulletText,
+  languageLevel,
+  skillLevel,
+  notYetAdded,
+} from '../resumeModel.js';
 import { fontChoice } from './fonts.js';
 
 export const PAGE = {
@@ -71,14 +78,23 @@ const article = (ctx, key, inner) =>
     ? `<article class="entry" data-entry="${e(key)}">${inner}</article>`
     : `<article class="entry">${inner}</article>`;
 
-/** Five dots, `filled` of them solid, in the current text colour. */
-const levelDots = (filled) =>
-  `<svg class="dots" aria-hidden="true" focusable="false" viewBox="0 0 37 6">${[0, 1, 2, 3, 4]
+/**
+ * A level meter out of five, drawn in the current text colour: five dots, or a bar. Inline SVG
+ * with no text, so it stays sharp in PDFs and adds nothing to extracted text.
+ */
+function meter(filled, style = 'dots') {
+  const n = Math.max(0, Math.min(5, Number(filled) || 0));
+  if (style === 'bar')
+    return `<svg class="meter bar" aria-hidden="true" focusable="false" viewBox="0 0 50 5" preserveAspectRatio="none"><rect width="50" height="5" rx="2.5" fill="currentColor" fill-opacity="0.2"/>${n ? `<rect width="${n * 10}" height="5" rx="2.5" fill="currentColor"/>` : ''}</svg>`;
+  return `<svg class="meter dots" aria-hidden="true" focusable="false" viewBox="0 0 37 6">${[
+    0, 1, 2, 3, 4,
+  ]
     .map(
       (i) =>
-        `<circle cx="${3 + i * 7.75}" cy="3" r="2.6" fill="currentColor"${i < filled ? '' : ' fill-opacity="0.22"'}/>`,
+        `<circle cx="${3 + i * 7.75}" cy="3" r="2.6" fill="currentColor"${i < n ? '' : ' fill-opacity="0.22"'}/>`,
     )
     .join('')}</svg>`;
+}
 
 const renderers = {
   summary: (c, hidden, ctx = {}) =>
@@ -167,7 +183,7 @@ const renderers = {
       if (!opts.editable && !s.name?.trim()) continue;
       const key = s.category?.trim() || 'Skills';
       if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(opts.editable ? s : s.name.trim());
+      groups.get(key).push(s);
     }
     if (!groups.size) return '';
     // No skill has a category: list them without a group label, which would only repeat the
@@ -176,6 +192,11 @@ const renderers = {
       groups.size === 1 &&
       groups.has('Skills') &&
       !visibleItems(c.skills, hidden).some((s) => s.category?.trim());
+    // Levels show as rows of name and meter, only on templates that draw meters and only when
+    // the resume uses them; otherwise skills print exactly as before.
+    const leveled =
+      opts.levelDots && visibleItems(c.skills, hidden).some((s) => skillLevel(s.level));
+    const name = (s) => s.name.trim();
     if (opts.editable) {
       const skill = (s) =>
         ed(
@@ -184,19 +205,41 @@ const renderers = {
           s.name,
           'Skill',
           'span',
-          opts.skillChips ? ' class="chip"' : '',
+          opts.skillChips && !leveled ? ' class="chip"' : '',
         );
-      return `<dl class="skills${opts.skillChips ? ' chips' : ''}" data-entry="skills">${[...groups]
+      const row = (s) =>
+        `<span class="lv">${skill(s)}<span class="lv-meter" data-level="skills:${e(s.id)}" role="button" tabindex="0" title="Change level">${meter(s.level, opts.levelStyle)}</span></span>`;
+      return `<dl class="skills${opts.skillChips ? ' chips' : ''}${leveled ? ' leveled' : ''}" data-entry="skills">${[
+        ...groups,
+      ]
         .map(
           ([cat, list]) =>
-            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${encodeURIComponent(cat)}`, uncategorised ? '' : cat, 'Category (optional)')}</dt><dd>${list
-              .map(skill)
-              .join(opts.skillChips ? ' ' : '<span class="sep">, </span>')}</dd></div>`,
+            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${encodeURIComponent(cat)}`, uncategorised ? '' : cat, 'Category (optional)')}</dt><dd>${
+              leveled
+                ? `<span class="levels">${list.map(row).join('')}</span>`
+                : list.map(skill).join(opts.skillChips ? ' ' : '<span class="sep">, </span>')
+            }</dd></div>`,
         )
         .join('')}</dl>`;
     }
+    if (leveled) {
+      // Rows are spans, not divs: templates style `.skills div` (spacing, display: contents)
+      // and those rules mustn't reach the rows.
+      const items = (list) =>
+        list
+          .map(
+            (s) =>
+              `<span class="lv"><span>${e(name(s))}</span>${skillLevel(s.level) ? meter(s.level, opts.levelStyle) : ''}</span>`,
+          )
+          .join('');
+      const rows = (list) => `<span class="levels">${items(list)}</span>`;
+      if (uncategorised) return `<p class="levels">${items(groups.get('Skills'))}</p>`;
+      return `<dl class="skills leveled">${[...groups]
+        .map(([cat, list]) => `<div><dt>${e(cat)}</dt><dd>${rows(list)}</dd></div>`)
+        .join('')}</dl>`;
+    }
     if (uncategorised) {
-      const names = groups.get('Skills');
+      const names = groups.get('Skills').map(name);
       return opts.skillChips
         ? `<p class="skills-list">${names.map((n) => `<span class="chip">${e(n)}</span>`).join(' ')}</p>`
         : `<p class="skills-list">${e(names.join(', '))}</p>`;
@@ -205,13 +248,13 @@ const renderers = {
       // Chips are separate elements with real spaces between them, so extracted text stays readable.
       return `<dl class="skills chips">${[...groups]
         .map(
-          ([cat, names]) =>
-            `<div><dt>${e(cat)}</dt><dd>${names.map((n) => `<span class="chip">${e(n)}</span>`).join(' ')}</dd></div>`,
+          ([cat, list]) =>
+            `<div><dt>${e(cat)}</dt><dd>${list.map((s) => `<span class="chip">${e(name(s))}</span>`).join(' ')}</dd></div>`,
         )
         .join('')}</dl>`;
     }
     return `<dl class="skills">${[...groups]
-      .map(([cat, names]) => `<div><dt>${e(cat)}</dt><dd>${e(names.join(', '))}</dd></div>`)
+      .map(([cat, list]) => `<div><dt>${e(cat)}</dt><dd>${e(list.map(name).join(', '))}</dd></div>`)
       .join('')}</dl>`;
   },
 
@@ -271,8 +314,7 @@ const renderers = {
       .join(''),
 
   // Each language is a name and an optional level. The level is always printed as a word;
-  // templates with an accent also draw it as five dots (an inline SVG with no text, so it stays
-  // sharp in PDFs and adds nothing to extracted text).
+  // templates with an accent also draw it as a meter.
   languages: (c, hidden, ctx = {}) => {
     const items = visibleItems(c.languages, hidden).filter((x) => ctx.editable || x.name?.trim());
     if (!items.length) return '';
@@ -282,13 +324,13 @@ const renderers = {
         .map((x) => {
           const key = `languages:${x.id}`;
           const level = languageLevel(x.level);
-          return `<div data-entry="${e(key)}"><dt>${ed(ctx, `${key}:name`, x.name, 'Language')}</dt><dd class="lvl" data-level="${e(key)}" role="button" tabindex="0">${e(level?.label ?? 'Set level')}${ctx.levelDots ? levelDots(level?.dots ?? 0) : ''}</dd></div>`;
+          return `<div data-entry="${e(key)}"><dt>${ed(ctx, `${key}:name`, x.name, 'Language')}</dt><dd class="lvl" data-level="${e(key)}" role="button" tabindex="0">${e(level?.label ?? 'Set level')}${ctx.levelDots ? meter(level?.dots ?? 0, ctx.levelStyle) : ''}</dd></div>`;
         })
         .join('')}</dl>`;
     return `<dl class="${cls}">${items
       .map((x) => {
         const level = languageLevel(x.level);
-        return `<div><dt>${e(x.name.trim())}</dt>${level ? `<dd class="lvl">${e(level.label)}${ctx.levelDots ? levelDots(level.dots) : ''}</dd>` : ''}</div>`;
+        return `<div><dt>${e(x.name.trim())}</dt>${level ? `<dd class="lvl">${e(level.label)}${ctx.levelDots ? meter(level.dots, ctx.levelStyle) : ''}</dd>` : ''}</div>`;
       })
       .join('')}</dl>`;
   },
@@ -313,12 +355,22 @@ const renderers = {
 // Shared styles for the language and interest lists, added only when a resume shows them, so
 // other output is unchanged. Templates can override any of it. Dots use the text colour, so
 // they read on light and dark columns alike; the empty dots are a tint of it (never opacity).
-const LIST_CSS = `.langs { margin: 0; }
+const LIST_CSS = `/* Languages and levelled skills flow into columns where there's room and stack in sidebars. */
+.langs { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(52mm, 1fr)); column-gap: 14pt; }
 .langs div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 8pt; margin-bottom: 3pt; break-inside: avoid; }
 .langs dt { font-weight: 600; overflow-wrap: normal; }
 .langs dd { margin: 0 0 0 auto; display: flex; align-items: center; gap: 6pt; font-size: 0.88em; white-space: nowrap; }
-.langs .dots { width: 37pt; height: 6pt; flex: none; }
 .interests { margin: 0; }
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(40mm, 1fr)); gap: 2pt 12pt; margin: 0; }
+.lv { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; column-gap: 8pt; break-inside: avoid; }
+.lv > span:first-child { overflow-wrap: normal; }
+.lv .meter, .lv-meter { margin-left: auto; }
+.skills.leveled dd { margin: 0; }
+.meter { flex: none; display: block; }
+.meter.dots { width: 37pt; height: 6pt; }
+.meter.bar { width: 46pt; height: 4.5pt; }
+/* On white pages meters take the accent; in coloured sidebars they keep the text colour. */
+.main .meter, body:not(.has-sidebar) .meter { color: var(--accent, currentColor); }
 `;
 
 function renderCustom(section, hidden, ctx = {}) {
@@ -462,8 +514,9 @@ const EDITABLE_CSS = `
 p[data-edit]:empty, h2[data-edit]:empty { min-height: 1.2em; }
 .dates[data-dates] { cursor: pointer; border-radius: 2px; }
 .dates[data-dates]:hover { background-color: rgba(46, 63, 184, 0.07); }
-.lvl[data-level] { cursor: pointer; border-radius: 2px; }
-.lvl[data-level]:hover { background-color: rgba(46, 63, 184, 0.07); }
+.lvl[data-level], .lv-meter[data-level] { cursor: pointer; border-radius: 2px; }
+.lvl[data-level]:hover, .lv-meter[data-level]:hover { background-color: rgba(46, 63, 184, 0.07); }
+.lv-meter { display: inline-flex; padding: 2pt; }
 .ed-empty { margin: 2pt 0 0; color: #7a828d; font-style: italic; cursor: pointer; }
 .ed-empty:hover { color: #2e3fb8; }
 [data-entry].ed-active { outline: 1.5px dashed rgba(46, 63, 184, 0.45); outline-offset: 3pt; border-radius: 3pt; }
@@ -551,6 +604,8 @@ export function renderResume(
     editable = false,
     pattern = 'none',
     pageBackground = '#fff',
+    // How skill and language levels are drawn on accent templates: 'dots' or 'bar'.
+    levelStyle = 'dots',
   },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
@@ -575,9 +630,11 @@ export function renderResume(
           skillChips,
           editable,
           levelDots: Boolean(defaultAccent),
+          levelStyle,
         });
       }
       if (editable) {
+        if (notYetAdded(content, layout, key)) return null;
         // The editor shows every visible section, with an invitation to add when it's empty.
         const heading = key.startsWith('custom:')
           ? headingIcons
@@ -601,7 +658,7 @@ export function renderResume(
     })
     .filter(Boolean);
 
-  const usesLists = sections.some((s) => s.key === 'languages' || s.key === 'interests');
+  const usesLists = sections.some((s) => /class="(langs|interests|levels)/.test(s.html));
   const photoTag = isPhotoDataUrl(photo) ? `<img class="photo" src="${photo}" alt="">\n` : '';
   const header = `<header${photoTag ? ' class="with-photo"' : ''}>
 ${photoTag}${editable ? ed({ editable }, 'contact:name', contact.name, 'Your name', 'h1') : `<h1>${e(contact.name || '')}</h1>`}

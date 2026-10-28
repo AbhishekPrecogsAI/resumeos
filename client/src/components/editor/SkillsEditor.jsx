@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { newId } from '@resumeos/shared/ids.js';
-import { ID_PREFIX } from '@resumeos/shared/resumeModel.js';
+import { ID_PREFIX, SKILL_LEVELS } from '@resumeos/shared/resumeModel.js';
 import { LIMITS } from '@resumeos/shared/limits.js';
 import { moveItem, removeAt, replaceAt } from '../../lib/array.js';
 import { Button } from '../ui/Button.jsx';
@@ -53,6 +53,27 @@ export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted })
     setDraft('');
   };
 
+  // No level is stored as no key at all, so untouched skills keep their exact shape.
+  const setLevel = (index, value) => {
+    const { level: _old, ...rest } = skills[index];
+    onChange(replaceAt(skills, index, value ? { ...rest, level: Number(value) } : rest));
+  };
+  const levelSelect = (s, i, className) => (
+    <select
+      aria-label={`Skill ${i + 1} level`}
+      className={cx(input, 'pr-7', className)}
+      value={s.level ?? ''}
+      onChange={(e) => setLevel(i, e.target.value)}
+    >
+      <option value="">No level</option>
+      {SKILL_LEVELS.map((l) => (
+        <option key={l.value} value={l.value}>
+          {l.label}
+        </option>
+      ))}
+    </select>
+  );
+
   const update = (index, patch, key) =>
     onChange(replaceAt(skills, index, { ...skills[index], ...patch }), {
       coalesceKey: `skill:${skills[index].id}:${key}`,
@@ -103,7 +124,8 @@ export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted })
           <Plus className="size-4" aria-hidden="true" /> Add
         </Button>
         <p id="skill-quick-add-hint" className="text-xs text-muted sm:col-span-3">
-          Separate several skills with commas, then press Enter. Duplicates are skipped.
+          Separate several skills with commas, then press Enter. Duplicates are skipped. Levels are
+          optional; templates with an accent colour draw them as dots or bars.
         </p>
         <datalist id="skill-categories">
           {categories.map((c) => (
@@ -124,6 +146,9 @@ export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted })
               </th>
               <th scope="col" className="hidden pb-2 pl-2 font-medium sm:table-cell">
                 Category
+              </th>
+              <th scope="col" className="hidden pb-2 pl-2 font-medium sm:table-cell">
+                Level
               </th>
               <th scope="col" className="hidden pb-2 pl-2 font-medium md:table-cell">
                 Context (optional)
@@ -152,6 +177,7 @@ export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted })
                     value={s.category}
                     onChange={(e) => update(i, { category: e.target.value }, 'category')}
                   />
+                  {levelSelect(s, i, 'mt-1 sm:hidden')}
                 </td>
                 <td className="hidden py-1 pl-2 sm:table-cell">
                   <input
@@ -163,6 +189,7 @@ export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted })
                     onChange={(e) => update(i, { category: e.target.value }, 'category')}
                   />
                 </td>
+                <td className="hidden w-36 py-1 pl-2 sm:table-cell">{levelSelect(s, i)}</td>
                 <td className="hidden py-1 pl-2 md:table-cell">
                   <input
                     aria-label={`Skill ${i + 1} context`}

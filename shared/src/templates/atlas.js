@@ -104,6 +104,7 @@ export function renderAtlas(
     skillChips: true,
     contactIcons: true,
     headingIcons: true,
+    levelStyle: 'bar',
     photo,
     defaultAccent: ATLAS.accent.default,
     accentColor,

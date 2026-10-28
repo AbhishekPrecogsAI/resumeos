@@ -79,6 +79,7 @@ export function renderCircuit(
     skillChips: true,
     contactIcons: true,
     headingIcons: true,
+    levelStyle: 'bar',
     defaultAccent: CIRCUIT.accent.default,
     accentColor,
     pattern,
