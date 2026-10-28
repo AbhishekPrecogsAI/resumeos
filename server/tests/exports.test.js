@@ -198,6 +198,21 @@ describe.skipIf(!hasChrome)('export API', () => {
     expect(res.body.export).toMatchObject({ draftRevision: 2, pageSize: 'Letter' });
   });
 
+  it('links an export to a saved version only when the draft matches it', async () => {
+    const { client, resume } = await userWithResume();
+    const base = `/api/v1/resumes/${resume.id}`;
+    const v1 = (await client.post(`${base}/versions`).send({ name: 'General' })).body.version;
+    const matched = (await client.post(`${base}/export`).send({})).body.export;
+    expect(matched.resumeVersionId).toBe(v1.id);
+    const draft = structuredClone(resume.draft);
+    draft.content.headline = 'Unsaved change';
+    await client.put(`${base}/draft`).set('if-match', '1').send(draft);
+    const unmatched = (await client.post(`${base}/export`).send({})).body.export;
+    expect(unmatched.resumeVersionId).toBeNull();
+    const versions = (await client.get(`${base}/versions`)).body.items;
+    expect(versions[0]).toMatchObject({ id: v1.id, exported: true });
+  });
+
   it('reuses the export for a repeated idempotency key', async () => {
     const { client, resume } = await userWithResume();
     const first = await client

@@ -8,7 +8,7 @@ export function metaRouter({ version }) {
       name: 'ResumeOS API',
       version,
       apiVersion: 'v1',
-      features: ['auth', 'account', 'profile', 'resumes', 'export:pdf'],
+      features: ['auth', 'account', 'profile', 'resumes', 'export:pdf', 'versions'],
     });
   });
   return router;

@@ -9,6 +9,7 @@ import { ExportRecord } from './export.model.js';
 import { renderPdf } from './render.js';
 import { validatePdf } from './validate.js';
 import { Resume } from '../resumes/resume.model.js';
+import { ResumeVersion } from '../versions/version.model.js';
 import { HttpError } from '../../utils/HttpError.js';
 
 const notFound = () => new HttpError(404, 'NOT_FOUND', "That export doesn't exist or isn't yours.");
@@ -55,6 +56,18 @@ export function contentDisposition(baseName) {
       .trim()
       .replace(/\s+/g, '-') || 'resume';
   return `attachment; filename="${ascii}.pdf"; filename*=UTF-8''${encodeURIComponent(clean.replace(/\s+/g, '-'))}.pdf`;
+}
+
+/** The saved version this export corresponds to, only if the draft is identical to it. */
+async function matchingVersionId(resume, content, layout) {
+  if (!resume.currentVersionId) return null;
+  const v = await ResumeVersion.findOne(
+    { _id: resume.currentVersionId },
+    { contentHash: 1, templateId: 1, pageSize: 1 },
+  ).lean();
+  const same =
+    v && v.contentHash === contentHash({ content, layout }) && v.templateId === resume.templateId;
+  return same ? v._id : null;
 }
 
 export function createExportService({ env, pool, logger }) {
@@ -116,7 +129,7 @@ export function createExportService({ env, pool, logger }) {
           userId,
           resumeId: resume._id,
           resumeTitle: resume.title,
-          resumeVersionId: resume.currentVersionId ?? null,
+          resumeVersionId: await matchingVersionId(resume, content, layout),
           draftRevision: resume.draftRevision,
           contentHash: contentHash({ content, layout }),
           format,

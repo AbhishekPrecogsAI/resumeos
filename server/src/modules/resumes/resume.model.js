@@ -12,6 +12,13 @@ const resumeSchema = new mongoose.Schema(
     jobId: { type: mongoose.Schema.Types.ObjectId, default: null },
     sourceProfileId: { type: mongoose.Schema.Types.ObjectId, default: null },
     currentVersionId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    // Monotonic per-resume counter for version numbers (never reused, even after deletion).
+    versionCounter: { type: Number, default: 0 },
+    branchedFrom: {
+      resumeId: { type: mongoose.Schema.Types.ObjectId, default: null },
+      versionId: { type: mongoose.Schema.Types.ObjectId, default: null },
+      versionNumber: { type: Number, default: null },
+    },
     templateId: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], default: 'A4' },
     draft: {

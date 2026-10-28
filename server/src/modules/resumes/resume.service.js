@@ -3,6 +3,7 @@ import { buildBaselines } from '@resumeos/shared/sync.js';
 import { defaultLayout } from '@resumeos/shared/resumeModel.js';
 import { getTemplate, DEFAULT_TEMPLATE_ID } from '@resumeos/shared/templates/index.js';
 import { Resume, MAX_RESUMES_PER_USER } from './resume.model.js';
+import { ResumeVersion } from '../versions/version.model.js';
 import { CareerProfile } from '../profiles/profile.model.js';
 import { resumeContentSchema, layoutSchema, baselinesSchema } from '../profiles/content.schema.js';
 import { HttpError } from '../../utils/HttpError.js';
@@ -34,6 +35,13 @@ export function summary(doc) {
     currentVersionId: doc.currentVersionId ? String(doc.currentVersionId) : null,
     jobId: doc.jobId ? String(doc.jobId) : null,
     archived: Boolean(doc.archivedAt),
+    branchedFrom: doc.branchedFrom?.resumeId
+      ? {
+          resumeId: String(doc.branchedFrom.resumeId),
+          versionId: doc.branchedFrom.versionId ? String(doc.branchedFrom.versionId) : null,
+          versionNumber: doc.branchedFrom.versionNumber ?? null,
+        }
+      : null,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -148,18 +156,36 @@ export const resumeService = {
     return detail(doc);
   },
 
-  async duplicate(userId, resumeId, { title } = {}) {
+  /** Copy a resume, or branch from one of its saved versions (e.g. to tailor for another job). */
+  async duplicate(userId, resumeId, { title, targetRole, fromVersionId } = {}) {
     const source = await Resume.findOne({ _id: resumeId, userId }).lean();
     if (!source) throw notFound();
+    let version = null;
+    if (fromVersionId) {
+      version = await ResumeVersion.findOne({
+        _id: fromVersionId,
+        resumeId: source._id,
+        userId,
+      }).lean();
+      if (!version) throw new HttpError(404, 'NOT_FOUND', "That version doesn't exist.");
+    }
     await assertUnderLimit(userId);
     const doc = await Resume.create({
       userId,
-      title: title ?? `${source.title} (copy)`.slice(0, 120),
-      targetRole: source.targetRole,
-      templateId: source.templateId,
-      pageSize: source.pageSize,
+      title: (
+        title ??
+        (version ? `${source.title} (from v${version.versionNumber})` : `${source.title} (copy)`)
+      ).slice(0, 120),
+      targetRole: targetRole ?? source.targetRole,
+      templateId: version?.templateId ?? source.templateId,
+      pageSize: version?.pageSize ?? source.pageSize,
       sourceProfileId: source.sourceProfileId,
-      draft: structuredClone(source.draft),
+      draft: structuredClone(version?.snapshot ?? source.draft),
+      branchedFrom: {
+        resumeId: source._id,
+        versionId: version?._id ?? null,
+        versionNumber: version?.versionNumber ?? null,
+      },
     });
     return detail(doc);
   },

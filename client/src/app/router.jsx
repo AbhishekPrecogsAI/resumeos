@@ -78,6 +78,17 @@ export const routes = [
             ),
           },
           {
+            path: 'resumes/:resumeId/versions',
+            lazy: page(
+              () => import('../features/resumes/versions/VersionHistoryPage.jsx'),
+              'VersionHistoryPage',
+            ),
+          },
+          {
+            path: 'resumes/:resumeId/compare/:leftVersionId/:rightVersionId',
+            lazy: page(() => import('../features/resumes/versions/ComparePage.jsx'), 'ComparePage'),
+          },
+          {
             path: 'settings',
             lazy: page(() => import('../features/settings/SettingsLayout.jsx'), 'SettingsLayout'),
             children: [

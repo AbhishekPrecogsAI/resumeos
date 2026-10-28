@@ -44,7 +44,14 @@ const draftBody = z.strictObject({
   layout: z.unknown(),
   baselines: z.unknown().optional(),
 });
-const duplicateBody = z.strictObject({ title: title.optional() });
+const duplicateBody = z.strictObject({
+  title: title.optional(),
+  targetRole: targetRole.optional(),
+  fromVersionId: z
+    .string()
+    .regex(/^[a-f0-9]{24}$/, 'Invalid id.')
+    .optional(),
+});
 
 export function resumeRouter() {
   const router = Router();

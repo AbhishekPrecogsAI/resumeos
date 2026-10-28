@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, FileText, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Copy, FileText, History, Pencil, Plus, Trash2 } from 'lucide-react';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { resumesApi } from '../../api/resumes.api.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
@@ -131,6 +131,14 @@ export function ResumesPage() {
                     aria-label={`Edit ${r.title}`}
                   >
                     <Pencil className="size-4" aria-hidden="true" /> Edit
+                  </ButtonLink>
+                  <ButtonLink
+                    to={`/app/resumes/${r.id}/versions`}
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Version history of ${r.title}`}
+                  >
+                    <History className="size-4" aria-hidden="true" /> History
                   </ButtonLink>
                   <Button
                     variant="ghost"

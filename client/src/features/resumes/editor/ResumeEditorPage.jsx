@@ -6,6 +6,8 @@ import {
   Eye,
   EyeOff,
   FileDown,
+  History,
+  Save,
   Keyboard,
   Plus,
   Redo2,
@@ -48,6 +50,9 @@ import { ProfileSyncPanel } from './ProfileSyncPanel.jsx';
 import { PreviewPane } from './PreviewPane.jsx';
 import { ShortcutsDialog } from './ShortcutsDialog.jsx';
 import { ExportDialog } from './ExportDialog.jsx';
+import { SaveVersionDialog } from '../versions/SaveVersionDialog.jsx';
+import { versionsApi, versionsKey } from '../../../api/versions.api.js';
+import { contentHash } from '@resumeos/shared/hash.js';
 
 const RESUME_DELETE_MESSAGE =
   'This removes it from this resume only. Your master profile keeps it.';
@@ -161,6 +166,35 @@ function CustomSectionEditor({ section, onChange, onDelete, renderHeaderExtra, i
   );
 }
 
+/** "Matches v3" / "Changes since v3", computed by hashing the local draft like the server does. */
+function VersionIndicator({ resumeId, draft }) {
+  const versions = useQuery({
+    queryKey: versionsKey(resumeId),
+    queryFn: () => versionsApi.list(resumeId, { limit: 50 }),
+  });
+  const hash = useMemo(
+    () => contentHash({ content: draft.content, layout: draft.layout }),
+    [draft.content, draft.layout],
+  );
+  if (!versions.data) return null;
+  const current = versions.data.items.find((v) => v.id === versions.data.currentVersionId);
+  if (!current)
+    return <span className="hidden text-sm text-muted md:inline">No saved versions</span>;
+  const matches = current.contentHash === hash;
+  return (
+    <Link
+      to={
+        matches
+          ? `/app/resumes/${resumeId}/versions`
+          : `/app/resumes/${resumeId}/compare/${current.id}/draft`
+      }
+      className="hidden text-sm text-muted underline-offset-2 hover:text-ink hover:underline md:inline"
+    >
+      {matches ? `Matches v${current.versionNumber}` : `Changes since v${current.versionNumber}`}
+    </Link>
+  );
+}
+
 function ResumeEditor({ resume, profile }) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -175,6 +209,7 @@ function ResumeEditor({ resume, profile }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [saveVersionOpen, setSaveVersionOpen] = useState(false);
   const [pendingSectionDelete, setPendingSectionDelete] = useState(null);
   const [resolving, setResolving] = useState(false);
   useDocumentTitle(`Edit ${meta.title}`);
@@ -441,6 +476,7 @@ function ResumeEditor({ resume, profile }) {
           lastSavedAt={autosave.lastSavedAt}
           onRetry={autosave.retry}
         />
+        <VersionIndicator resumeId={resume.id} draft={autosave.data} />
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -498,6 +534,17 @@ function ResumeEditor({ resume, profile }) {
           >
             <Keyboard className="size-4" aria-hidden="true" />
           </Button>
+          <Button variant="secondary" size="sm" onClick={() => setSaveVersionOpen(true)}>
+            <Save className="size-4" aria-hidden="true" /> Save version
+          </Button>
+          <Link
+            to={`/app/resumes/${resume.id}/versions`}
+            aria-label="Version history"
+            title="Version history"
+            className="grid size-9 place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink"
+          >
+            <History className="size-4" aria-hidden="true" />
+          </Link>
           <Button size="sm" onClick={() => setExportOpen(true)}>
             <FileDown className="size-4" aria-hidden="true" /> Export
           </Button>
@@ -615,6 +662,12 @@ function ResumeEditor({ resume, profile }) {
       </div>
 
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <SaveVersionDialog
+        open={saveVersionOpen}
+        onClose={() => setSaveVersionOpen(false)}
+        resumeId={resume.id}
+        flush={autosave.flush}
+      />
       <ExportDialog
         open={exportOpen}
         onClose={() => setExportOpen(false)}
