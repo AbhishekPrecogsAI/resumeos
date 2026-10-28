@@ -96,18 +96,50 @@ Templates share one markup renderer (`shared/src/templates/base.js`). Single-col
 differ only in CSS. Sidebar templates also ask the renderer to place Skills, Education and
 Certifications in a sidebar. Tests enforce that every template contains exactly the same words.
 
-| Template       | Layout                                                                           | Accent default         |
-| -------------- | -------------------------------------------------------------------------------- | ---------------------- |
-| Clarity 1.0.0  | Single column, serif; the safest for applicant tracking systems                  | None (black by design) |
-| Ledger 1.0.0   | Sans-serif, headings in a margin column; identical markup to Clarity             | #1f4e5f                |
-| Horizon 1.0.0  | Single column, timeline rail, skill chips, contact pills                         | #0f6e66                |
-| Cadence 1.0.0  | Single column, dates in a left column with an accent rule                        | #1f4fb4                |
-| Sable 1.0.0    | Compact single column (9pt), contact block on the right, two-column skills       | #8a1f3d                |
-| Meridian 1.0.0 | Full-height dark left sidebar                                                    | #17323f                |
-| Atelier 1.0.0  | Colour header band, serif headings, tinted right sidebar (first in the document) | #23304a                |
-| Prism 1.0.0    | Accent stripe, light tinted left sidebar                                         | #5b2a6e                |
+| Template       | Layout                                                                                            | Photo | Accent default         |
+| -------------- | ------------------------------------------------------------------------------------------------- | ----- | ---------------------- |
+| Clarity 1.0.0  | Single column, serif; the safest for applicant tracking systems                                   | No    | None (black by design) |
+| Orbit 1.0.0    | Modern: tinted header card, two-column contact grid with icons, timeline, right column with chips | Yes   | #1f4fb4                |
+| Vertex 1.0.0   | Modern: bold colour sidebar, Outfit headings, icon badges, timeline                               | Yes   | #0f6e66                |
+| Lumen 1.0.0    | Modern single column: large name, icons, pill headings, timeline, chips                           | Yes   | #5b2a6e                |
+| Ledger 1.0.0   | Sans-serif, headings in a margin column; identical markup to Clarity                              | No    | #1f4e5f                |
+| Horizon 1.0.0  | Single column, timeline rail, skill chips, contact pills with icons                               | No    | #0f6e66                |
+| Cadence 1.0.0  | Single column, dates in a left column with an accent rule                                         | No    | #1f4fb4                |
+| Sable 1.0.0    | Compact single column (9pt), contact block on the right, two-column skills                        | No    | #8a1f3d                |
+| Meridian 1.0.0 | Full-height dark left sidebar with icons                                                          | No    | #17323f                |
+| Atelier 1.0.0  | Colour header band, serif headings, tinted right sidebar (first in the document)                  | No    | #23304a                |
+| Prism 1.0.0    | Accent stripe, light tinted left sidebar                                                          | No    | #5b2a6e                |
 
-All eight are original designs. No competitor's templates were copied.
+All eleven are original designs. No competitor's templates were copied.
+
+**Reading order rule: no positioned text.** Chrome paints positioned elements (`position`,
+`transform`, `opacity`, `z-index`) in a later pass, and PDF text follows paint order. So any text
+inside one extracts after the rest of the page. An earlier Horizon release positioned its
+timeline entries, and its extracted text read "EXPERIENCE, PROJECTS, SKILLS…" with every entry
+after the headings. All decoration (timeline rails and dots, dot patterns, stripes) is now
+painted with `background-image` on the element itself.
+
+Two checks guard against this:
+
+- The export check walks headings and every bullet in document order through the extracted
+  text, so a bullet that drifts from its heading fails.
+- A template test rejects positioning, transforms, opacity and z-index in any template.
+
+A separate test rejects hiding `.sep` outside the contact line, because hidden separators run
+words together in extracted text ("EngineerNorthwind").
+
+**Contact icons** are generic line icons drawn with SVG paths, not brand logos and not text, so
+they add nothing to extracted text.
+
+**Photos.** One optional profile photo per user (`ProfilePhoto`):
+
+- The browser crops and re-encodes it to a 400×400 JPEG, which drops EXIF/GPS data.
+- The server checks the real file signature (JPEG/PNG only), size (≤ 300 KB) and dimensions
+  (64–2000 px).
+- A resume shows it only with `layout.showPhoto` and a template that supports photos. It's
+  embedded as a data URL, so rendering stays offline.
+- The renderer accepts only base64 JPEG/PNG data URLs in the `<img>`.
+- The photo isn't part of versions (it belongs to the profile), and DOCX exports don't include it.
 
 **Accent colours.** Every template except Clarity takes an accent (`resume.accentColor`; `null`
 means the template's default). Accents are restricted to readable colours: eight
