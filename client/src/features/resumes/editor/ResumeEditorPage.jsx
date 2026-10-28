@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Eye, EyeOff, Keyboard, Plus, Redo2, Trash2, Undo2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  FileDown,
+  Keyboard,
+  Plus,
+  Redo2,
+  Trash2,
+  Undo2,
+} from 'lucide-react';
 import { resolveSectionOrder, sectionTitle } from '@resumeos/shared/resumeModel.js';
 import { compareWithProfile, pullFromProfile, acknowledgeProfile } from '@resumeos/shared/sync.js';
 import { TEMPLATES } from '@resumeos/shared/templates/index.js';
@@ -37,6 +47,7 @@ import { SectionNavigator } from './SectionNavigator.jsx';
 import { ProfileSyncPanel } from './ProfileSyncPanel.jsx';
 import { PreviewPane } from './PreviewPane.jsx';
 import { ShortcutsDialog } from './ShortcutsDialog.jsx';
+import { ExportDialog } from './ExportDialog.jsx';
 
 const RESUME_DELETE_MESSAGE =
   'This removes it from this resume only. Your master profile keeps it.';
@@ -163,6 +174,7 @@ function ResumeEditor({ resume, profile }) {
   const [mobileTab, setMobileTab] = useState('edit');
   const [helpOpen, setHelpOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [pendingSectionDelete, setPendingSectionDelete] = useState(null);
   const [resolving, setResolving] = useState(false);
   useDocumentTitle(`Edit ${meta.title}`);
@@ -486,6 +498,9 @@ function ResumeEditor({ resume, profile }) {
           >
             <Keyboard className="size-4" aria-hidden="true" />
           </Button>
+          <Button size="sm" onClick={() => setExportOpen(true)}>
+            <FileDown className="size-4" aria-hidden="true" /> Export
+          </Button>
         </div>
       </div>
 
@@ -600,6 +615,14 @@ function ResumeEditor({ resume, profile }) {
       </div>
 
       <ShortcutsDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <ExportDialog
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        resume={resume}
+        meta={meta}
+        flush={autosave.flush}
+        saveStatus={autosave.status}
+      />
       <Dialog
         open={Boolean(pendingSectionDelete)}
         onClose={() => setPendingSectionDelete(null)}

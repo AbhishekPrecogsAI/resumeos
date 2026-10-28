@@ -23,8 +23,16 @@ export function makeEnv(overrides = {}) {
 export const testEnv = makeEnv();
 export const silentLogger = { debug() {}, info() {}, warn() {}, error() {} };
 
-export function buildApp({ isDbReady = () => true, env = testEnv } = {}) {
-  return createApp({ env, logger: silentLogger, isDbReady });
+// Apps that never export get a pool that fails loudly instead of launching Chrome.
+const noPdf = {
+  withPage: async () => {
+    throw new Error('PDF rendering not configured for this test app');
+  },
+  close: async () => {},
+};
+
+export function buildApp({ isDbReady = () => true, env = testEnv, pdfPool = noPdf } = {}) {
+  return createApp({ env, logger: silentLogger, isDbReady, pdfPool });
 }
 
 /** Connect to a fresh, uniquely named database for this test file. */

@@ -30,6 +30,15 @@ const schema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   APP_BASE_URL: z.string().url(),
   EXPORT_TEMP_DIR: z.string().min(1).default('./tmp/exports'),
+  // Chrome/Chromium used for PDF rendering. Auto-detected from common paths when unset.
+  CHROME_PATH: z.string().optional(),
+  EXPORT_TTL_MINUTES: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(24 * 60)
+    .default(60),
+  EXPORT_TIMEOUT_MS: z.coerce.number().int().min(2000).max(120_000).default(20_000),
   // Only for automated tests; refused in production below.
   RATE_LIMIT_DISABLED: booleanString,
 });

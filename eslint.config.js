@@ -17,8 +17,8 @@ export default [
     languageOptions: { globals: globals.node },
   },
   {
-    // Isomorphic code and Playwright specs (which evaluate callbacks in the browser).
-    files: ['shared/**/*.js', 'e2e/**/*.js'],
+    // Isomorphic code, Playwright specs and PDF rendering (callbacks evaluated in the browser).
+    files: ['shared/**/*.js', 'e2e/**/*.js', 'server/src/modules/exports/render.js'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

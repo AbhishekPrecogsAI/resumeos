@@ -3,10 +3,10 @@
 A career-data workspace: maintain one trustworthy master profile and generate versioned,
 job-specific resumes from it, with deterministic quality checks and reliable exports.
 
-**Status:** Phases 0–4 complete: accounts, master profile, resumes and the live-preview editor. PDF export is next.
+**Status:** Phases 0–5 complete: accounts, master profile, resume editor, and validated PDF export. Version history is next.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 [`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
-[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md).
+[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md).
 
 ## Stack
 
@@ -22,6 +22,7 @@ The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 
 - Node.js **≥ 22.12** (`.nvmrc` pins 22) and npm ≥ 10
 - MongoDB **7+**, either native `mongod` or via Docker Compose
+- Google Chrome or Chromium, for PDF export (auto-detected, or set `CHROME_PATH`)
 
 ## Setup
 
@@ -108,6 +109,11 @@ Writes that carry a stale revision get `409 STALE_REVISION` with the current rev
 offers "Load latest version" or "Keep my edits" and never overwrites silently. Resumes copy
 profile entries under the same ids and keep per-entry fingerprints, so the editor can show
 which entries changed in the profile (logic in `shared/src/sync.js`).
+
+| POST | `/api/v1/resumes/:id/export` | `{ format: "pdf", pageSize? }`; optional `Idempotency-Key` |
+| GET | `/api/v1/exports`, `/api/v1/exports/:id` | Export history with validation results |
+| GET | `/api/v1/exports/:id/download` | The PDF while it hasn't expired (`410` after) |
+| DELETE | `/api/v1/exports/:id` | Delete record and file |
 
 State-changing API requests must come from an allowed origin (see `docs/security.md`); the
 Vite dev proxy preserves the browser's `Origin`, so this works in development.

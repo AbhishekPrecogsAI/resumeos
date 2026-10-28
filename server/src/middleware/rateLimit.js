@@ -23,5 +23,7 @@ export function rateLimits(env) {
     login: createLimiter({ windowMs: 15 * 60_000, limit: 10, disabled }),
     register: createLimiter({ windowMs: 60 * 60_000, limit: 10, disabled }),
     sensitive: createLimiter({ windowMs: 15 * 60_000, limit: 10, disabled }),
+    // PDF rendering is CPU-heavy.
+    export: createLimiter({ windowMs: 5 * 60_000, limit: 20, disabled }),
   };
 }

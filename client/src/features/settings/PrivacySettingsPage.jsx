@@ -17,6 +17,9 @@ import { useToast } from '../../components/ui/Toast.jsx';
 // What deletion removes. Each product area adds its line as it ships.
 export const DELETED_DATA = [
   'Your account, email address and password',
+  'Your master profile, including evidence notes',
+  'Every resume and its draft',
+  'Export history and any export files not yet expired',
   'Every signed-in session, on all devices',
 ];
 

@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, FilePlus2, FileText, UserRoundPen } from 'lucide-
 import { profileCompletion } from '@resumeos/shared/completion.js';
 import { profileApi } from '../../api/profile.api.js';
 import { resumesApi } from '../../api/resumes.api.js';
+import { exportsApi } from '../../api/exports.api.js';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { AppPage, Panel } from '../../components/layout/AppPage.jsx';
@@ -145,6 +146,73 @@ function RecentResumes() {
   );
 }
 
+const EXPORT_STATUS = {
+  passed: 'all checks passed',
+  warnings: 'passed with warnings',
+  failed: 'checks failed',
+};
+
+function RecentExports() {
+  const list = useQuery({
+    queryKey: ['exports', { recent: true }],
+    queryFn: () => exportsApi.list({ limit: 5 }),
+  });
+  if (list.isPending) return <Skeleton className="h-32" />;
+  if (list.isError)
+    return (
+      <ErrorState
+        title="Couldn't load your exports"
+        error={list.error}
+        onRetry={list.refetch}
+        className="py-6"
+      />
+    );
+  return (
+    <Panel title="Recent exports">
+      {list.data.items.length === 0 ? (
+        <p className="text-sm text-muted">
+          No exports yet. Open a resume and choose Export to create a checked PDF.
+        </p>
+      ) : (
+        <ul className="grid gap-2 text-sm">
+          {list.data.items.map((x) => (
+            <li
+              key={x.id}
+              className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"
+            >
+              <span className="min-w-0">
+                <Link
+                  to={`/app/resumes/${x.resumeId}/edit`}
+                  className="font-medium text-ink hover:underline"
+                >
+                  {x.resumeTitle}
+                </Link>
+                <span className="text-muted"> PDF, {EXPORT_STATUS[x.validation.status]}</span>
+              </span>
+              <span className="flex items-baseline gap-3">
+                <time dateTime={x.createdAt} className="text-muted">
+                  {formatRelative(x.createdAt)}
+                </time>
+                {x.downloadAvailable ? (
+                  <a
+                    href={exportsApi.downloadUrl(x.id)}
+                    className="font-medium text-accent underline underline-offset-2"
+                    aria-label={`Download PDF of ${x.resumeTitle}`}
+                  >
+                    Download
+                  </a>
+                ) : (
+                  <span className="text-faint">Expired</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
 export function DashboardPage() {
   useDocumentTitle('Dashboard');
   const { user } = useAuth();
@@ -167,6 +235,7 @@ export function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <RecentResumes />
         <ProfileChecklist />
+        <RecentExports />
       </div>
     </AppPage>
   );

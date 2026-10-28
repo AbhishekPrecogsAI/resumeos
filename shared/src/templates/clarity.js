@@ -13,7 +13,7 @@ export const CLARITY = {
   tradeOffs:
     'Deliberately restrained: no sidebar, icons, photo or skill bars. Long profiles run to a second page rather than shrinking text.',
   parsingNotes:
-    'One column, real text, standard section headings in reading order. Export text-extraction checks arrive with PDF export.',
+    'One column of real, selectable text with standard headings. In our export tests, text extracted with pdf.js keeps sections in reading order and links stay clickable. Each export is re-checked and the results are shown before download.',
 };
 
 const PAGE = {

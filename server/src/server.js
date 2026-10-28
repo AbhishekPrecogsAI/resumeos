@@ -18,6 +18,14 @@ try {
 const app = createApp({ env, logger, isDbReady: isDatabaseReady, version });
 const server = app.listen(env.PORT, () => logger.info('server listening', { port: env.PORT }));
 
+// Delete expired export files every 10 minutes; records stay as export history.
+const sweeper = setInterval(() => {
+  app.locals.exportsService
+    .sweepExpired()
+    .catch((err) => logger.error('export sweep failed', { message: err.message }));
+}, 10 * 60_000);
+sweeper.unref();
+
 // Start serving immediately so /health/live works; /health/ready reports the DB state.
 connectDatabase(env.MONGODB_URI, logger).catch((err) => {
   logger.error('mongodb initial connection failed', { message: err.message });
@@ -29,7 +37,9 @@ async function shutdown(signal) {
   shuttingDown = true;
   logger.info('shutting down', { signal });
   const force = setTimeout(() => process.exit(1), 10_000).unref();
+  clearInterval(sweeper);
   server.close(async () => {
+    await app.locals.pdfPool.close();
     await disconnectDatabase().catch(() => {});
     clearTimeout(force);
     process.exit(0);
