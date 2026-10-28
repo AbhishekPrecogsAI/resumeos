@@ -59,6 +59,25 @@ export const routes = [
             lazy: page(() => import('../features/dashboard/DashboardPage.jsx'), 'DashboardPage'),
           },
           {
+            path: 'profile',
+            lazy: page(() => import('../features/profile/ProfilePage.jsx'), 'ProfilePage'),
+          },
+          {
+            path: 'resumes',
+            lazy: page(() => import('../features/resumes/ResumesPage.jsx'), 'ResumesPage'),
+          },
+          {
+            path: 'resumes/new',
+            lazy: page(() => import('../features/resumes/NewResumePage.jsx'), 'NewResumePage'),
+          },
+          {
+            path: 'resumes/:resumeId/edit',
+            lazy: page(
+              () => import('../features/resumes/editor/ResumeEditorPage.jsx'),
+              'ResumeEditorPage',
+            ),
+          },
+          {
             path: 'settings',
             lazy: page(() => import('../features/settings/SettingsLayout.jsx'), 'SettingsLayout'),
             children: [

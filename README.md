@@ -3,7 +3,7 @@
 A career-data workspace: maintain one trustworthy master profile and generate versioned,
 job-specific resumes from it, with deterministic quality checks and reliable exports.
 
-**Status:** Phase 2 complete (accounts, sessions, settings). Profile editing arrives in Phase 3.
+**Status:** Phases 0–4 complete: accounts, master profile, resumes and the live-preview editor. PDF export is next.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 [`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
 [`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md).
@@ -94,6 +94,20 @@ uses same-origin paths and never hard-codes the API URL.
 | GET    | `/api/v1/account`, PATCH `/api/v1/account`        | Read or update display name and preferences       |
 | GET    | `/api/v1/account/export`                          | JSON export of all your data                      |
 | DELETE | `/api/v1/account`                                 | Body `{ password, confirmation: "DELETE" }`       |
+
+| GET | `/api/v1/profile` | Profile with `revision` (0 before first save) |
+| PUT | `/api/v1/profile` | Replace content; needs `If-Match: "<revision>"` |
+| POST | `/api/v1/profile/:section` | Add an entry (`experience`, `skills`, …) |
+| PATCH/DELETE | `/api/v1/profile/:section/:entryId` | Update or delete one entry; needs `If-Match` |
+| GET/POST | `/api/v1/resumes` | Paginated list (`page`, `limit`, `includeArchived`); create from profile |
+| GET/PATCH/DELETE | `/api/v1/resumes/:id` | Read, update metadata (title, template, archive), delete |
+| PUT | `/api/v1/resumes/:id/draft` | Autosave draft; needs `If-Match: "<draftRevision>"` |
+| POST | `/api/v1/resumes/:id/duplicate` | Copy a resume |
+
+Writes that carry a stale revision get `409 STALE_REVISION` with the current revision; the UI
+offers "Load latest version" or "Keep my edits" and never overwrites silently. Resumes copy
+profile entries under the same ids and keep per-entry fingerprints, so the editor can show
+which entries changed in the profile (logic in `shared/src/sync.js`).
 
 State-changing API requests must come from an allowed origin (see `docs/security.md`); the
 Vite dev proxy preserves the browser's `Origin`, so this works in development.

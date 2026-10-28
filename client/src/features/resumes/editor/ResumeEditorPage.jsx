@@ -162,6 +162,7 @@ function ResumeEditor({ resume, profile }) {
   const [selected, setSelected] = useState('contact');
   const [mobileTab, setMobileTab] = useState('edit');
   const [helpOpen, setHelpOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [pendingSectionDelete, setPendingSectionDelete] = useState(null);
   const [resolving, setResolving] = useState(false);
   useDocumentTitle(`Edit ${meta.title}`);
@@ -381,6 +382,7 @@ function ResumeEditor({ resume, profile }) {
         onSelect={(key) => {
           setSelected(key);
           setMobileTab('edit');
+          setNavOpen(false);
         }}
         onMove={(from, to) => patchLayout({ sectionOrder: moveItem(order, from, to) })}
         onToggleVisible={(key) =>
@@ -544,13 +546,22 @@ function ResumeEditor({ resume, profile }) {
             mobileTab === 'edit' ? 'block' : 'hidden xl:block',
           )}
         >
-          <details className="lg:hidden" open={false}>
-            <summary className="cursor-pointer rounded-md px-2 py-2 text-sm font-medium text-ink">
-              Sections: {selectedTitle}
-            </summary>
-            <div className="mt-2">{navigator}</div>
-          </details>
-          <div className="hidden lg:block">{navigator}</div>
+          <button
+            type="button"
+            aria-expanded={navOpen}
+            aria-controls="resume-section-nav"
+            onClick={() => setNavOpen((v) => !v)}
+            className="w-full rounded-md px-2 py-2 text-left text-sm font-medium text-ink hover:bg-sunken lg:hidden"
+          >
+            Sections: {selectedTitle}
+          </button>
+          {/* Rendered once; collapsible below the lg breakpoint. */}
+          <div
+            id="resume-section-nav"
+            className={cx('mt-2 lg:mt-0 lg:block', navOpen ? 'block' : 'hidden')}
+          >
+            {navigator}
+          </div>
         </aside>
 
         <section

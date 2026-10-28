@@ -38,8 +38,7 @@ function CompletionChecklist({ content }) {
               href={`#${item.anchor}`}
               className={cx('hover:underline', item.done ? 'text-muted' : 'text-ink')}
             >
-              <span className="sr-only">{item.done ? 'Done: ' : 'To do: '}</span>
-              {item.label}
+              <span className="sr-only">{item.done ? 'Done:' : 'To do:'}</span> {item.label}
             </a>
           </li>
         ))}

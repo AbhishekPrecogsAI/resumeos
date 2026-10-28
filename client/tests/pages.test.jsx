@@ -37,7 +37,7 @@ describe('profile page', () => {
       'PUT /api/v1/profile': (init) => [200, profileBody(4, JSON.parse(init.body).content)],
     });
     renderRoute('/app/profile');
-    const headline = await screen.findByLabelText(/^Headline/);
+    const headline = await screen.findByLabelText('Headline');
     fireEvent.change(headline, { target: { value: 'Platform engineer' } });
     await waitFor(() => expect(calls.some((c) => c.method === 'PUT')).toBe(true), {
       timeout: 3000,
@@ -64,7 +64,7 @@ describe('profile page', () => {
       ],
     });
     renderRoute('/app/profile');
-    fireEvent.change(await screen.findByLabelText(/^Headline/), { target: { value: 'Mine' } });
+    fireEvent.change(await screen.findByLabelText('Headline'), { target: { value: 'Mine' } });
     expect(
       await screen.findByText(
         'Your profile was changed in another tab or device',
@@ -73,7 +73,7 @@ describe('profile page', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Load latest version' })).toBeInTheDocument();
-    expect(screen.getByLabelText(/^Headline/)).toHaveValue('Mine');
+    expect(screen.getByLabelText('Headline')).toHaveValue('Mine');
   });
 
   it('shows the completion checklist with explicit rules', async () => {
@@ -123,7 +123,7 @@ describe('resume editor', () => {
     expect(await screen.findByLabelText('Resume name')).toHaveValue('Platform roles');
     const nav = screen.getByRole('navigation', { name: 'Resume sections' });
     expect(within(nav).getByRole('button', { name: /^Experience/ })).toBeInTheDocument();
-    expect(screen.getByTitle('Live resume preview')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Preview' })).toBeInTheDocument();
     expect(screen.getAllByText('Saved').length).toBeGreaterThan(0);
   });
 
