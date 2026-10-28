@@ -48,7 +48,12 @@ export function summary(doc) {
 }
 
 export function detail(doc) {
-  return { ...summary(doc), draftRevision: doc.draftRevision, draft: doc.draft };
+  return {
+    ...summary(doc),
+    draftRevision: doc.draftRevision,
+    draft: doc.draft,
+    qualityDismissals: doc.qualityDismissals ?? [],
+  };
 }
 
 function requireTemplate(templateId) {
@@ -181,6 +186,7 @@ export const resumeService = {
       pageSize: version?.pageSize ?? source.pageSize,
       sourceProfileId: source.sourceProfileId,
       draft: structuredClone(version?.snapshot ?? source.draft),
+      qualityDismissals: structuredClone(source.qualityDismissals ?? []),
       branchedFrom: {
         resumeId: source._id,
         versionId: version?._id ?? null,

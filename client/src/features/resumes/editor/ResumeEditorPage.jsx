@@ -50,6 +50,10 @@ import { ProfileSyncPanel } from './ProfileSyncPanel.jsx';
 import { PreviewPane } from './PreviewPane.jsx';
 import { ShortcutsDialog } from './ShortcutsDialog.jsx';
 import { ExportDialog } from './ExportDialog.jsx';
+import { QualityPanel } from './QualityPanel.jsx';
+import { runQualityChecks } from '@resumeos/shared/quality/engine.js';
+import { applyFix } from '@resumeos/shared/quality/fixes.js';
+import { qualityApi } from '../../../api/resumes.api.js';
 import { SaveVersionDialog } from '../versions/SaveVersionDialog.jsx';
 import { versionsApi, versionsKey } from '../../../api/versions.api.js';
 import { contentHash } from '@resumeos/shared/hash.js';
@@ -206,6 +210,8 @@ function ResumeEditor({ resume, profile }) {
   });
   const [selected, setSelected] = useState('contact');
   const [mobileTab, setMobileTab] = useState('edit');
+  const [sidePanel, setSidePanel] = useState('preview');
+  const [dismissals, setDismissals] = useState(resume.qualityDismissals ?? []);
   const [helpOpen, setHelpOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -232,6 +238,10 @@ function ResumeEditor({ resume, profile }) {
   const guard = useUnsavedChangesGuard(autosave);
   const { content, layout, baselines } = autosave.data;
   const previewDraft = useDebouncedValue(autosave.data, 200);
+  const report = useMemo(
+    () => runQualityChecks(previewDraft.content, previewDraft.layout, { dismissals }),
+    [previewDraft.content, previewDraft.layout, dismissals],
+  );
   const openHelp = useCallback(() => setHelpOpen(true), []);
   useEditorShortcuts({ undo: autosave.undo, redo: autosave.redo, flush: autosave.flush, openHelp });
 
@@ -367,6 +377,41 @@ function ResumeEditor({ resume, profile }) {
       toast.error("Couldn't save your edits", err.message);
     } finally {
       setResolving(false);
+    }
+  };
+
+  const rightPanel = mobileTab === 'edit' ? sidePanel : mobileTab;
+
+  const jumpTo = (finding) => {
+    const key = finding.section === 'contact' ? 'contact' : finding.section;
+    setSelected(key);
+    setMobileTab('edit');
+  };
+  const fix = (finding) => {
+    setDraft((d) => ({ ...d, content: applyFix(d.content, finding.fix) }));
+    toast.success('Fixed', 'Use Undo if you change your mind.');
+  };
+  const dismiss = async (finding, reason) => {
+    const previous = dismissals;
+    setDismissals((list) => [
+      ...list.filter((x) => x.key !== finding.key),
+      { key: finding.key, ruleId: finding.ruleId, reason },
+    ]);
+    try {
+      setDismissals(await qualityApi.dismiss(resume.id, { key: finding.key, reason }));
+    } catch (err) {
+      setDismissals(previous);
+      toast.error("Couldn't dismiss that finding", err.message);
+    }
+  };
+  const restoreFinding = async (finding) => {
+    const previous = dismissals;
+    setDismissals((list) => list.filter((x) => x.key !== finding.key));
+    try {
+      setDismissals(await qualityApi.restore(resume.id, finding.key));
+    } catch (err) {
+      setDismissals(previous);
+      toast.error("Couldn't restore that finding", err.message);
     }
   };
 
@@ -582,7 +627,7 @@ function ResumeEditor({ resume, profile }) {
         aria-label="Editor view"
         className="flex gap-1 border-b border-rule px-4 xl:hidden"
       >
-        {['edit', 'preview'].map((tab) => (
+        {['edit', 'preview', 'checks'].map((tab) => (
           <button
             key={tab}
             type="button"
@@ -596,7 +641,11 @@ function ResumeEditor({ resume, profile }) {
                 : 'border-transparent text-muted',
             )}
           >
-            {tab === 'edit' ? 'Edit' : 'Preview'}
+            {tab === 'edit'
+              ? 'Edit'
+              : tab === 'preview'
+                ? 'Preview'
+                : `Checks (${report.counts.total})`}
           </button>
         ))}
       </div>
@@ -644,20 +693,59 @@ function ResumeEditor({ resume, profile }) {
         </section>
 
         <section
-          aria-label="Preview"
+          aria-label={rightPanel === 'checks' ? 'Quality checks' : 'Preview'}
           className={cx(
             'min-w-0 border-rule bg-sunken/40 px-4 py-6 sm:px-6 xl:border-l',
-            mobileTab === 'preview' ? 'block lg:col-span-2 xl:col-span-1' : 'hidden xl:block',
+            mobileTab !== 'edit' ? 'block lg:col-span-2 xl:col-span-1' : 'hidden xl:block',
           )}
         >
-          <div className="xl:sticky xl:top-32">
-            <PreviewPane
-              content={previewDraft.content}
-              layout={previewDraft.layout}
-              templateId={meta.templateId}
-              pageSize={meta.pageSize}
-            />
+          <div
+            role="tablist"
+            aria-label="Side panel"
+            className="mb-4 hidden gap-1 border-b border-rule xl:flex"
+          >
+            {[
+              ['preview', 'Preview'],
+              ['checks', `Checks (${report.counts.total})`],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={rightPanel === value}
+                onClick={() => {
+                  setSidePanel(value);
+                  if (mobileTab !== 'edit') setMobileTab(value);
+                }}
+                className={cx(
+                  '-mb-px border-b-2 px-3 py-2 text-sm',
+                  rightPanel === value
+                    ? 'border-accent font-medium text-ink'
+                    : 'border-transparent text-muted',
+                )}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+          {rightPanel === 'checks' ? (
+            <QualityPanel
+              report={report}
+              onJump={jumpTo}
+              onFix={fix}
+              onDismiss={dismiss}
+              onRestore={restoreFinding}
+            />
+          ) : (
+            <div className="xl:sticky xl:top-32">
+              <PreviewPane
+                content={previewDraft.content}
+                layout={previewDraft.layout}
+                templateId={meta.templateId}
+                pageSize={meta.pageSize}
+              />
+            </div>
+          )}
         </section>
       </div>
 

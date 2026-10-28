@@ -27,15 +27,13 @@ export function versionRouters() {
     '/',
     validate({ params: resumeParams, body: createBody }),
     route(async (req, res) =>
-      res
-        .status(201)
-        .json({
-          version: await versionService.create(
-            req.auth.user._id,
-            req.valid.params.resumeId,
-            req.valid.body,
-          ),
-        }),
+      res.status(201).json({
+        version: await versionService.create(
+          req.auth.user._id,
+          req.valid.params.resumeId,
+          req.valid.body,
+        ),
+      }),
     ),
   );
   versions.get(

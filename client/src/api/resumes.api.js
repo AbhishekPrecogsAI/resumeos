@@ -20,3 +20,14 @@ export const resumesApi = {
     apiFetch(`${base}/${enc(id)}/duplicate`, { method: 'POST', body }).then((r) => r.resume),
   remove: (id) => apiFetch(`${base}/${enc(id)}`, { method: 'DELETE' }),
 };
+
+export const qualityApi = {
+  dismiss: (resumeId, body) =>
+    apiFetch(`${base}/${enc(resumeId)}/quality-dismissals`, { method: 'POST', body }).then(
+      (r) => r.items,
+    ),
+  restore: (resumeId, key) =>
+    apiFetch(`${base}/${enc(resumeId)}/quality-dismissals/${enc(key)}`, { method: 'DELETE' }).then(
+      (r) => r.items,
+    ),
+};

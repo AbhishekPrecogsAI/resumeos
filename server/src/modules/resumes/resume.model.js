@@ -29,6 +29,11 @@ const resumeSchema = new mongoose.Schema(
     },
     draftRevision: { type: Number, default: 1 },
     archivedAt: { type: Date, default: null },
+    // Quality findings the user chose to dismiss, keyed by finding key (see shared/src/quality).
+    qualityDismissals: {
+      type: [{ _id: false, key: String, ruleId: String, reason: String, dismissedAt: Date }],
+      default: [],
+    },
   },
   { timestamps: true, minimize: false },
 );

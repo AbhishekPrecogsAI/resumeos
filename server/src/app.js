@@ -27,6 +27,7 @@ import { createBrowserPool } from './modules/exports/browser.js';
 import { versionRouters } from './modules/versions/version.routes.js';
 import { versionService } from './modules/versions/version.service.js';
 import { registerVersionData } from './modules/versions/version.data.js';
+import { qualityRouter } from './modules/quality/quality.routes.js';
 
 export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }) {
   const app = express();
@@ -80,6 +81,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   api.use('/resumes/:resumeId/export', resumeExport);
   api.use('/resumes/:resumeId/versions', versions);
   api.use('/resumes/:resumeId/compare', compare);
+  api.use('/resumes/:resumeId', qualityRouter());
   api.use('/resumes', resumeRouter());
   api.use('/exports', exportsRouter);
   app.use('/api/v1', api);

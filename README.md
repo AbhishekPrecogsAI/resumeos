@@ -3,10 +3,10 @@
 A career-data workspace: maintain one trustworthy master profile and generate versioned,
 job-specific resumes from it, with deterministic quality checks and reliable exports.
 
-**Status:** Phases 0–6 complete: accounts, master profile, resume editor, validated PDF export, and version history with comparison. The quality engine is next.
+**Status:** Phases 0–7 complete: accounts, master profile, resume editor, validated PDF export, version history with comparison, and deterministic quality checks. Job-description comparison is next.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 [`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
-[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md); versions in [`docs/versioning.md`](docs/versioning.md).
+[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md); versions in [`docs/versioning.md`](docs/versioning.md); quality rules in [`docs/quality.md`](docs/quality.md).
 
 ## Stack
 
@@ -114,6 +114,9 @@ which entries changed in the profile (logic in `shared/src/sync.js`).
 | GET/DELETE | `/api/v1/resumes/:id/versions/:vid` | Read a version (with snapshot) or delete it |
 | POST | `/api/v1/resumes/:id/versions/:vid/restore` | Restore as a new version (auto-saves an unsaved draft first) |
 | GET | `/api/v1/resumes/:id/compare?left=&right=` | Structured diff; each side is a version id or `draft` |
+| POST | `/api/v1/resumes/:id/quality-check` | Run all quality rules on the saved draft |
+| GET/POST | `/api/v1/resumes/:id/quality-dismissals` | List or add a dismissal `{ key, reason? }` |
+| DELETE | `/api/v1/resumes/:id/quality-dismissals/:key` | Restore a dismissed finding |
 | POST | `/api/v1/resumes/:id/export` | `{ format: "pdf", pageSize? }`; optional `Idempotency-Key` |
 | GET | `/api/v1/exports`, `/api/v1/exports/:id` | Export history with validation results |
 | GET | `/api/v1/exports/:id/download` | The PDF while it hasn't expired (`410` after) |
