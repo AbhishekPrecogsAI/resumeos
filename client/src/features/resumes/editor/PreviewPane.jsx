@@ -7,7 +7,14 @@ import { useToast } from '../../../components/ui/Toast.jsx';
 import { templateFontCss } from '../../../lib/templateFonts.js';
 import { printHtml } from '../../../lib/print.js';
 
-export function PreviewPane({ content, layout, templateId, pageSize, accentColor = null }) {
+export function PreviewPane({
+  content,
+  layout,
+  templateId,
+  pageSize,
+  accentColor = null,
+  photo = null,
+}) {
   const [pages, setPages] = useState(1);
   const toast = useToast();
 
@@ -15,6 +22,7 @@ export function PreviewPane({ content, layout, templateId, pageSize, accentColor
     const html = getTemplate(templateId).render(content, layout, {
       pageSize,
       accentColor,
+      photo,
       fontCss: templateFontCss(templateId),
     });
     if (!printHtml(html))
@@ -46,6 +54,7 @@ export function PreviewPane({ content, layout, templateId, pageSize, accentColor
           templateId={templateId}
           pageSize={pageSize}
           accentColor={accentColor}
+          photo={photo}
           title="Live resume preview"
           onPageCount={setPages}
         />

@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
+    "@fontsource/outfit": "^5.3.0",
     "@fontsource/source-serif-4": "^5.3.1",
     "@resumeos/shared": "^0.0.0",
     "argon2": "^0.45.1",

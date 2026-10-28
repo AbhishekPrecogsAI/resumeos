@@ -16,8 +16,9 @@ export function PrivacyPage() {
             theme.
           </li>
           <li>
-            Content you enter: your profile, resumes, versions, evidence notes, and any job
-            descriptions you choose to save.
+            Content you enter: your profile, resumes, versions, evidence notes, any job descriptions
+            you choose to save, and an optional profile photo (resized in your browser before
+            upload; location data in the file isn't uploaded).
           </li>
           <li>
             Export records: when you exported, which version and template, and the validation

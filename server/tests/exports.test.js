@@ -79,7 +79,8 @@ describe.skipIf(!hasChrome)('PDF rendering and validation', () => {
     const v = await validatePdf(out.buffer, out);
     expect(v.checks.find((c) => c.id === 'EXPORT_TEXT_ORDER_WARNING')).toMatchObject({
       result: 'pass',
-      detail: 'Skills → Experience → Summary → Projects → Education → Certifications',
+      detail:
+        'Skills → Experience → Summary → Projects → Education → Certifications, with every bullet under its heading.',
     });
   });
 
@@ -159,6 +160,14 @@ describe.skipIf(!hasChrome)('PDF rendering and validation', () => {
             pageSize,
             [],
           ]);
+          if (name === 'sample') {
+            // Whitespace-insensitive checks can't see words run together; check a real line.
+            const text = (await parsePdf(out.buffer)).lines.map((l) => l.text).join('\n');
+            expect([
+              templateId,
+              text.includes('Senior Backend Engineer, Northwind Freight'),
+            ]).toEqual([templateId, true]);
+          }
         }
       }
     },

@@ -22,7 +22,20 @@ export function expectationsFromHtml(html) {
       [...html.matchAll(/<a href="([^"]+)"/g)].map((m) => safeHref(unescape(m[1]))).filter(Boolean),
     ),
   ];
-  return { name, headings, bullets, links, sourceText: stripTags(html) };
+  // Headings and bullets in document order: each bullet must extract under its own heading.
+  const sequence = [
+    ...html.replace(/<style>[\s\S]*?<\/style>/, '').matchAll(/<(h2|li)>([\s\S]*?)<\/\1>/g),
+  ]
+    .map((m) => ({ kind: m[1] === 'h2' ? 'heading' : 'bullet', text: stripTags(m[2]).trim() }))
+    .filter((x) => x.text);
+  return {
+    sequence,
+    name,
+    headings,
+    bullets,
+    links,
+    sourceText: stripTags(html),
+  };
 }
 
 /** Parse a PDF buffer: per-page lines of text, link URLs and page count. */
@@ -202,12 +215,14 @@ export function contentChecks({ lines, links, html, formatLabel }) {
         ),
   );
 
+  // Walk headings and bullets in document order through the extracted text. A bullet that
+  // extracts before its heading, or a heading that comes before its own content, breaks the walk.
   let cursor = -1;
   let outOfOrder = null;
-  for (const h of expected.headings) {
-    const at = flat.indexOf(normalizeText(h), cursor + 1);
-    if (at < 0 || at < cursor) {
-      outOfOrder = h;
+  for (const item of expected.sequence) {
+    const at = flat.indexOf(normalizeText(item.text), cursor + 1);
+    if (at < 0) {
+      outOfOrder = item;
       break;
     }
     cursor = at;
@@ -216,15 +231,17 @@ export function contentChecks({ lines, links, html, formatLabel }) {
     outOfOrder
       ? check(
           'EXPORT_TEXT_ORDER_WARNING',
-          'Sections extract in order',
+          'Text extracts in reading order',
           'warn',
-          `"${outOfOrder}" was not found after the previous section in reading order.`,
+          outOfOrder.kind === 'heading'
+            ? `The "${outOfOrder.text}" heading doesn't come after the previous section's text, so parsers may attach text to the wrong section.`
+            : `"${outOfOrder.text.slice(0, 60)}${outOfOrder.text.length > 60 ? '…' : ''}" doesn't extract under its heading, so parsers may attach it to the wrong section.`,
         )
       : check(
           'EXPORT_TEXT_ORDER_WARNING',
-          'Sections extract in order',
+          'Text extracts in reading order',
           'pass',
-          expected.headings.join(' → ') || 'No sections',
+          `${expected.headings.join(' → ') || 'No sections'}, with every bullet under its heading.`,
         ),
   );
 

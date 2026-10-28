@@ -35,6 +35,8 @@ header { background: var(--accent); color: #fff; padding: 13mm 14mm 9mm; }
 h1 { font-family: ${SERIF}; font-size: 27pt; font-weight: 600; line-height: 1.05; margin: 0 0 4pt; letter-spacing: -0.01em; }
 .headline { font-size: 10.5pt; margin: 0 0 7pt; color: var(--on-dark); }
 .contact { margin: 0; font-size: 8.5pt; color: #e4e9f2; }
+.contact .ico { width: 9.5pt; height: 9.5pt; flex: none; }
+.ci { display: inline-flex; align-items: center; gap: 4pt; }
 .contact .sep { color: var(--on-dark); }
 .main, .sidebar { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .columns { display: grid; grid-template-columns: minmax(0, 1fr) ${SIDE_W}; align-items: start; }
@@ -78,6 +80,7 @@ export function renderAtelier(
     css,
     sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
     skillChips: true,
+    contactIcons: true,
     defaultAccent: ATELIER.accent.default,
     accentColor,
   });

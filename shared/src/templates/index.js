@@ -6,9 +6,15 @@ import { SABLE, renderSable } from './sable.js';
 import { MERIDIAN, renderMeridian } from './meridian.js';
 import { ATELIER, renderAtelier } from './atelier.js';
 import { PRISM, renderPrism } from './prism.js';
+import { ORBIT, renderOrbit } from './orbit.js';
+import { VERTEX, renderVertex } from './vertex.js';
+import { LUMEN, renderLumen } from './lumen.js';
 
 export const TEMPLATES = [
   { ...CLARITY, render: renderClarity },
+  { ...ORBIT, render: renderOrbit },
+  { ...VERTEX, render: renderVertex },
+  { ...LUMEN, render: renderLumen },
   { ...LEDGER, render: renderLedger },
   { ...HORIZON, render: renderHorizon },
   { ...CADENCE, render: renderCadence },

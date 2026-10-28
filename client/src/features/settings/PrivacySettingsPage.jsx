@@ -18,6 +18,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 export const DELETED_DATA = [
   'Your account, email address and password',
   'Your master profile, including evidence notes',
+  'Your profile photo, if you uploaded one',
   'Every resume, its draft and its saved versions',
   'Export history and any export files not yet expired',
   'Saved job descriptions and their term lists',

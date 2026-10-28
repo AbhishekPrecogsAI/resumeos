@@ -19,6 +19,7 @@ export function TemplatePreview({
   className,
   onPageCount,
   accentColor = null,
+  photo = null,
 }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
@@ -31,9 +32,10 @@ export function TemplatePreview({
     return template.render(content, layout, {
       pageSize,
       accentColor,
+      photo,
       fontCss: templateFontCss(templateId),
     });
-  }, [content, layout, templateId, pageSize, accentColor]);
+  }, [content, layout, templateId, pageSize, accentColor, photo]);
 
   useEffect(() => {
     const el = containerRef.current;

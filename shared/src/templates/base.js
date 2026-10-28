@@ -127,21 +127,48 @@ function renderCustom(section, hidden) {
     .join('');
 }
 
-function contactLine(contact, { contactItems = false } = {}) {
+// Generic line icons (no brand marks), drawn with paths only so they add no extractable text.
+const ICON_PATHS = {
+  location:
+    '<path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  email: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/>',
+  website:
+    '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  linkedin:
+    '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M5.8 16.5c.8-1.6 2-2.2 3.2-2.2s2.4.6 3.2 2.2M14.5 10h4M14.5 13.5h3"/>',
+  github: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 5l-3 14"/>',
+  portfolio:
+    '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7"/>',
+};
+const icon = (kind) =>
+  `<svg class="ico" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[kind]}</svg>`;
+
+function contactLine(contact, { contactItems = false, contactIcons = false } = {}) {
   const parts = [
-    contact.location && e(contact.location),
-    contact.email && link(`mailto:${contact.email}`, contact.email),
-    contact.phone && e(contact.phone),
-    contact.website && link(contact.website),
-    contact.linkedin && link(contact.linkedin),
-    contact.github && link(contact.github),
-    contact.portfolio && link(contact.portfolio),
-  ].filter(Boolean);
-  // contactItems wraps each part so templates can stack them or add icons-free styling.
-  return (contactItems ? parts.map((p) => `<span class="ci">${p}</span>`) : parts).join(
-    '<span class="sep"> | </span>',
-  );
+    ['location', contact.location && e(contact.location)],
+    ['email', contact.email && link(`mailto:${contact.email}`, contact.email)],
+    ['phone', contact.phone && e(contact.phone)],
+    ['website', contact.website && link(contact.website)],
+    ['linkedin', contact.linkedin && link(contact.linkedin)],
+    ['github', contact.github && link(contact.github)],
+    ['portfolio', contact.portfolio && link(contact.portfolio)],
+  ].filter(([, html]) => html);
+  // contactItems wraps each part so templates can stack or style them; icons imply items.
+  const items = contactIcons
+    ? parts.map(
+        ([kind, html]) => `<span class="ci ci-${kind}">${icon(kind)}<span>${html}</span></span>`,
+      )
+    : contactItems
+      ? parts.map(([, html]) => `<span class="ci">${html}</span>`)
+      : parts.map(([, html]) => html);
+  return items.join('<span class="sep"> | </span>');
 }
+
+// Only small base64 JPEG/PNG data URLs are ever placed in an <img>; anything else is dropped.
+const PHOTO_URL = /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/]+={0,2}$/;
+export const isPhotoDataUrl = (value) =>
+  typeof value === 'string' && value.length < 700_000 && PHOTO_URL.test(value);
 
 /**
  * Shared resume markup. Templates differ only in CSS, so every template has the same reading
@@ -172,6 +199,9 @@ export function renderResume(
     contactItems = false,
     defaultAccent = null,
     accentColor = null,
+    contactIcons = false,
+    photo = null,
+    fullWidth = [],
   },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
@@ -199,10 +229,11 @@ export function renderResume(
     })
     .filter(Boolean);
 
-  const header = `<header>
-<h1>${e(contact.name || '')}</h1>
+  const photoTag = isPhotoDataUrl(photo) ? `<img class="photo" src="${photo}" alt="">\n` : '';
+  const header = `<header${photoTag ? ' class="with-photo"' : ''}>
+${photoTag}<h1>${e(contact.name || '')}</h1>
 ${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
-<p class="contact">${contactLine(contact, { contactItems })}</p>
+<p class="contact">${contactLine(contact, { contactItems, contactIcons })}</p>
 </header>`;
 
   let body;
@@ -214,16 +245,22 @@ ${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
     // continues, so this order lets extractors read the whole sidebar, then the whole main
     // column, on any number of pages, instead of interleaving the columns page by page.
     const inSide = new Set(sidebar.keys);
+    // Sections listed in `fullWidth` (e.g. the summary) span both columns, above them.
+    const wide = new Set(fullWidth);
+    const above = sections
+      .filter((s) => wide.has(s.key))
+      .map((s) => s.html)
+      .join('');
     const side = sections
       .filter((s) => inSide.has(s.key))
       .map((s) => s.html)
       .join('');
     const main = sections
-      .filter((s) => !inSide.has(s.key))
+      .filter((s) => !inSide.has(s.key) && !wide.has(s.key))
       .map((s) => s.html)
       .join('');
     const aside = `<aside class="sidebar">${sidebar.header === 'sidebar' ? header : ''}${side}</aside>`;
-    body = `${sidebar.header === 'sidebar' ? '' : header}\n<div class="columns sidebar-${sidebar.side}">${aside}<main class="main">${main}</main></div>`;
+    body = `${sidebar.header === 'sidebar' ? '' : header}\n${above ? `<div class="full">${above}</div>` : ''}<div class="columns sidebar-${sidebar.side}">${aside}<main class="main">${main}</main></div>`;
   }
 
   return `<!doctype html>

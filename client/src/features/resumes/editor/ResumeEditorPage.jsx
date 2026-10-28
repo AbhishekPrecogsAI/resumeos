@@ -18,6 +18,7 @@ import { resolveSectionOrder, sectionTitle } from '@resumeos/shared/resumeModel.
 import { compareWithProfile, pullFromProfile, acknowledgeProfile } from '@resumeos/shared/sync.js';
 import { TEMPLATES, getTemplate } from '@resumeos/shared/templates/index.js';
 import { AccentPicker } from '../../../components/editor/AccentPicker.jsx';
+import { photoApi, PHOTO_KEY } from '../../../api/photo.api.js';
 import { LIMITS } from '@resumeos/shared/limits.js';
 import { resumesApi } from '../../../api/resumes.api.js';
 import { profileApi } from '../../../api/profile.api.js';
@@ -34,7 +35,7 @@ import { SaveStatus } from '../../../components/editor/SaveStatus.jsx';
 import { ConflictBanner } from '../../../components/editor/ConflictBanner.jsx';
 import { EntryFields } from '../../../components/editor/EntryFields.jsx';
 import { EntryListEditor } from '../../../components/editor/EntryListEditor.jsx';
-import { TextField } from '../../../components/ui/Field.jsx';
+import { TextField, Checkbox } from '../../../components/ui/Field.jsx';
 import { ProfileSection } from '../../profile/ProfileSectionsEditor.jsx';
 import {
   CONTACT_FIELDS,
@@ -240,6 +241,11 @@ function ResumeEditor({ resume, profile }) {
   const guard = useUnsavedChangesGuard(autosave);
   const { content, layout, baselines } = autosave.data;
   const previewDraft = useDebouncedValue(autosave.data, 200);
+  const photo = useQuery({ queryKey: PHOTO_KEY, queryFn: photoApi.get });
+  const previewPhoto =
+    previewDraft.layout.showPhoto && getTemplate(meta.templateId)?.photo
+      ? (photo.data?.dataUrl ?? null)
+      : null;
   const report = useMemo(
     () => runQualityChecks(previewDraft.content, previewDraft.layout, { dismissals }),
     [previewDraft.content, previewDraft.layout, dismissals],
@@ -430,12 +436,37 @@ function ResumeEditor({ resume, profile }) {
   let editor;
   if (selected === 'contact') {
     editor = (
-      <EntryFields
-        fields={CONTACT_FIELDS}
-        value={content.contact}
-        idPrefix="contact"
-        onChange={(contact, opts) => patchContent({ contact }, opts)}
-      />
+      <>
+        {getTemplate(meta.templateId)?.photo && (
+          <div className="mb-6 rounded-lg border border-rule bg-surface p-4">
+            <Checkbox
+              label="Show my photo on this resume"
+              hint={
+                photo.data
+                  ? 'Many employers in the US, UK and Canada prefer resumes without photos; applicant tracking systems ignore them.'
+                  : 'Upload a photo in your master profile (Contact) first.'
+              }
+              checked={Boolean(layout.showPhoto)}
+              disabled={!photo.data && !layout.showPhoto}
+              onChange={(e) => patchLayout({ showPhoto: e.target.checked })}
+            />
+            {!photo.data && (
+              <Link
+                to="/app/profile#contact"
+                className="mt-2 inline-block text-sm text-accent underline underline-offset-2"
+              >
+                Add a photo to your profile
+              </Link>
+            )}
+          </div>
+        )}
+        <EntryFields
+          fields={CONTACT_FIELDS}
+          value={content.contact}
+          idPrefix="contact"
+          onChange={(contact, opts) => patchContent({ contact }, opts)}
+        />
+      </>
     );
   } else if (customSection) {
     editor = (
@@ -753,6 +784,7 @@ function ResumeEditor({ resume, profile }) {
                 templateId={meta.templateId}
                 pageSize={meta.pageSize}
                 accentColor={meta.accentColor}
+                photo={previewPhoto}
               />
             </div>
           )}

@@ -104,7 +104,17 @@ describe('templates registry', () => {
       const order = [...markup.matchAll(/<section data-section="([^"]+)"/g)].map((m) => m[1]);
       if (!t.render(sampleResume, {}).includes('<aside class="sidebar">'))
         expect(order).toEqual(layout.sectionOrder);
-      // Sidebar templates: sidebar sections first (in layout order), then the main column (in layout order).
+      // Sidebar templates: any full-width sections (Orbit's summary), then sidebar sections, then the
+      // main column, each in layout order.
+      else if (t.id === 'orbit')
+        expect(order).toEqual([
+          'summary',
+          'skills',
+          'education',
+          'certifications',
+          'experience',
+          'projects',
+        ]);
       else
         expect(order).toEqual([
           'skills',
@@ -191,5 +201,30 @@ describe('accent colours in templates', () => {
     const { accentProblem } = await import('../src/templates/color.js');
     for (const t of TEMPLATES.filter((x) => x.accent))
       expect([t.id, accentProblem(t.accent.default)]).toEqual([t.id, null]);
+  });
+});
+
+describe('template CSS guards', () => {
+  it('never hides separators outside the contact line (they keep words apart in extracted text)', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    for (const t of TEMPLATES) {
+      const css = /<style>([\s\S]*?)<\/style>/.exec(t.render(sampleResume, {}))[1];
+      expect([t.id, /(^|\n)\.sep\s*\{[^}]*display:\s*none/.test(css)]).toEqual([t.id, false]);
+    }
+  });
+
+  it('never positions, transforms or fades anything (that reorders extracted text)', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    for (const t of TEMPLATES) {
+      const css = /<style>([\s\S]*?)<\/style>/
+        .exec(t.render(sampleResume, {}))[1]
+        .replace(/@font-face\{[^}]*\}/g, '');
+      expect([
+        t.id,
+        css.match(
+          /(?<![-\w])(?:position:\s*(?:relative|absolute|fixed|sticky)|transform:|opacity:|z-index:)/g,
+        ),
+      ]).toEqual([t.id, null]);
+    }
   });
 });

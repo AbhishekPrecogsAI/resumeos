@@ -30,6 +30,7 @@ import { versionRouters } from './modules/versions/version.routes.js';
 import { versionService } from './modules/versions/version.service.js';
 import { registerVersionData } from './modules/versions/version.data.js';
 import { qualityRouter } from './modules/quality/quality.routes.js';
+import { photoRouter, registerPhotoData } from './modules/photos/photo.routes.js';
 import { jobRouter } from './modules/jobs/job.routes.js';
 import { registerJobData } from './modules/jobs/job.data.js';
 import { applicationRouter } from './modules/applications/application.routes.js';
@@ -44,6 +45,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   const userData = createUserDataRegistry();
   registerUserData(userData);
   registerProfileData(userData);
+  registerPhotoData(userData);
   registerResumeData(userData);
   registerVersionData(userData);
   registerJobData(userData);
@@ -95,6 +97,7 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   mount('/meta', metaRouter({ version }));
   mount('/auth', authRouter({ auth, sessions, limits }));
   mount('/account', accountRouter({ auth, sessions, userData, limits, logger }));
+  mount('/profile/photo', photoRouter());
   mount('/profile', profileRouter());
   mount('/resumes/:resumeId/export', resumeExport);
   mount('/resumes/:resumeId/versions', versions);

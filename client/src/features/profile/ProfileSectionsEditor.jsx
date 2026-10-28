@@ -4,6 +4,7 @@ import { SkillsEditor } from '../../components/editor/SkillsEditor.jsx';
 import { SummaryFields } from '../../components/editor/SummaryFields.jsx';
 import { CustomSectionsEditor } from '../../components/editor/CustomSectionsEditor.jsx';
 import { CONTACT_FIELDS, SECTIONS } from './sectionConfig.js';
+import { PhotoUploader } from '../../components/editor/PhotoUploader.jsx';
 
 export const PROFILE_DELETE_MESSAGE =
   'This removes it from your master profile. Resumes that already include it keep their own copy.';
@@ -48,12 +49,15 @@ export function ProfileSection({
   switch (id) {
     case 'contact':
       return (
-        <EntryFields
-          fields={CONTACT_FIELDS}
-          value={content.contact}
-          idPrefix="contact"
-          onChange={(contact, opts) => onChange({ contact }, opts)}
-        />
+        <>
+          <PhotoUploader />
+          <EntryFields
+            fields={CONTACT_FIELDS}
+            value={content.contact}
+            idPrefix="contact"
+            onChange={(contact, opts) => onChange({ contact }, opts)}
+          />
+        </>
       );
     case 'summary':
       return (

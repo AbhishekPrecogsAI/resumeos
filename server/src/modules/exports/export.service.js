@@ -22,6 +22,7 @@ export const FORMATS = {
 };
 import { Resume } from '../resumes/resume.model.js';
 import { ResumeVersion } from '../versions/version.model.js';
+import { photoService } from '../photos/photo.service.js';
 import { HttpError } from '../../utils/HttpError.js';
 
 const notFound = () => new HttpError(404, 'NOT_FOUND', "That export doesn't exist or isn't yours.");
@@ -139,6 +140,9 @@ export function createExportService({ env, pool, logger }) {
             pageSize: size,
             timeoutMs: env.EXPORT_TIMEOUT_MS,
             accentColor: resume.accentColor ?? null,
+            // The photo is included only if this resume opts in and the template supports one.
+            photo:
+              layout?.showPhoto && template?.photo ? await photoService.dataUrlFor(userId) : null,
           });
         }
       } catch (err) {

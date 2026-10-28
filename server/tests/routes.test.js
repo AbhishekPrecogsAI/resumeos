@@ -24,6 +24,7 @@ const NO_INPUT = new Set([
   'GET /auth/me',
   'GET /account/',
   'GET /meta/',
+  'DELETE /profile/photo/',
 ]);
 
 function inventory() {
@@ -85,7 +86,13 @@ describe('route inventory', () => {
       .map((r) => r.key)
       .sort();
     expect(unvalidated).toEqual(
-      [...NO_INPUT, 'GET /auth/sessions', 'GET /account/export', 'GET /profile/'].sort(),
+      [
+        ...NO_INPUT,
+        'GET /auth/sessions',
+        'GET /account/export',
+        'GET /profile/',
+        'GET /profile/photo/',
+      ].sort(),
     );
   });
 

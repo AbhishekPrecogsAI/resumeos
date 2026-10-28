@@ -9,16 +9,33 @@ const RANGES = {
     'U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB',
 };
 
+const ALL_SUBSETS = ['latin', 'latin-ext', 'vietnamese'];
+
 export const TEMPLATE_FONTS = {
   'Source Serif 4': {
     package: '@fontsource/source-serif-4',
     prefix: 'source-serif-4',
     weights: [400, 600, 700],
+    subsets: ALL_SUBSETS,
   },
   'IBM Plex Sans': {
     package: '@fontsource/ibm-plex-sans',
     prefix: 'ibm-plex-sans',
     weights: [400, 500, 600],
+    subsets: ALL_SUBSETS,
+  },
+  Manrope: {
+    package: '@fontsource/manrope',
+    prefix: 'manrope',
+    weights: [400, 500, 600, 700, 800],
+    subsets: ALL_SUBSETS,
+  },
+  // Outfit has no Vietnamese subset; templates using it list Manrope next in the stack.
+  Outfit: {
+    package: '@fontsource/outfit',
+    prefix: 'outfit',
+    weights: [500, 600, 700],
+    subsets: ['latin', 'latin-ext'],
   },
 };
 
@@ -26,12 +43,12 @@ export function fontFiles(family) {
   const f = TEMPLATE_FONTS[family];
   if (!f) throw new Error(`Unknown template font: ${family}`);
   return f.weights.flatMap((weight) =>
-    Object.entries(RANGES).map(([subset, unicodeRange]) => ({
+    f.subsets.map((subset) => ({
       family,
       package: f.package,
       weight,
       subset,
-      unicodeRange,
+      unicodeRange: RANGES[subset],
       file: `${f.prefix}-${subset}-${weight}-normal.woff2`,
     })),
   );

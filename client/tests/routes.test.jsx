@@ -10,7 +10,7 @@ describe('public routes', () => {
   it.each([
     ['/', /One career record/],
     ['/features', /What ResumeOS does/],
-    ['/templates', /^Templates$/],
+    ['/templates', /^Resume templates$/],
     ['/pricing', /^Pricing$/],
     ['/security', /Security and privacy/],
     ['/privacy', /Privacy policy/],

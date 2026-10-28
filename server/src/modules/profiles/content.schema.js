@@ -171,6 +171,8 @@ export const layoutSchema = z.strictObject({
   sectionOrder: z.array(sectionKey).max(30).default([]),
   hiddenSections: z.array(sectionKey).max(30).default([]),
   hiddenItems: z.array(id).max(1000).default([]),
+  // Show the profile photo on templates that support one. Off by default.
+  showPhoto: z.boolean().default(false),
 });
 
 export const baselinesSchema = z

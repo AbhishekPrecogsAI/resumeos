@@ -34,7 +34,9 @@ header { background: #fff; border-top: 5mm solid var(--accent); padding: 9mm 14m
 h1 { font-size: 23pt; font-weight: 600; line-height: 1.05; margin: 0 0 3pt; letter-spacing: -0.015em; color: var(--accent); }
 .headline { font-size: 10.5pt; font-weight: 500; margin: 0 0 5pt; color: #3a3f4b; }
 .contact { margin: 0; font-size: 8.5pt; color: #3a3f4b; }
-.sep { color: var(--rail); }
+.ico { width: 9.5pt; height: 9.5pt; flex: none; }
+.ci { display: inline-flex; align-items: center; gap: 4pt; }
+.contact .sep { color: var(--rail); }
 .main, .sidebar { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .columns { display: grid; grid-template-columns: ${SIDE_W} minmax(0, 1fr); align-items: start; }
 .sidebar { padding: 8mm 7mm 8mm 10mm; }
@@ -76,6 +78,7 @@ export function renderPrism(
     css,
     sidebar: { keys: ['skills', 'education', 'certifications'], side: 'left', header: 'top' },
     skillChips: true,
+    contactIcons: true,
     defaultAccent: PRISM.accent.default,
     accentColor,
   });

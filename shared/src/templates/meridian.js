@@ -39,6 +39,8 @@ h1 { font-size: 21pt; font-weight: 600; line-height: 1.08; margin: 0 0 4pt; colo
 .headline { font-size: 10pt; font-weight: 500; margin: 0 0 9pt; color: var(--on-dark); }
 .contact { margin: 0; font-size: 8.5pt; color: #d5e1e5; }
 .contact .ci { display: block; margin-bottom: 2.5pt; overflow-wrap: anywhere; }
+.contact .ico { width: 9.5pt; height: 9.5pt; flex: none; }
+.ci { display: inline-flex; align-items: center; gap: 4pt; }
 .contact .sep { display: none; }
 section { margin-top: 12pt; }
 .main section:first-child { margin-top: 0; }
@@ -82,6 +84,7 @@ export function renderMeridian(
     sidebar: { keys: ['skills', 'education', 'certifications'], side: 'left', header: 'sidebar' },
     skillChips: true,
     contactItems: true,
+    contactIcons: true,
     defaultAccent: MERIDIAN.accent.default,
     accentColor,
   });
