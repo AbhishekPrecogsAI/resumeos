@@ -3,10 +3,10 @@
 A career-data workspace: maintain one trustworthy master profile and generate versioned,
 job-specific resumes from it, with deterministic quality checks and reliable exports.
 
-**Status:** Phases 0–9 complete: accounts, master profile, resume editor, validated PDF and DOCX export, two templates, version history with comparison, deterministic quality checks, job-description comparison, and an application tracker. Release readiness (Phase 10) is next.
+**Status:** Release candidate 1 (Phases 0–10). See [`docs/release-checklist.md`](docs/release-checklist.md) for verified results and the blockers before public launch.
 The full product spec is in [`AGENT-8.md`](AGENT-8.md); scope is in
 [`docs/product-requirements.md`](docs/product-requirements.md); UI tokens and components are in
-[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md); versions in [`docs/versioning.md`](docs/versioning.md); quality rules in [`docs/quality.md`](docs/quality.md); job matching in [`docs/jobs.md`](docs/jobs.md); applications in [`docs/applications.md`](docs/applications.md).
+[`docs/design-system.md`](docs/design-system.md); security model in [`docs/security.md`](docs/security.md); export design and checks in [`docs/export.md`](docs/export.md); versions in [`docs/versioning.md`](docs/versioning.md); quality rules in [`docs/quality.md`](docs/quality.md); job matching in [`docs/jobs.md`](docs/jobs.md); applications in [`docs/applications.md`](docs/applications.md); deployment in [`docs/deployment.md`](docs/deployment.md); tests in [`docs/test-plan.md`](docs/test-plan.md).
 
 ## Stack
 
@@ -136,6 +136,17 @@ Vite dev proxy preserves the browser's `Origin`, so this works in development.
 Errors use one shape: `{ "error": { "code", "message", "requestId" } }`. Every response
 carries an `x-request-id` header. Logs are structured JSON and record method, path, status
 and latency only, never request bodies.
+
+## Production
+
+```bash
+npm ci && npm run build
+cd server && NODE_ENV=production CLIENT_DIST_DIR=../client/dist node src/server.js
+```
+
+In production the server also serves the built web app from the same origin. It needs HTTPS
+URLs, a real `SESSION_SECRET` and a TLS-terminating proxy. See
+[`docs/deployment.md`](docs/deployment.md) for configuration, monitoring, backups and rollback.
 
 ## Troubleshooting
 

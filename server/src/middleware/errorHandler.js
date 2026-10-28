@@ -15,14 +15,28 @@ export function errorHandler(logger, { exposeDetails = false } = {}) {
       err = new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Request body is too large.');
     } else if (err?.type === 'entity.parse.failed') {
       err = new HttpError(400, 'INVALID_JSON', 'Request body is not valid JSON.');
+    } else if (!(err instanceof HttpError) && err?.status >= 400 && err.status < 500) {
+      // Client errors raised by Express middleware (e.g. a missing static asset). The original
+      // message is replaced with a generic one, so nothing internal is exposed.
+      err =
+        err.status === 404
+          ? new HttpError(404, 'NOT_FOUND', 'Resource not found.')
+          : new HttpError(err.status, 'BAD_REQUEST', 'The request could not be processed.');
     }
 
     const status = err instanceof HttpError ? err.status : 500;
     if (status >= 500) {
+      // Error messages can embed user-submitted values (e.g. Mongoose cast errors), so log only
+      // the error type, code and stack frames, never the message.
       logger.error('unhandled error', {
         requestId: req.id,
         name: err?.name,
-        message: err?.message,
+        code: err?.code,
+        frames: String(err?.stack ?? '')
+          .split('\n')
+          .filter((line) => line.trim().startsWith('at '))
+          .slice(0, 8)
+          .map((line) => line.trim()),
       });
     }
 

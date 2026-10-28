@@ -13,18 +13,19 @@ Values are CSS variables set on `:root` (light) and `.dark`, exposed to Tailwind
 `@theme inline` so scoped overrides work. `.theme-light` forces light tokens on "paper"
 surfaces (resume previews) inside dark mode.
 
-| Token              | Light     | Dark      | Use                                     |
-| ------------------ | --------- | --------- | --------------------------------------- |
-| canvas             | `#fbfbfc` | `#12161c` | Page background                         |
-| surface            | `#ffffff` | `#1a1f27` | Raised panels, inputs                   |
-| sunken             | `#f1f3f6` | `#0e1116` | Recessed bands, hover fills             |
-| ink                | `#1b2430` | `#e7eaf0` | Primary text                            |
-| muted              | `#4a5565` | `#a3acba` | Secondary text                          |
-| faint              | `#5c6676` | `#8691a1` | Captions; still ≥ 4.5:1 on all fills    |
-| rule / rule-strong | `#dde1e7` | `#2c333e` | Borders                                 |
-| accent             | `#2e3fb8` | `#9aa6ff` | Primary actions, focus ring             |
-| added / removed    | green/red | green/red | Diffs; always paired with an icon/label |
-| warn / danger      | amber/red | amber/red | Findings severity, destructive actions  |
+| Token           | Light     | Dark      | Use                                                      |
+| --------------- | --------- | --------- | -------------------------------------------------------- |
+| canvas          | `#fbfbfc` | `#12161c` | Page background                                          |
+| surface         | `#ffffff` | `#1a1f27` | Raised panels, inputs                                    |
+| sunken          | `#f1f3f6` | `#0e1116` | Recessed bands, hover fills                              |
+| ink             | `#1b2430` | `#e7eaf0` | Primary text                                             |
+| muted           | `#4a5565` | `#a3acba` | Secondary text                                           |
+| faint           | `#5c6676` | `#8691a1` | Captions; still ≥ 4.5:1 on all fills                     |
+| rule            | `#dde1e7` | `#2c333e` | Decorative borders and dividers                          |
+| rule-strong     | `#858e9b` | `#69727f` | Control borders; ≥ 3:1 against backgrounds (WCAG 1.4.11) |
+| accent          | `#2e3fb8` | `#9aa6ff` | Primary actions, focus ring                              |
+| added / removed | green/red | green/red | Diffs; always paired with an icon/label                  |
+| warn / danger   | amber/red | amber/red | Findings severity, destructive actions                   |
 
 Theme preference (`light`, `dark`, `system`) is stored in `localStorage` under
 `resumeos:theme` and applied before first paint by an inline script in `index.html`.
@@ -47,6 +48,8 @@ Vietnamese), embedded as `@font-face` so the preview and PDF export render the s
 
 ## Rules
 
+- Contrast is tested in `client/tests/contrast.test.js`: every text pairing ≥ 4.5:1 and control
+  borders ≥ 3:1, in both themes.
 - No colour-only meaning: diffs and severities always carry a text label or icon.
 - Visible `:focus-visible` outline everywhere; skip link is the first tab stop.
 - Motion is limited to state changes and is disabled under `prefers-reduced-motion`.

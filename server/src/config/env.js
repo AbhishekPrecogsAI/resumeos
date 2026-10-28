@@ -39,6 +39,8 @@ const schema = z.object({
     .max(24 * 60)
     .default(60),
   EXPORT_TIMEOUT_MS: z.coerce.number().int().min(2000).max(120_000).default(20_000),
+  // Directory of the built client (client/dist). When set, the server also serves the web app.
+  CLIENT_DIST_DIR: z.string().optional(),
   // Only for automated tests; refused in production below.
   RATE_LIMIT_DISABLED: booleanString,
 });
@@ -55,6 +57,12 @@ export function loadEnv(source = process.env) {
   const problems = [];
   if (env.NODE_ENV === 'production' && env.SESSION_SECRET === PLACEHOLDER_SECRET) {
     problems.push('  - SESSION_SECRET: placeholder value is not allowed in production');
+  }
+  if (env.NODE_ENV === 'production' && !env.APP_BASE_URL.startsWith('https://')) {
+    problems.push('  - APP_BASE_URL: must use https:// in production');
+  }
+  if (env.NODE_ENV === 'production' && env.CLIENT_ORIGIN.some((o) => !o.startsWith('https://'))) {
+    problems.push('  - CLIENT_ORIGIN: every origin must use https:// in production');
   }
   if (env.NODE_ENV === 'production' && env.RATE_LIMIT_DISABLED) {
     problems.push('  - RATE_LIMIT_DISABLED: cannot be enabled in production');

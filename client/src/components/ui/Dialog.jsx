@@ -35,6 +35,9 @@ export function Dialog({ open, onClose, title, description, children, footer, si
   }, [open, onClose]);
 
   return (
+    // Backdrop click is a mouse convenience only: the native dialog closes on Escape and has a
+    // labelled close button, so keyboard users already have equivalents.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <dialog
       ref={ref}
       aria-labelledby={titleId}

@@ -18,8 +18,9 @@ export function SecurityPage() {
           </li>
           <li>Changing your password or signing out everywhere revokes other sessions.</li>
           <li>
-            Sign-in and registration are rate-limited, and error messages don't reveal whether an
-            email is registered.
+            Sign-in and registration are rate-limited. A failed sign-in doesn't say whether the
+            email is registered; registration does say when an address is already in use, because
+            without email verification there's no other way to let you know.
           </li>
         </ul>
         <h2>Your data</h2>

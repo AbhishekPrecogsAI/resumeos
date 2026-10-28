@@ -2,6 +2,8 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import { requestId } from './middleware/requestId.js';
+import { requireHttps } from './middleware/https.js';
+import { clientApp, contentSecurityPolicy } from './middleware/clientApp.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { rateLimits } from './middleware/rateLimit.js';
 import { csrfProtection } from './middleware/csrf.js';
@@ -62,7 +64,9 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
 
   app.use(requestId());
   app.use(requestLogger(logger));
-  app.use(helmet());
+  if (env.NODE_ENV === 'production') app.use(requireHttps());
+  const client = env.CLIENT_DIST_DIR ? clientApp(env.CLIENT_DIST_DIR) : null;
+  app.use(helmet({ contentSecurityPolicy: contentSecurityPolicy(client?.scriptHashes) }));
   app.use(
     cors({
       origin: (origin, cb) => cb(null, !origin || env.CLIENT_ORIGIN.includes(origin)),
@@ -82,23 +86,32 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
     next();
   });
   api.use(loadSession(sessions));
-  api.use('/meta', metaRouter({ version }));
-  api.use('/auth', authRouter({ auth, sessions, limits }));
-  api.use('/account', accountRouter({ auth, sessions, userData, limits, logger }));
-  api.use('/profile', profileRouter());
-  api.use('/resumes/:resumeId/export', resumeExport);
-  api.use('/resumes/:resumeId/versions', versions);
-  api.use('/resumes/:resumeId/compare', compare);
-  api.use('/resumes/:resumeId', qualityRouter());
-  api.use('/jobs', jobRouter());
-  api.use('/applications', applicationRouter());
-  api.use('/resumes', resumeRouter());
-  api.use('/exports', exportsRouter);
+  // Every API router is mounted through here so tests can inventory routes (see routes.test.js).
+  const routeManifest = [];
+  const mount = (prefix, router) => {
+    routeManifest.push({ prefix, router });
+    api.use(prefix, router);
+  };
+  mount('/meta', metaRouter({ version }));
+  mount('/auth', authRouter({ auth, sessions, limits }));
+  mount('/account', accountRouter({ auth, sessions, userData, limits, logger }));
+  mount('/profile', profileRouter());
+  mount('/resumes/:resumeId/export', resumeExport);
+  mount('/resumes/:resumeId/versions', versions);
+  mount('/resumes/:resumeId/compare', compare);
+  mount('/resumes/:resumeId', qualityRouter());
+  mount('/jobs', jobRouter());
+  mount('/applications', applicationRouter());
+  mount('/resumes', resumeRouter());
+  mount('/exports', exportsRouter);
   app.use('/api/v1', api);
+
+  if (client) app.use(client.router);
 
   app.use(notFoundHandler());
   app.use(errorHandler(logger, { exposeDetails: env.NODE_ENV === 'development' }));
 
+  app.locals.routeManifest = routeManifest;
   app.locals.pdfPool = pool;
   app.locals.exportsService = exportsService;
   return app;

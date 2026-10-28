@@ -127,8 +127,7 @@ export function PublicLayout() {
           <div className="max-w-sm">
             <Logo />
             <p className="mt-3 text-sm text-muted">
-              ResumeOS is in active development. Pages describe the product as designed; features
-              ship phase by phase.
+              ResumeOS is pre-release software. Export your data regularly if you rely on it.
             </p>
           </div>
           <nav

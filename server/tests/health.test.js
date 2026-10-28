@@ -67,3 +67,31 @@ describe('api basics', () => {
     expect(bad.headers['access-control-allow-origin']).toBeUndefined();
   });
 });
+
+describe('request logging', () => {
+  it('logs the full path without query string or body', async () => {
+    const { createApp } = await import('../src/app.js');
+    const { testEnv } = await import('./helpers.js');
+    const lines = [];
+    const logger = {
+      debug() {},
+      info: (msg, f) => lines.push({ msg, ...f }),
+      warn() {},
+      error() {},
+    };
+    const app = createApp({
+      env: testEnv,
+      logger,
+      isDbReady: () => true,
+      pdfPool: { withPage: async () => {}, close: async () => {} },
+    });
+    await request(app).get('/health/ready?token=secret-value');
+    await request(app)
+      .post('/api/v1/auth/login')
+      .set('origin', 'http://localhost:5173')
+      .send({ email: 'leak@example.com', password: 'secret-password' });
+    const entries = lines.filter((l) => l.msg === 'request');
+    expect(entries.map((l) => l.path)).toEqual(['/health/ready', '/api/v1/auth/login']);
+    expect(JSON.stringify(lines)).not.toMatch(/secret-value|leak@example.com|secret-password/);
+  });
+});

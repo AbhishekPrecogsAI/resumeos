@@ -7,7 +7,8 @@ export function requestLogger(logger) {
       logger.info('request', {
         requestId: req.id,
         method: req.method,
-        path: req.path,
+        // originalUrl keeps the mount prefix; the query string is dropped (it may hold identifiers).
+        path: req.originalUrl.split('?')[0],
         status: res.statusCode,
         durationMs: Math.round(durationMs * 10) / 10,
       });

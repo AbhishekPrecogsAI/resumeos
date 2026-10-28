@@ -162,16 +162,16 @@ export function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:items-center">
           <div>
             <h2 id="templates-heading" className="text-3xl font-semibold tracking-tight text-ink">
-              One template, done properly first
+              Few templates, each tested in export
             </h2>
             <p className="mt-4 max-w-lg text-muted">
               <span className="font-medium text-ink">{CLARITY.name}</span> is a single-column layout
-              with real text and standard headings in reading order. More templates come only once
-              this one holds up in export testing.
+              with real text and standard headings in reading order. A second template was added
+              only after it held up in export testing, and every template lists its trade-offs.
             </p>
             <p className="mt-4 max-w-lg text-muted">{CLARITY.tradeOffs}</p>
             <ButtonLink to="/templates" variant="secondary" className="mt-6">
-              View the template
+              View the templates
             </ButtonLink>
           </div>
           <div>

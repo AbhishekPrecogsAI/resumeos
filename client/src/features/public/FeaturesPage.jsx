@@ -45,7 +45,7 @@ const FEATURES = [
   {
     title: 'Exports that are checked after they are made',
     points: [
-      'PDF export in A4 or US Letter, generated from the same renderer as the live preview.',
+      'PDF export in A4 or US Letter, generated from the same renderer as the live preview, plus an editable Word (DOCX) version.',
       'After export, the file is reopened and its text checked for content and section order. Results are reported as found, including warnings.',
       'Each export records the exact version and template it came from.',
     ],

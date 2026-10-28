@@ -5,7 +5,7 @@ import { HttpError } from '../utils/HttpError.js';
  * Schemas should be strict so unexpected keys (including `$`-operators) are rejected.
  */
 export function validate({ body, params, query } = {}) {
-  return (req, res, next) => {
+  const middleware = (req, res, next) => {
     const issues = [];
     const parsed = {};
     for (const [part, schema] of [
@@ -29,4 +29,6 @@ export function validate({ body, params, query } = {}) {
     req.valid = parsed;
     next();
   };
+  middleware.isValidator = true;
+  return middleware;
 }

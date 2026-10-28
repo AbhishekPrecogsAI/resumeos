@@ -17,13 +17,11 @@ async function setup() {
       .send({ name: 'Sent to Example Co' })
   ).body.version;
   const job = (
-    await u.client
-      .post('/api/v1/jobs')
-      .send({
-        title: 'Platform Engineer',
-        company: 'Example Co',
-        descriptionText: 'Requirements: Node.js, Kubernetes and PostgreSQL.',
-      })
+    await u.client.post('/api/v1/jobs').send({
+      title: 'Platform Engineer',
+      company: 'Example Co',
+      descriptionText: 'Requirements: Node.js, Kubernetes and PostgreSQL.',
+    })
   ).body.job;
   return { ...u, resume, version, job };
 }
@@ -31,19 +29,17 @@ async function setup() {
 describe('applications API', () => {
   it('records which resume version and job were used, with labels', async () => {
     const { client, resume, version, job } = await setup();
-    const res = await client
-      .post('/api/v1/applications')
-      .send({
-        company: 'Example Co',
-        role: 'Platform Engineer',
-        status: 'applied',
-        appliedAt: '2026-10-20',
-        nextFollowUpAt: '2026-10-27',
-        jobDescriptionId: job.id,
-        resumeId: resume.id,
-        resumeVersionId: version.id,
-        notes: 'Referred by a former colleague.',
-      });
+    const res = await client.post('/api/v1/applications').send({
+      company: 'Example Co',
+      role: 'Platform Engineer',
+      status: 'applied',
+      appliedAt: '2026-10-20',
+      nextFollowUpAt: '2026-10-27',
+      jobDescriptionId: job.id,
+      resumeId: resume.id,
+      resumeVersionId: version.id,
+      notes: 'Referred by a former colleague.',
+    });
     expect(res.status).toBe(201);
     expect(res.body.application).toMatchObject({
       status: 'applied',
@@ -134,14 +130,12 @@ describe('applications API', () => {
     ).toBe(400);
     expect(
       (
-        await client
-          .post('/api/v1/applications')
-          .send({
-            company: 'A',
-            role: 'R',
-            resumeId: owner.resume.id,
-            resumeVersionId: other.version.id,
-          })
+        await client.post('/api/v1/applications').send({
+          company: 'A',
+          role: 'R',
+          resumeId: owner.resume.id,
+          resumeVersionId: other.version.id,
+        })
       ).status,
     ).toBe(400);
   });
@@ -149,15 +143,13 @@ describe('applications API', () => {
   it('keeps history labels when the linked version, job or resume is deleted', async () => {
     const { client, resume, version, job } = await setup();
     const a = (
-      await client
-        .post('/api/v1/applications')
-        .send({
-          company: 'Example Co',
-          role: 'Platform',
-          resumeId: resume.id,
-          resumeVersionId: version.id,
-          jobDescriptionId: job.id,
-        })
+      await client.post('/api/v1/applications').send({
+        company: 'Example Co',
+        role: 'Platform',
+        resumeId: resume.id,
+        resumeVersionId: version.id,
+        jobDescriptionId: job.id,
+      })
     ).body.application;
     await client.delete(`/api/v1/resumes/${resume.id}/versions/${version.id}`);
     await client.delete(`/api/v1/jobs/${job.id}`);
