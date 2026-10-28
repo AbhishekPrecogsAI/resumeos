@@ -21,6 +21,8 @@ const resumeSchema = new mongoose.Schema(
     },
     templateId: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], default: 'A4' },
+    // Template accent colour; null means the template's default. Validated for contrast.
+    accentColor: { type: String, default: null },
     draft: {
       content: { type: mongoose.Schema.Types.Mixed, required: true },
       layout: { type: mongoose.Schema.Types.Mixed, required: true },

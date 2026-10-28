@@ -1,4 +1,5 @@
 import { escapeHtml as e, safeHref, displayUrl } from '../escape.js';
+import { accentPalette, accentProblem } from './color.js';
 import { formatRange } from '../dates.js';
 import { SECTION_TITLES, resolveSectionOrder, bulletText } from '../resumeModel.js';
 
@@ -147,6 +148,17 @@ function contactLine(contact, { contactItems = false } = {}) {
  * order and the same text for export validation. All user text is escaped; no scripts.
  * `css(page, fontStack)` returns the template's stylesheet.
  */
+/**
+ * CSS custom properties for templates that support an accent colour. An invalid or too-light
+ * accent falls back to the template default, so a bad value can never make text unreadable.
+ */
+function accentVars(defaultAccent, accentColor) {
+  if (!defaultAccent) return '';
+  const chosen = accentColor && !accentProblem(accentColor) ? accentColor : defaultAccent;
+  const p = accentPalette(chosen);
+  return `:root { --accent: ${p.accent}; --soft: ${p.soft}; --rail: ${p.rail}; --on-dark: ${p.onDark}; --deep: ${p.deep}; }\n`;
+}
+
 export function renderResume(
   content,
   layout = {},
@@ -158,6 +170,8 @@ export function renderResume(
     sidebar = null,
     skillChips = false,
     contactItems = false,
+    defaultAccent = null,
+    accentColor = null,
   },
 ) {
   const page = PAGE[pageSize] ?? PAGE.A4;
@@ -218,7 +232,7 @@ ${content.headline ? `<p class="headline">${e(content.headline)}</p>` : ''}
 <title>${e(contact.name || 'Resume')}</title>
 <style>
 ${fontCss}
-${css(page, fontStack)}</style></head>
+${accentVars(defaultAccent, accentColor)}${css(page, fontStack)}</style></head>
 <body${sidebar ? ' class="has-sidebar"' : ''}>
 ${body}
 </body></html>`;

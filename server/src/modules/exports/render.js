@@ -28,7 +28,10 @@ function withTimeout(promise, ms) {
  * Render resume content to PDF with headless Chrome, using the same template HTML as the
  * live preview. Also measures the laid-out page for content wider than the printable area.
  */
-export async function renderPdf(pool, { content, layout, templateId, pageSize, timeoutMs }) {
+export async function renderPdf(
+  pool,
+  { content, layout, templateId, pageSize, timeoutMs, accentColor = null },
+) {
   const template = getTemplate(templateId);
   if (!template)
     throw new HttpError(
@@ -37,6 +40,7 @@ export async function renderPdf(pool, { content, layout, templateId, pageSize, t
       'This resume uses a template that no longer exists.',
     );
   const html = template.render(content, layout, {
+    accentColor,
     pageSize,
     fontCss: serverFontCss(template.fonts),
   });

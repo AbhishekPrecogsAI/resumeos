@@ -14,6 +14,7 @@ import { safeHref, displayUrl } from '@resumeos/shared/escape.js';
 import { SECTION_TITLES, resolveSectionOrder, bulletText } from '@resumeos/shared/resumeModel.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { renderClarity } from '@resumeos/shared/templates/clarity.js';
+import { accentPalette, accentProblem } from '@resumeos/shared/templates/color.js';
 
 /** DOCX is single-column in layout order for every template, so validate against that render. */
 export const docxReferenceHtml = (content, layout, pageSize) =>
@@ -174,7 +175,13 @@ function sectionParagraphs(key, content, hidden, width) {
 }
 
 /** Build a DOCX with the same content, visibility and order as the HTML/PDF render. */
-export async function renderDocx({ content, layout = {}, templateId, pageSize }) {
+export async function renderDocx({
+  content,
+  layout = {},
+  templateId,
+  pageSize,
+  accentColor = null,
+}) {
   const template = getTemplate(templateId);
   const page = PAGE[pageSize] ?? PAGE.A4;
   const width = page.width - MARGIN.left - MARGIN.right;
@@ -213,6 +220,14 @@ export async function renderDocx({ content, layout = {}, templateId, pageSize })
   }
 
   const font = template?.docxFont ?? 'Arial';
+  // Templates with an accent colour their name and headings with it in Word too.
+  const headingColor = template?.accent
+    ? accentPalette(
+        accentColor && !accentProblem(accentColor) ? accentColor : template.accent.default,
+      )
+        .accent.slice(1)
+        .toUpperCase()
+    : '16181D';
   const doc = new Document({
     creator: 'ResumeOS',
     title: contact.name ? `${contact.name} resume` : 'Resume',
@@ -229,7 +244,7 @@ export async function renderDocx({ content, layout = {}, templateId, pageSize })
           name: 'Title',
           basedOn: 'Normal',
           next: 'Normal',
-          run: { font, size: 40, bold: true, color: '16181D' },
+          run: { font, size: 40, bold: true, color: headingColor },
           paragraph: { spacing: { after: 40 } },
         },
         {
@@ -238,7 +253,7 @@ export async function renderDocx({ content, layout = {}, templateId, pageSize })
           basedOn: 'Normal',
           next: 'Normal',
           quickFormat: true,
-          run: { font, size: 21, bold: true, allCaps: true, color: '16181D' },
+          run: { font, size: 21, bold: true, allCaps: true, color: headingColor },
           paragraph: {
             spacing: { before: 220, after: 60 },
             border: { bottom: { style: 'single', size: 6, color: '9AA1AB', space: 2 } },

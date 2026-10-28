@@ -7,6 +7,7 @@ export const HORIZON = {
   style: 'Single column with a timeline and skill chips',
   columns: 1,
   fonts: ['IBM Plex Sans'],
+  accent: { default: '#0f6e66' },
   docxFont: 'Arial',
   bestFor:
     'When you want something more visual than Clarity but still one column: product companies, startups and design-aware teams.',
@@ -17,9 +18,6 @@ export const HORIZON = {
 };
 
 const FONT_STACK = "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif";
-const ACCENT = '#0f6e66';
-const SOFT = '#e7f3f1';
-const RAIL = '#b9dcd7';
 
 const css = (page, fontStack) => `@page { size: ${page.size}; margin: 13mm 15mm; }
 * { box-sizing: border-box; }
@@ -29,38 +27,38 @@ body { margin: 0; font-family: ${fontStack}; font-size: 9.75pt; line-height: 1.4
 a { color: inherit; text-decoration: none; }
 header { margin-bottom: 12pt; }
 h1 { font-size: 26pt; font-weight: 600; line-height: 1.02; margin: 0 0 3pt; letter-spacing: -0.02em; }
-.headline { font-size: 11pt; font-weight: 500; margin: 0 0 8pt; color: ${ACCENT}; }
+.headline { font-size: 11pt; font-weight: 500; margin: 0 0 8pt; color: var(--accent); }
 .contact { margin: 0; font-size: 8.5pt; }
-.contact .ci { display: inline-block; margin: 0 4pt 4pt 0; padding: 1pt 6pt; border-radius: 9pt; background: ${SOFT}; color: #134e48; }
+.contact .ci { display: inline-block; margin: 0 4pt 4pt 0; padding: 1pt 6pt; border-radius: 9pt; background: var(--soft); color: var(--deep); }
 .contact .sep { display: none; }
 section { margin-top: 13pt; }
-h2 { display: flex; align-items: center; gap: 7pt; font-size: 9.5pt; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: ${ACCENT}; margin: 0 0 7pt; break-after: avoid; }
-h2::after { content: ''; flex: 1; border-top: 0.75pt solid ${RAIL}; }
+h2 { display: flex; align-items: center; gap: 7pt; font-size: 9.5pt; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); margin: 0 0 7pt; break-after: avoid; }
+h2::after { content: ''; flex: 1; border-top: 0.75pt solid var(--rail); }
 .entry { margin-bottom: 8pt; break-inside: avoid; }
-section[data-section="experience"] .entry, section[data-section="projects"] .entry, section[data-section="education"] .entry { position: relative; margin-left: 4pt; padding-left: 13pt; padding-bottom: 2pt; border-left: 1.25pt solid ${RAIL}; }
-section[data-section="experience"] .entry::before, section[data-section="projects"] .entry::before, section[data-section="education"] .entry::before { content: ''; position: absolute; left: -4.6pt; top: 3.2pt; width: 8pt; height: 8pt; border-radius: 50%; background: #fff; border: 2pt solid ${ACCENT}; }
+section[data-section="experience"] .entry, section[data-section="projects"] .entry, section[data-section="education"] .entry { position: relative; margin-left: 4pt; padding-left: 13pt; padding-bottom: 2pt; border-left: 1.25pt solid var(--rail); }
+section[data-section="experience"] .entry::before, section[data-section="projects"] .entry::before, section[data-section="education"] .entry::before { content: ''; position: absolute; left: -4.6pt; top: 3.2pt; width: 8pt; height: 8pt; border-radius: 50%; background: #fff; border: 2pt solid var(--accent); }
 .entry-head { display: flex; justify-content: space-between; gap: 10pt; align-items: baseline; }
 .entry-title { min-width: 0; }
 .entry-title strong { font-weight: 600; }
 .entry-title .meta { display: block; font-size: 8.5pt; color: #58626c; }
-.dates { flex: none; font-size: 8.5pt; color: ${ACCENT}; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dates { flex: none; font-size: 8.5pt; color: var(--accent); font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
 p { margin: 2pt 0 0; }
 .summary { margin: 0; }
 .tech, .links { font-size: 8.5pt; color: #3d4650; }
 ul { margin: 3pt 0 0; padding-left: 11pt; }
 li { margin: 1.5pt 0; padding-left: 1pt; }
-li::marker { color: ${ACCENT}; }
+li::marker { color: var(--accent); }
 .skills { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4pt 10pt; align-items: baseline; }
 .skills div { display: contents; }
 .skills dt { font-size: 8.75pt; font-weight: 600; }
 .skills dd { margin: 0; }
-.chip { display: inline-block; margin: 0 2.5pt 2.5pt 0; padding: 0.75pt 6pt; border-radius: 9pt; background: ${SOFT}; color: #134e48; font-size: 8.5pt; }
+.chip { display: inline-block; margin: 0 2.5pt 2.5pt 0; padding: 0.75pt 6pt; border-radius: 9pt; background: var(--soft); color: var(--deep); font-size: 8.5pt; }
 `;
 
 export function renderHorizon(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK } = {},
+  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK, accentColor = null } = {},
 ) {
   return renderResume(content, layout, {
     pageSize,
@@ -69,5 +67,7 @@ export function renderHorizon(
     css,
     skillChips: true,
     contactItems: true,
+    defaultAccent: HORIZON.accent.default,
+    accentColor,
   });
 }

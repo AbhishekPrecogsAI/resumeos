@@ -306,6 +306,12 @@ export function diffResumes(left, right) {
     template.push({ field: 'templateId', before: left.templateId, after: right.templateId });
   if (left.pageSize !== right.pageSize)
     template.push({ field: 'pageSize', before: left.pageSize, after: right.pageSize });
+  if ((left.accentColor ?? null) !== (right.accentColor ?? null))
+    template.push({
+      field: 'accentColor',
+      before: left.accentColor ?? null,
+      after: right.accentColor ?? null,
+    });
 
   const summary = { added: 0, removed: 0, modified: 0, reordered: 0 };
   const count = (entries) => {

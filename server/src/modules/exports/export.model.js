@@ -14,6 +14,7 @@ const exportSchema = new mongoose.Schema(
     templateId: { type: String, required: true },
     templateVersion: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], required: true },
+    accentColor: { type: String, default: null },
     pageCount: { type: Number, default: null },
     byteSize: { type: Number, default: 0 },
     durationMs: { type: Number, default: 0 },

@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { resolveSectionOrder, sectionTitle } from '@resumeos/shared/resumeModel.js';
 import { compareWithProfile, pullFromProfile, acknowledgeProfile } from '@resumeos/shared/sync.js';
-import { TEMPLATES } from '@resumeos/shared/templates/index.js';
+import { TEMPLATES, getTemplate } from '@resumeos/shared/templates/index.js';
+import { AccentPicker } from '../../../components/editor/AccentPicker.jsx';
 import { LIMITS } from '@resumeos/shared/limits.js';
 import { resumesApi } from '../../../api/resumes.api.js';
 import { profileApi } from '../../../api/profile.api.js';
@@ -206,6 +207,7 @@ function ResumeEditor({ resume, profile }) {
     title: resume.title,
     templateId: resume.templateId,
     pageSize: resume.pageSize,
+    accentColor: resume.accentColor ?? null,
     targetRole: resume.targetRole,
   });
   const [selected, setSelected] = useState('contact');
@@ -570,6 +572,13 @@ function ResumeEditor({ resume, profile }) {
             <option value="A4">A4</option>
             <option value="Letter">US Letter</option>
           </select>
+          {getTemplate(meta.templateId)?.accent && (
+            <AccentPicker
+              value={meta.accentColor}
+              defaultAccent={getTemplate(meta.templateId).accent.default}
+              onChange={(accentColor) => updateMeta.mutate({ accentColor })}
+            />
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -743,6 +752,7 @@ function ResumeEditor({ resume, profile }) {
                 layout={previewDraft.layout}
                 templateId={meta.templateId}
                 pageSize={meta.pageSize}
+                accentColor={meta.accentColor}
               />
             </div>
           )}

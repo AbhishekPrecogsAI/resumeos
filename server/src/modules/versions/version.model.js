@@ -16,6 +16,7 @@ const versionSchema = new mongoose.Schema(
     templateId: { type: String, required: true },
     templateVersion: { type: String, required: true },
     pageSize: { type: String, enum: ['A4', 'Letter'], required: true },
+    accentColor: { type: String, default: null },
     snapshot: {
       content: { type: mongoose.Schema.Types.Mixed, required: true },
       layout: { type: mongoose.Schema.Types.Mixed, required: true },

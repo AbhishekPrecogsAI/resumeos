@@ -1,11 +1,45 @@
 import { useState } from 'react';
 import { TEMPLATES } from '@resumeos/shared/templates/index.js';
+import { ACCENT_SWATCHES } from '@resumeos/shared/templates/color.js';
 import { sampleResume, SAMPLE_LABEL } from '@resumeos/shared/sample/sampleResume.js';
 import { PageHeader } from '../../components/layout/PageHeader.jsx';
 import { TemplatePreview } from '../../components/preview/TemplatePreview.jsx';
 import { ButtonLink } from '../../components/ui/Button.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { cx } from '../../lib/cx.js';
+
+function AccentSwatches({ template, value, onChange }) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={`${template.name} accent colour preview`}
+      className="flex flex-wrap items-center gap-1.5"
+    >
+      {[
+        { name: 'Default', hex: template.accent.default },
+        ...ACCENT_SWATCHES.filter((s) => s.hex !== template.accent.default),
+      ].map((s) => {
+        const selected = (value ?? template.accent.default) === s.hex;
+        return (
+          <button
+            key={s.hex}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={s.name === 'Default' ? 'Template default colour' : s.name}
+            title={s.name}
+            onClick={() => onChange(s.hex)}
+            className={cx(
+              'size-6 rounded-full border-2',
+              selected ? 'border-ink' : 'border-transparent',
+            )}
+            style={{ background: s.hex }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 function PageSizeSwitch({ value, onChange, group }) {
   return (
@@ -42,6 +76,7 @@ function PageSizeSwitch({ value, onChange, group }) {
 export function TemplatesPage() {
   useDocumentTitle('Templates');
   const [pageSize, setPageSize] = useState('A4');
+  const [accents, setAccents] = useState({});
 
   return (
     <>
@@ -105,11 +140,26 @@ export function TemplatesPage() {
                 <PageSizeSwitch value={pageSize} onChange={setPageSize} group={t.id} />
                 <p className="text-xs text-faint">{SAMPLE_LABEL}</p>
               </div>
+              {t.accent ? (
+                <div className="mb-3 flex flex-wrap items-center gap-3">
+                  <span className="text-sm text-muted">Accent</span>
+                  <AccentSwatches
+                    template={t}
+                    value={accents[t.id]}
+                    onChange={(hex) => setAccents((a) => ({ ...a, [t.id]: hex }))}
+                  />
+                </div>
+              ) : (
+                <p className="mb-3 text-sm text-muted">
+                  Black only, by design: the plainest choice for applicant tracking systems.
+                </p>
+              )}
               <div className="overflow-hidden rounded-sm shadow-paper">
                 <TemplatePreview
                   content={sampleResume}
                   templateId={t.id}
                   pageSize={pageSize}
+                  accentColor={accents[t.id] ?? null}
                   title={`${t.name} template preview, ${pageSize}, sample data`}
                 />
               </div>

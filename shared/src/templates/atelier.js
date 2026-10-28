@@ -7,6 +7,7 @@ export const ATELIER = {
   style: 'Colour header band, serif headings, right sidebar',
   columns: 2,
   fonts: ['IBM Plex Sans', 'Source Serif 4'],
+  accent: { default: '#23304a' },
   docxFont: 'Georgia',
   bestFor:
     'Senior and lead roles, consultancy and agency applications, and anywhere a polished, editorial look suits the role.',
@@ -18,8 +19,6 @@ export const ATELIER = {
 
 const FONT_STACK = "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif";
 const SERIF = "'Source Serif 4', Georgia, serif";
-const BAND = '#23304a';
-const TINT = '#eef2f7';
 const SIDE_W = '64mm';
 
 const css = (
@@ -28,15 +27,15 @@ const css = (
 ) => `/* Full-bleed page; column padding repeats on every page via box-decoration-break. */
 @page { size: ${page.size}; margin: 0; }
 * { box-sizing: border-box; }
-html { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: linear-gradient(to left, ${TINT} 0, ${TINT} ${SIDE_W}, #fff ${SIDE_W}); }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: linear-gradient(to left, var(--soft) 0, var(--soft) ${SIDE_W}, #fff ${SIDE_W}); }
 body { margin: 0; font-family: ${fontStack}; font-size: 9.5pt; line-height: 1.45; color: #1d222b; overflow-wrap: break-word; }
 @media screen { body { width: ${page.width}; min-height: ${page.minHeight}; } }
 a { color: inherit; text-decoration: none; }
-header { background: ${BAND}; color: #fff; padding: 13mm 14mm 9mm; }
+header { background: var(--accent); color: #fff; padding: 13mm 14mm 9mm; }
 h1 { font-family: ${SERIF}; font-size: 27pt; font-weight: 600; line-height: 1.05; margin: 0 0 4pt; letter-spacing: -0.01em; }
-.headline { font-size: 10.5pt; margin: 0 0 7pt; color: #c9d3e6; }
+.headline { font-size: 10.5pt; margin: 0 0 7pt; color: var(--on-dark); }
 .contact { margin: 0; font-size: 8.5pt; color: #e4e9f2; }
-.contact .sep { color: #7f8ca6; }
+.contact .sep { color: var(--on-dark); }
 .main, .sidebar { -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .columns { display: grid; grid-template-columns: minmax(0, 1fr) ${SIDE_W}; align-items: start; }
 .columns .sidebar { grid-column: 2; grid-row: 1; }
@@ -45,7 +44,7 @@ h1 { font-family: ${SERIF}; font-size: 27pt; font-weight: 600; line-height: 1.05
 .sidebar { padding: 9mm 11mm 8mm 8mm; }
 section { margin-top: 12pt; }
 .main section:first-child, .sidebar section:first-child { margin-top: 0; }
-h2 { font-family: ${SERIF}; font-size: 12.5pt; font-weight: 600; color: ${BAND}; margin: 0 0 5pt; padding-bottom: 2pt; border-bottom: 0.75pt solid #b8c4d6; break-after: avoid; }
+h2 { font-family: ${SERIF}; font-size: 12.5pt; font-weight: 600; color: var(--accent); margin: 0 0 5pt; padding-bottom: 2pt; border-bottom: 0.75pt solid var(--rail); break-after: avoid; }
 .entry { margin-bottom: 8pt; break-inside: avoid; }
 .entry-head { display: flex; justify-content: space-between; gap: 10pt; align-items: baseline; }
 .entry-title { min-width: 0; }
@@ -59,18 +58,18 @@ p { margin: 2pt 0 0; }
 .tech, .links { font-size: 8.5pt; color: #46505f; }
 ul { margin: 3pt 0 0; padding-left: 11pt; }
 li { margin: 1.5pt 0; padding-left: 1pt; }
-li::marker { color: #8a98b3; }
+li::marker { color: var(--accent); }
 .skills { margin: 0; }
 .skills div { margin-bottom: 6pt; }
-.skills dt { font-size: 8.5pt; font-weight: 600; color: ${BAND}; margin-bottom: 3pt; }
+.skills dt { font-size: 8.5pt; font-weight: 600; color: var(--accent); margin-bottom: 3pt; }
 .skills dd { margin: 0; }
-.chip { display: inline-block; margin: 0 2.5pt 3pt 0; padding: 0.75pt 5pt; border: 0.75pt solid #b8c4d6; border-radius: 9pt; background: #fff; font-size: 8.25pt; color: #2c3850; }
+.chip { display: inline-block; margin: 0 2.5pt 3pt 0; padding: 0.75pt 5pt; border: 0.75pt solid var(--rail); border-radius: 9pt; background: #fff; font-size: 8.25pt; color: var(--deep); }
 `;
 
 export function renderAtelier(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK } = {},
+  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK, accentColor = null } = {},
 ) {
   return renderResume(content, layout, {
     pageSize,
@@ -79,5 +78,7 @@ export function renderAtelier(
     css,
     sidebar: { keys: ['skills', 'education', 'certifications'], side: 'right', header: 'top' },
     skillChips: true,
+    defaultAccent: ATELIER.accent.default,
+    accentColor,
   });
 }

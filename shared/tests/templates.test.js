@@ -165,3 +165,31 @@ describe('templates registry', () => {
     }
   });
 });
+
+describe('accent colours in templates', () => {
+  it('applies a valid accent and falls back to the default for an unreadable one', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    for (const t of TEMPLATES.filter((x) => x.accent)) {
+      expect(t.render(sampleResume, {}, { accentColor: '#8a1f3d' })).toContain('--accent: #8a1f3d');
+      const fallback = t.render(sampleResume, {}, { accentColor: '#ffee00' });
+      expect(fallback).toContain(`--accent: ${t.accent.default}`);
+      expect(
+        t.render(sampleResume, {}, { accentColor: 'red; } body { display:none' }),
+      ).not.toContain('display:none');
+    }
+  });
+
+  it('Clarity ignores accents entirely', async () => {
+    const { getTemplate } = await import('../src/templates/index.js');
+    const c = getTemplate('clarity');
+    expect(c.accent).toBeNull();
+    expect(c.render(sampleResume, {}, { accentColor: '#8a1f3d' })).toBe(c.render(sampleResume, {}));
+  });
+
+  it('every accent template declares a readable default', async () => {
+    const { TEMPLATES } = await import('../src/templates/index.js');
+    const { accentProblem } = await import('../src/templates/color.js');
+    for (const t of TEMPLATES.filter((x) => x.accent))
+      expect([t.id, accentProblem(t.accent.default)]).toEqual([t.id, null]);
+  });
+});

@@ -7,6 +7,7 @@ export const CLARITY = {
   style: 'Plain, single column',
   columns: 1,
   fonts: ['Source Serif 4'],
+  accent: null, // Deliberately plain black: the safest choice for applicant tracking systems.
   docxFont: 'Georgia',
   bestFor:
     'Applications submitted through applicant tracking systems, and any role where a reader skims.',

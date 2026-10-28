@@ -44,6 +44,7 @@ export function publicExport(doc) {
     templateId: doc.templateId,
     templateVersion: doc.templateVersion,
     pageSize: doc.pageSize,
+    accentColor: doc.accentColor ?? null,
     pageCount: doc.pageCount,
     byteSize: doc.byteSize,
     durationMs: doc.durationMs,
@@ -75,10 +76,13 @@ async function matchingVersionId(resume, content, layout) {
   if (!resume.currentVersionId) return null;
   const v = await ResumeVersion.findOne(
     { _id: resume.currentVersionId },
-    { contentHash: 1, templateId: 1, pageSize: 1 },
+    { contentHash: 1, templateId: 1, pageSize: 1, accentColor: 1 },
   ).lean();
   const same =
-    v && v.contentHash === contentHash({ content, layout }) && v.templateId === resume.templateId;
+    v &&
+    v.contentHash === contentHash({ content, layout }) &&
+    v.templateId === resume.templateId &&
+    (v.accentColor ?? null) === (resume.accentColor ?? null);
   return same ? v._id : null;
 }
 
@@ -123,6 +127,7 @@ export function createExportService({ env, pool, logger }) {
               layout,
               templateId: resume.templateId,
               pageSize: size,
+              accentColor: resume.accentColor ?? null,
             }),
             html,
           };
@@ -133,6 +138,7 @@ export function createExportService({ env, pool, logger }) {
             templateId: resume.templateId,
             pageSize: size,
             timeoutMs: env.EXPORT_TIMEOUT_MS,
+            accentColor: resume.accentColor ?? null,
           });
         }
       } catch (err) {
@@ -168,6 +174,7 @@ export function createExportService({ env, pool, logger }) {
           templateId: resume.templateId,
           templateVersion: template.version,
           pageSize: size,
+          accentColor: resume.accentColor ?? null,
           pageCount: validation.pageCount,
           byteSize: rendered.buffer.length,
           durationMs: Date.now() - started,

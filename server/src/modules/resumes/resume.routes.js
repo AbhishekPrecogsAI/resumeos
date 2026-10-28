@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { accentProblem } from '@resumeos/shared/templates/color.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth } from '../../middleware/authenticate.js';
 import { route } from '../../utils/asyncRoute.js';
@@ -14,6 +15,13 @@ const title = z
   .max(120, 'Use at most 120 characters.');
 const targetRole = z.string().max(120, 'Use at most 120 characters.');
 const pageSize = z.enum(['A4', 'Letter']);
+const accentColor = z.union([
+  z.string().superRefine((v, ctx) => {
+    const problem = accentProblem(v);
+    if (problem) ctx.addIssue({ code: 'custom', message: problem });
+  }),
+  z.null(),
+]);
 const templateId = z.string().max(40);
 
 const listQuery = z.strictObject({
@@ -29,6 +37,7 @@ const createBody = z.strictObject({
   targetRole: targetRole.optional(),
   templateId: templateId.optional(),
   pageSize: pageSize.optional(),
+  accentColor: accentColor.optional(),
 });
 const patchBody = z
   .strictObject({
@@ -36,6 +45,7 @@ const patchBody = z
     targetRole: targetRole.optional(),
     templateId: templateId.optional(),
     pageSize: pageSize.optional(),
+    accentColor: accentColor.optional(),
     archived: z.boolean().optional(),
     jobId: z.union([z.string().regex(/^[a-f0-9]{24}$/, 'Invalid id.'), z.null()]).optional(),
   })

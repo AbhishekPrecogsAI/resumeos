@@ -29,6 +29,7 @@ export function versionSummary(doc, { exported = false } = {}) {
     templateId: doc.templateId,
     templateVersion: doc.templateVersion,
     pageSize: doc.pageSize,
+    accentColor: doc.accentColor ?? null,
     contentHash: doc.contentHash,
     createdAt: doc.createdAt,
     exported,
@@ -78,6 +79,7 @@ async function insertVersion(
     snapshot,
     templateId,
     pageSize,
+    accentColor = null,
     parentVersionId,
     restoredFromVersionId = null,
   },
@@ -96,6 +98,7 @@ async function insertVersion(
     templateId,
     templateVersion: template?.version ?? 'unknown',
     pageSize,
+    accentColor,
     snapshot: structuredClone(snapshot),
     contentHash: stateHash(snapshot),
     createdBy: userId,
@@ -107,13 +110,23 @@ async function stateFor(userId, resume, ref) {
   if (ref === 'draft') {
     return {
       meta: { type: 'draft', label: 'Current draft', draftRevision: resume.draftRevision },
-      state: { ...resume.draft, templateId: resume.templateId, pageSize: resume.pageSize },
+      state: {
+        ...resume.draft,
+        templateId: resume.templateId,
+        pageSize: resume.pageSize,
+        accentColor: resume.accentColor ?? null,
+      },
     };
   }
   const v = await loadVersion(userId, resume._id, ref);
   return {
     meta: { ...versionSummary(v), type: 'version', label: `v${v.versionNumber}: ${v.name}` },
-    state: { ...v.snapshot, templateId: v.templateId, pageSize: v.pageSize },
+    state: {
+      ...v.snapshot,
+      templateId: v.templateId,
+      pageSize: v.pageSize,
+      accentColor: v.accentColor ?? null,
+    },
   };
 }
 
@@ -128,6 +141,7 @@ export const versionService = {
       snapshot: resume.draft,
       templateId: resume.templateId,
       pageSize: resume.pageSize,
+      accentColor: resume.accentColor ?? null,
       parentVersionId: resume.currentVersionId,
     });
     await Resume.updateOne({ _id: resume._id, userId }, { $set: { currentVersionId: doc._id } });
@@ -161,13 +175,14 @@ export const versionService = {
     if (!resume.currentVersionId) return false;
     const current = await ResumeVersion.findOne(
       { _id: resume.currentVersionId },
-      { contentHash: 1, templateId: 1, pageSize: 1 },
+      { contentHash: 1, templateId: 1, pageSize: 1, accentColor: 1 },
     ).lean();
     return (
       Boolean(current) &&
       current.contentHash === stateHash(resume.draft) &&
       current.templateId === resume.templateId &&
-      current.pageSize === resume.pageSize
+      current.pageSize === resume.pageSize &&
+      (current.accentColor ?? null) === (resume.accentColor ?? null)
     );
   },
 
@@ -197,6 +212,7 @@ export const versionService = {
         snapshot: resume.draft,
         templateId: resume.templateId,
         pageSize: resume.pageSize,
+        accentColor: resume.accentColor ?? null,
         parentVersionId: parent,
       });
       created.push(auto);
@@ -209,6 +225,7 @@ export const versionService = {
       snapshot: target.snapshot,
       templateId: target.templateId,
       pageSize: target.pageSize,
+      accentColor: target.accentColor ?? null,
       parentVersionId: parent,
       restoredFromVersionId: target._id,
     });
@@ -221,6 +238,7 @@ export const versionService = {
           draft: structuredClone(target.snapshot),
           templateId: target.templateId,
           pageSize: target.pageSize,
+          accentColor: target.accentColor ?? null,
           currentVersionId: restored._id,
         },
         $inc: { draftRevision: 1 },

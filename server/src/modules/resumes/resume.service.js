@@ -33,6 +33,7 @@ export function summary(doc) {
     targetRole: doc.targetRole,
     templateId: doc.templateId,
     pageSize: doc.pageSize,
+    accentColor: doc.accentColor ?? null,
     currentVersionId: doc.currentVersionId ? String(doc.currentVersionId) : null,
     jobId: doc.jobId ? String(doc.jobId) : null,
     archived: Boolean(doc.archivedAt),
@@ -92,7 +93,13 @@ export const resumeService = {
 
   async create(
     userId,
-    { title, targetRole = '', templateId = DEFAULT_TEMPLATE_ID, pageSize = 'A4' },
+    {
+      title,
+      targetRole = '',
+      templateId = DEFAULT_TEMPLATE_ID,
+      pageSize = 'A4',
+      accentColor = null,
+    },
   ) {
     requireTemplate(templateId);
     await assertUnderLimit(userId);
@@ -104,6 +111,7 @@ export const resumeService = {
       targetRole,
       templateId,
       pageSize,
+      accentColor,
       sourceProfileId: profile?._id ?? null,
       draft: { content, layout: defaultLayout(content), baselines: buildBaselines(content) },
     });
@@ -186,6 +194,7 @@ export const resumeService = {
       targetRole: targetRole ?? source.targetRole,
       templateId: version?.templateId ?? source.templateId,
       pageSize: version?.pageSize ?? source.pageSize,
+      accentColor: version ? (version.accentColor ?? null) : (source.accentColor ?? null),
       sourceProfileId: source.sourceProfileId,
       draft: structuredClone(version?.snapshot ?? source.draft),
       qualityDismissals: structuredClone(source.qualityDismissals ?? []),

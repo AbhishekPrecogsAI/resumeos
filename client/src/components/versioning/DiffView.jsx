@@ -39,6 +39,7 @@ const FIELD_LABELS = {
   evidenceIds: 'Linked evidence',
   templateId: 'Template',
   pageSize: 'Page size',
+  accentColor: 'Accent colour',
 };
 
 export const STATUS = {
@@ -67,6 +68,7 @@ function StatusBadge({ status, moved }) {
 }
 
 function formatValue(field, value) {
+  if (field === 'accentColor' && !value) return 'Template default';
   if (value === null || value === undefined || value === '') return '(empty)';
   if (Array.isArray(value))
     return value.length

@@ -7,6 +7,7 @@ export const MERIDIAN = {
   style: 'Dark sidebar, two columns',
   columns: 2,
   fonts: ['IBM Plex Sans'],
+  accent: { default: '#17323f' },
   docxFont: 'Arial',
   bestFor:
     'Portfolio links, networking, referrals and direct emails, where a person reads it first and a strong look helps you stand out.',
@@ -17,10 +18,7 @@ export const MERIDIAN = {
 };
 
 const FONT_STACK = "'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif";
-const SIDE = '#17323f';
 const SIDE_W = '70mm';
-const ACCENT = '#17323f';
-const HIGHLIGHT = '#8fc1cf';
 
 const css = (
   page,
@@ -28,7 +26,7 @@ const css = (
 ) => `/* Full-bleed page; column padding repeats on every page via box-decoration-break. */
 @page { size: ${page.size}; margin: 0; }
 * { box-sizing: border-box; }
-html { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: linear-gradient(to right, ${SIDE} 0, ${SIDE} ${SIDE_W}, #fff ${SIDE_W}); }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: linear-gradient(to right, var(--accent) 0, var(--accent) ${SIDE_W}, #fff ${SIDE_W}); }
 body { margin: 0; font-family: ${fontStack}; font-size: 9.5pt; line-height: 1.42; color: #1b1f24; overflow-wrap: break-word; }
 @media screen { body { width: ${page.width}; min-height: ${page.minHeight}; } }
 a { color: inherit; text-decoration: none; }
@@ -38,15 +36,15 @@ a { color: inherit; text-decoration: none; }
 .main { padding: 14mm 12mm 8mm 9mm; }
 header { margin-bottom: 9pt; }
 h1 { font-size: 21pt; font-weight: 600; line-height: 1.08; margin: 0 0 4pt; color: #fff; letter-spacing: -0.01em; }
-.headline { font-size: 10pt; font-weight: 500; margin: 0 0 9pt; color: ${HIGHLIGHT}; }
+.headline { font-size: 10pt; font-weight: 500; margin: 0 0 9pt; color: var(--on-dark); }
 .contact { margin: 0; font-size: 8.5pt; color: #d5e1e5; }
 .contact .ci { display: block; margin-bottom: 2.5pt; overflow-wrap: anywhere; }
 .contact .sep { display: none; }
 section { margin-top: 12pt; }
 .main section:first-child { margin-top: 0; }
 h2 { font-size: 9pt; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 6pt; break-after: avoid; }
-.main h2 { color: ${ACCENT}; padding-bottom: 3pt; border-bottom: 1.25pt solid ${ACCENT}; }
-.sidebar h2 { color: ${HIGHLIGHT}; padding-bottom: 3pt; border-bottom: 0.75pt solid rgba(255,255,255,0.22); }
+.main h2 { color: var(--accent); padding-bottom: 3pt; border-bottom: 1.25pt solid var(--accent); }
+.sidebar h2 { color: var(--on-dark); padding-bottom: 3pt; border-bottom: 0.75pt solid rgba(255,255,255,0.22); }
 .entry { margin-bottom: 8pt; break-inside: avoid; }
 .entry-head { display: flex; justify-content: space-between; gap: 10pt; align-items: baseline; }
 .entry-title { min-width: 0; }
@@ -62,19 +60,19 @@ p { margin: 2pt 0 0; }
 .sidebar .links { color: #d5e1e5; }
 ul { margin: 3pt 0 0; padding-left: 11pt; }
 li { margin: 1.5pt 0; padding-left: 1pt; }
-li::marker { color: ${ACCENT}; }
+li::marker { color: var(--accent); }
 .skills { margin: 0; }
 .skills div { margin-bottom: 6pt; }
 .skills dt { font-size: 8.5pt; font-weight: 600; color: #fff; margin-bottom: 3pt; }
 .skills dd { margin: 0; }
 .chip { display: inline-block; margin: 0 2.5pt 3pt 0; padding: 1pt 5pt; border-radius: 3pt; background: rgba(255,255,255,0.12); color: #eef4f6; font-size: 8.25pt; }
-.main .chip { background: #e8f0f2; color: ${ACCENT}; }
+.main .chip { background: var(--soft); color: var(--deep); }
 `;
 
 export function renderMeridian(
   content,
   layout = {},
-  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK } = {},
+  { pageSize = 'A4', fontCss = '', fontStack = FONT_STACK, accentColor = null } = {},
 ) {
   return renderResume(content, layout, {
     pageSize,
@@ -84,5 +82,7 @@ export function renderMeridian(
     sidebar: { keys: ['skills', 'education', 'certifications'], side: 'left', header: 'sidebar' },
     skillChips: true,
     contactItems: true,
+    defaultAccent: MERIDIAN.accent.default,
+    accentColor,
   });
 }

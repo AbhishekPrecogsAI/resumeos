@@ -18,6 +18,7 @@ export function TemplatePreview({
   title,
   className,
   onPageCount,
+  accentColor = null,
 }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
@@ -27,8 +28,12 @@ export function TemplatePreview({
 
   const html = useMemo(() => {
     const template = getTemplate(templateId) ?? getTemplate(DEFAULT_TEMPLATE_ID);
-    return template.render(content, layout, { pageSize, fontCss: templateFontCss(templateId) });
-  }, [content, layout, templateId, pageSize]);
+    return template.render(content, layout, {
+      pageSize,
+      accentColor,
+      fontCss: templateFontCss(templateId),
+    });
+  }, [content, layout, templateId, pageSize, accentColor]);
 
   useEffect(() => {
     const el = containerRef.current;

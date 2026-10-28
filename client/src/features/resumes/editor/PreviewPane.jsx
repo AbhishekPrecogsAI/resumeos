@@ -7,13 +7,14 @@ import { useToast } from '../../../components/ui/Toast.jsx';
 import { templateFontCss } from '../../../lib/templateFonts.js';
 import { printHtml } from '../../../lib/print.js';
 
-export function PreviewPane({ content, layout, templateId, pageSize }) {
+export function PreviewPane({ content, layout, templateId, pageSize, accentColor = null }) {
   const [pages, setPages] = useState(1);
   const toast = useToast();
 
   const print = () => {
     const html = getTemplate(templateId).render(content, layout, {
       pageSize,
+      accentColor,
       fontCss: templateFontCss(templateId),
     });
     if (!printHtml(html))
@@ -44,6 +45,7 @@ export function PreviewPane({ content, layout, templateId, pageSize }) {
           layout={layout}
           templateId={templateId}
           pageSize={pageSize}
+          accentColor={accentColor}
           title="Live resume preview"
           onPageCount={setPages}
         />
