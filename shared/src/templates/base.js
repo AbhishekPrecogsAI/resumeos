@@ -214,7 +214,7 @@ const renderers = {
       ]
         .map(
           ([cat, list]) =>
-            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${encodeURIComponent(cat)}`, uncategorised ? '' : cat, 'Category (optional)')}</dt><dd>${
+            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${list.map((s) => s.id).join(',')}`, uncategorised ? '' : cat, 'Category (optional)')}</dt><dd>${
               leveled
                 ? `<span class="levels">${list.map(row).join('')}</span>`
                 : list.map(skill).join(opts.skillChips ? ' ' : '<span class="sep">, </span>')

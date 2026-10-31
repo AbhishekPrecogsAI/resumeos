@@ -6,7 +6,7 @@ import { ID_PREFIX, LANGUAGE_LEVEL_IDS } from './resumeModel.js';
  *   "summary" | "headline" | "contact:email"
  *   "experience:exp_1:title" | "experience:exp_1:bullets:b_2:text"
  *   "custom:sec_1:title" | "custom:sec_1:itm_1:title" | "custom:sec_1:itm_1:bullets:b_1:text"
- *   "skills:sk_1:name" | "skillcat:<encoded category>"
+ *   "skills:sk_1:name" | "skillcat:sk_1,sk_2" (a category heading, named by the skills it groups)
  * Entry keys are the same without the field: "experience:exp_1", "custom:sec_1:itm_1".
  * Every function returns new content and never mutates its input.
  */
@@ -126,8 +126,10 @@ export function setField(content, path, text) {
     const skill = next.skills.find((s) => s.id === parts[1]);
     if (skill) skill.name = text;
   } else if (parts[0] === 'skillcat') {
-    const old = decodeURIComponent(parts[1]);
-    for (const s of next.skills) if ((s.category?.trim() || 'Skills') === old) s.category = text;
+    // The heading is identified by its skills, not its name: typing changes the name on every
+    // keystroke while the page (and this path) stays as it was until the next re-render.
+    const ids = new Set(parts[1].split(','));
+    for (const s of next.skills) if (ids.has(s.id)) s.category = text;
   } else {
     const { entryKey, sectionId, field } = splitPath(path);
     if (sectionId) {
@@ -159,8 +161,8 @@ export function getField(content, path) {
   if (parts[0] === 'contact') return content.contact?.[parts[1]] ?? '';
   if (parts[0] === 'skills') return content.skills.find((s) => s.id === parts[1])?.name ?? '';
   if (parts[0] === 'skillcat') {
-    const name = decodeURIComponent(parts[1]);
-    return content.skills.some((s) => (s.category?.trim() || 'Skills') === name) ? name : '';
+    const ids = new Set(parts[1].split(','));
+    return content.skills.find((s) => ids.has(s.id))?.category ?? '';
   }
   const { entryKey, sectionId, field } = splitPath(path);
   if (sectionId) return content.customSections.find((s) => s.id === sectionId)?.title ?? '';

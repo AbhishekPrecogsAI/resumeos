@@ -30,22 +30,58 @@ describe('on-page editing', () => {
     expect(paths.length).toBeGreaterThan(40);
     for (const path of paths) {
       const next = setField(content, path, 'Edited Ø');
-      // Renaming a category changes its path, so read it back under the new name.
-      const readBack = path.startsWith('skillcat:')
-        ? `skillcat:${encodeURIComponent('Edited Ø')}`
-        : path;
-      expect([path, getField(next, readBack)]).toEqual([path, 'Edited Ø']);
+      expect([path, getField(next, path)]).toEqual([path, 'Edited Ø']);
     }
     expect(content).toEqual(sampleResume);
   });
 
+  const categoryPath = (content, name) => {
+    const html = TEMPLATES[0].render(content, {}, { editable: true });
+    const match = [
+      ...html.matchAll(/data-skill-group="([^"]*)"><dt><span data-edit="(skillcat:[^"]+)"/g),
+    ];
+    return match.find((m) => m[1] === name.replace(/&/g, '&amp;'))[2];
+  };
+
   it('renames a skill category across its skills', () => {
-    const next = setField(c(), `skillcat:${encodeURIComponent('Data')}`, 'Databases');
+    const next = setField(c(), categoryPath(c(), 'Data'), 'Databases');
     expect(next.skills.filter((s) => s.category === 'Databases').map((s) => s.name)).toEqual([
       'PostgreSQL',
       'MongoDB',
       'Redis',
     ]);
+  });
+
+  it('keeps every keystroke of a category name, as typing does without re-rendering', () => {
+    // The page isn't re-rendered while typing, so every keystroke arrives on the original path.
+    let content = c();
+    const path = categoryPath(content, 'Infrastructure');
+    for (const text of ['I', 'In', 'D', 'Da', 'Dat', 'Data', 'Datab', 'Database', 'Databases'])
+      content = setField(content, path, text);
+    expect(content.skills.filter((s) => s.category === 'Databases').map((s) => s.name)).toEqual([
+      'Kubernetes',
+      'Terraform',
+      'AWS',
+    ]);
+    // Passing through "Data" on the way didn't pull in the existing Data group.
+    expect(content.skills.filter((s) => s.category === 'Data').map((s) => s.name)).toEqual([
+      'PostgreSQL',
+      'MongoDB',
+      'Redis',
+    ]);
+  });
+
+  it('names an uncategorised group, and clearing a name makes it uncategorised', () => {
+    const content = {
+      ...c(),
+      skills: c().skills.map((s) => ({ ...s, category: '' })),
+    };
+    const html = TEMPLATES[1].render(content, {}, { editable: true });
+    const path = /data-edit="(skillcat:[^"]+)"/.exec(html)[1];
+    expect(getField(content, path)).toBe('');
+    const named = setField(content, path, 'Tools');
+    expect(new Set(named.skills.map((s) => s.category))).toEqual(new Set(['Tools']));
+    expect(new Set(setField(named, path, '').skills.map((s) => s.category))).toEqual(new Set(['']));
   });
 
   it('parses technologies as a list', () => {
