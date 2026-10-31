@@ -5,11 +5,12 @@ import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { ExportRecord } from './export.model.js';
 import { renderPdf } from './render.js';
 import { createExportStorage } from './storage.js';
-import { validatePdf, parsePdf } from './validate.js';
 import { fitToOnePage } from '@resumeos/shared/fit.js';
-import { renderDocx } from './docx.js';
-import { validateDocx } from './validateDocx.js';
-import { docxReferenceHtml } from './docx.js';
+// Loaded on first use: pdf.js, docx and mammoth are large, and on a serverless host every
+// request that starts a fresh instance would otherwise pay to load them.
+const pdfChecks = () => import('./validate.js');
+const docxLib = () => import('./docx.js');
+const docxChecks = () => import('./validateDocx.js');
 
 export const FORMATS = {
   pdf: { ext: 'pdf', mime: 'application/pdf', label: 'PDF' },
@@ -127,6 +128,7 @@ export function createExportService({ env, pool, logger }) {
         if (format === 'docx') {
           // DOCX is always one column in layout order, so the single-column render is the
           // reference for what it must contain and in which order.
+          const { docxReferenceHtml, renderDocx } = await docxLib();
           const html = docxReferenceHtml(content, layout, size);
           rendered = {
             buffer: await renderDocx({
@@ -163,8 +165,10 @@ export function createExportService({ env, pool, logger }) {
       }
       validation =
         format === 'docx'
-          ? await validateDocx(rendered.buffer, { html: rendered.html })
-          : await validatePdf(rendered.buffer, {
+          ? await (await docxChecks()).validateDocx(rendered.buffer, { html: rendered.html })
+          : await (
+              await pdfChecks()
+            ).validatePdf(rendered.buffer, {
               html: rendered.html,
               overflow: rendered.overflow,
             });
@@ -259,7 +263,7 @@ export function createExportService({ env, pool, logger }) {
           pattern: resume.backgroundPattern ?? 'none',
           photo,
         });
-        return (await parsePdf(rendered.buffer)).pageCount;
+        return (await (await pdfChecks()).parsePdf(rendered.buffer)).pageCount;
       };
       // Errors are mapped here, so anyone waiting on the same measurement gets the same answer.
       const promise = fitToOnePage(layout ?? {}, countPages).catch((err) => {

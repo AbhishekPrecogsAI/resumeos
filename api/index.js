@@ -1,5 +1,7 @@
 // Vercel entry point: the whole API as one serverless function. vercel.json routes /api/* and
 // /health/* here; the web app itself is static files served by Vercel's CDN.
+// No export sweep here: on Vercel export files live in MongoDB, which deletes them when they
+// expire (TTL index), and downloads check expiry themselves.
 import { createRequire } from 'node:module';
 import { loadEnv } from '../server/src/config/env.js';
 import { connectDatabase, isDatabaseReady } from '../server/src/config/database.js';
@@ -30,17 +32,6 @@ function ensureDatabase() {
   return connecting;
 }
 
-// There's no long-running process for a timer, so expired export files are swept on traffic,
-// at most every 10 minutes per instance. (With MongoDB storage the files also expire on their own.)
-let lastSweep = 0;
-function sweepSometimes() {
-  if (Date.now() - lastSweep < 10 * 60_000) return;
-  lastSweep = Date.now();
-  app.locals.exportsService
-    .sweepExpired()
-    .catch((err) => logger.error('export sweep failed', { name: err.name }));
-}
-
 export default async function handler(req, res) {
   if (startupError) {
     res.statusCode = 500;
@@ -60,6 +51,5 @@ export default async function handler(req, res) {
       // Fall through: /health/ready reports 503 and API routes fail with their usual errors.
     }
   }
-  sweepSometimes();
   return app(req, res);
 }

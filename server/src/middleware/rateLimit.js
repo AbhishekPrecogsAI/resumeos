@@ -26,7 +26,10 @@ export function rateLimits(env) {
   const limiter = (name, windowMs, limit) =>
     createLimiter({ windowMs, limit, disabled, store: store(name) });
   return {
-    api: limiter('api', 60_000, 300),
+    // The general ceiling runs on every request, so it stays in memory (per instance) even on
+    // serverless hosts, saving a database round trip each time. The limits that protect
+    // passwords and expensive work below are shared in MongoDB there.
+    api: createLimiter({ windowMs: 60_000, limit: 300, disabled }),
     login: limiter('login', 15 * 60_000, 10),
     register: limiter('register', 60 * 60_000, 10),
     sensitive: limiter('sensitive', 15 * 60_000, 10),

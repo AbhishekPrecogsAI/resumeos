@@ -1,0 +1,8 @@
+# Not needed to build or run the deployment; keeps them out of Vercel uploads.
+docs
+e2e
+**/tests
+test-results
+playwright.config.js
+scripts
+AGENT-8.md

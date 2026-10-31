@@ -1,5 +1,4 @@
 import { existsSync } from 'node:fs';
-import { chromium } from 'playwright-core';
 
 const CANDIDATES = [
   '/usr/bin/google-chrome',
@@ -53,7 +52,10 @@ export function createBrowserPool({ chromePath, maxConcurrent = 2, logger, serve
     if (!browserPromise) {
       browserPromise = launchOptions(chromePath, serverless)
         .then(({ executablePath, args }) =>
-          chromium.launch({ executablePath, headless: true, args }),
+          // Loaded on first render, not at startup (it's the largest import in the server).
+          import('playwright-core').then(({ chromium }) =>
+            chromium.launch({ executablePath, headless: true, args }),
+          ),
         )
         .then((b) => {
           b.on('disconnected', () => {

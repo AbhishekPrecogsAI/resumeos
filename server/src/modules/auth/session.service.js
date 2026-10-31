@@ -36,9 +36,25 @@ export function createSessionService(env) {
     /** Resolve a cookie token to an active { session, user }, or null. */
     async resolve(token) {
       if (typeof token !== 'string' || token.length < 20 || token.length > 100) return null;
-      const session = await Session.findOne({ tokenHash: hashToken(token) });
-      if (!session || session.expiresAt <= new Date()) return null;
-      const user = await User.findById(session.userId);
+      // Session and user in one round trip: this runs on every signed-in request, and on
+      // serverless hosts each database round trip is a network hop.
+      const [found] = await Session.aggregate([
+        { $match: { tokenHash: hashToken(token) } },
+        { $limit: 1 },
+        {
+          $lookup: {
+            from: User.collection.name,
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'users',
+            // The password hash never leaves the database on this path.
+            pipeline: [{ $project: { passwordHash: 0 } }],
+          },
+        },
+      ]);
+      if (!found || found.expiresAt <= new Date()) return null;
+      const { users, ...session } = found;
+      const user = users[0];
       if (
         !user ||
         user.accountStatus !== 'active' ||
