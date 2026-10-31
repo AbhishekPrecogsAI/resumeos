@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, EyeOff, ListPlus, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, CopyPlus, EyeOff, ListPlus, Plus, Trash2 } from 'lucide-react';
 import { getTemplate, DEFAULT_TEMPLATE_ID } from '@resumeos/shared/templates/index.js';
 import {
   setField,
@@ -10,6 +10,7 @@ import {
   removeSkill,
   deleteEntry,
   moveEntry,
+  addEntryAfter,
   cycleLevel,
 } from '@resumeos/shared/editing.js';
 import { templateFontCss } from '../../../../lib/templateFonts.js';
@@ -18,6 +19,16 @@ import { PAGE_PX, documentHeight } from '../../../../lib/measurePages.js';
 const URL_FIELD =
   /^(contact:(website|linkedin|github|portfolio)|(projects|certifications):[^:]+:(url|repositoryUrl))$/;
 const BULLET_FIELD = /^(.*):bullets:([^:]+):text$/;
+// What "add another" adds, by section, for the side toolbar's label.
+const ENTRY_NOUN = {
+  experience: 'a role',
+  projects: 'a project',
+  education: 'an education entry',
+  certifications: 'a certification',
+  languages: 'a language',
+  interests: 'an interest',
+  custom: 'an entry',
+};
 // One-line list entries: Enter adds the next one, Backspace on an empty one removes it.
 const LIST_ITEM_FIELD = /^(languages|interests):([^:]+):name$/;
 
@@ -309,6 +320,18 @@ export function CanvasEditor({
               )}
               {entryOps && (
                 <>
+                  <RailButton
+                    label={`Add ${ENTRY_NOUN[activeEntry.split(':')[0]] ?? 'an entry'} below`}
+                    onClick={() =>
+                      act(() => {
+                        const out = addEntryAfter(contentRef.current, activeEntry);
+                        pendingFocus.current = out.focus;
+                        return out.focus ? { content: out.content } : null;
+                      })
+                    }
+                  >
+                    <CopyPlus className="size-4" aria-hidden="true" />
+                  </RailButton>
                   <RailButton
                     label="Move up"
                     onClick={() =>

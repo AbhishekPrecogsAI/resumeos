@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  addEntryAfter,
+  BLANK_ENTRY,
   setField,
   getField,
   addEntry,
@@ -82,6 +84,50 @@ describe('on-page editing', () => {
     const named = setField(content, path, 'Tools');
     expect(new Set(named.skills.map((s) => s.category))).toEqual(new Set(['Tools']));
     expect(new Set(setField(named, path, '').skills.map((s) => s.category))).toEqual(new Set(['']));
+  });
+
+  it('adds another entry right below the one being edited, ready to type in', () => {
+    const content = {
+      ...c(),
+      projects: [...c().projects, { ...c().projects[0], id: 'prj_2', name: 'second' }],
+    };
+    const out = addEntryAfter(content, 'projects:prj_1');
+    expect(out.content.projects.map((p) => p.name)).toEqual(['queue-lens', '', 'second']);
+    expect(out.focus).toBe(`projects:${out.content.projects[1].id}:name`);
+    expect(getField(out.content, out.focus)).toBe('');
+    expect(content.projects).toHaveLength(2); // input untouched
+
+    const role = addEntryAfter(c(), 'experience:exp_2');
+    expect(role.content.experience.at(-1).title).toBe('');
+    expect(role.focus).toMatch(/^experience:exp_[A-Za-z0-9_-]+:title$/);
+
+    const withCustom = {
+      ...c(),
+      customSections: [
+        { id: 'sec_a', title: 'Talks', items: [{ ...BLANK_ENTRY.custom(), id: 'itm_a' }] },
+      ],
+    };
+    const talk = addEntryAfter(withCustom, 'custom:sec_a:itm_a');
+    expect(talk.content.customSections[0].items).toHaveLength(2);
+    expect(talk.focus).toMatch(/^custom:sec_a:itm_[A-Za-z0-9_-]+:title$/);
+
+    expect(addEntryAfter(c(), 'projects:nope').focus).toBeNull();
+  });
+
+  it('offers "+ Add" after existing entries in the editor only, never in exports', () => {
+    const t = TEMPLATES.find((x) => x.id === 'orbit');
+    const editable = t.render(c(), {}, { editable: true });
+    for (const [section, label] of [
+      ['projects', '+ Add a project'],
+      ['experience', '+ Add a role'],
+      ['education', '+ Add education'],
+      ['languages', '+ Add a language'],
+    ])
+      expect(editable).toContain(
+        `<p class="ed-add" data-add="${section}" role="button" tabindex="0">${label}</p>`,
+      );
+    expect(editable).not.toContain('data-add="summary"');
+    expect(t.render(c(), {})).not.toMatch(/ed-add|data-add/);
   });
 
   it('parses technologies as a list', () => {

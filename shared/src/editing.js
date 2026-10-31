@@ -190,6 +190,20 @@ export function addEntry(content, sectionKey) {
   return { content: next, focus: `${sectionKey}:${entry.id}:${FIRST_FIELD[sectionKey]}` };
 }
 
+/** Insert a blank entry right after `entryKey`, in the same section; returns the path to focus. */
+export function addEntryAfter(content, entryKey) {
+  const next = clone(content);
+  const loc = locateEntry(next, entryKey);
+  if (!loc) return { content, focus: null };
+  const entry = BLANK_ENTRY[loc.kind]();
+  loc.list.splice(loc.index + 1, 0, entry);
+  const focus =
+    loc.kind === 'custom'
+      ? `custom:${entryKey.split(':')[1]}:${entry.id}:${FIRST_FIELD.custom}`
+      : `${loc.kind}:${entry.id}:${FIRST_FIELD[loc.kind]}`;
+  return { content: next, focus };
+}
+
 export function deleteEntry(content, entryKey) {
   const next = clone(content);
   const loc = locateEntry(next, entryKey);

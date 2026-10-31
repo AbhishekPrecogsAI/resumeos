@@ -503,7 +503,19 @@ const ADD_LABEL = {
   skills: 'skills',
   education: 'education',
   certifications: 'a certification',
+  languages: 'a language',
+  interests: 'an interest',
 };
+// Sections where the editor offers "+ Add …" after existing entries too, not only when empty.
+// (Summary is a single field; skills are added with Enter or the side toolbar.)
+const ADD_MORE = new Set([
+  'experience',
+  'projects',
+  'education',
+  'certifications',
+  'languages',
+  'interests',
+]);
 
 // Editor-only styles: field highlights, placeholders and click targets. Never in exports.
 const EDITABLE_CSS = `
@@ -519,6 +531,8 @@ p[data-edit]:empty, h2[data-edit]:empty { min-height: 1.2em; }
 .lv-meter { display: inline-flex; padding: 2pt; }
 .ed-empty { margin: 2pt 0 0; color: #7a828d; font-style: italic; cursor: pointer; }
 .ed-empty:hover { color: #2e3fb8; }
+.ed-add { display: inline-block; margin: 4pt 0 0; padding: 2pt 8pt; border: 1px dashed rgba(46, 63, 184, 0.35); border-radius: 999px; color: #2e3fb8; font-size: 8.5pt; font-weight: 600; cursor: pointer; }
+.ed-add:hover, .ed-add:focus { background: rgba(46, 63, 184, 0.08); outline: none; }
 [data-entry].ed-active { outline: 1.5px dashed rgba(46, 63, 184, 0.45); outline-offset: 3pt; border-radius: 3pt; }
 a { pointer-events: none; }
 `;
@@ -641,9 +655,12 @@ export function renderResume(
             ? `<h2>${sectionIcon(key)}${ed({ editable }, `${key}:title`, title, 'Section title')}</h2>`
             : ed({ editable }, `${key}:title`, title, 'Section title', 'h2')
           : `<h2>${headingIcons ? sectionIcon(key) : ''}${e(title)}</h2>`;
-        const empty = body
-          ? ''
-          : `<p class="ed-empty" data-add="${e(key)}" role="button" tabindex="0">+ Add ${e(key.startsWith('custom:') ? 'an entry' : (ADD_LABEL[key] ?? 'an entry'))}</p>`;
+        const addLabel = key.startsWith('custom:') ? 'an entry' : (ADD_LABEL[key] ?? 'an entry');
+        const empty = !body
+          ? `<p class="ed-empty" data-add="${e(key)}" role="button" tabindex="0">+ Add ${e(addLabel)}</p>`
+          : ADD_MORE.has(key) || key.startsWith('custom:')
+            ? `<p class="ed-add" data-add="${e(key)}" role="button" tabindex="0">+ Add ${e(addLabel)}</p>`
+            : '';
         return {
           key,
           html: `<section data-section="${e(key)}">${heading}${body}${empty}</section>`,
