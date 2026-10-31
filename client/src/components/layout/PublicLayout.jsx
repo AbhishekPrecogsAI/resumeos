@@ -64,7 +64,7 @@ export function PublicLayout() {
                 >
                   Sign in
                 </Link>
-                <ButtonLink to="/register" size="sm">
+                <ButtonLink to="/register" size="sm" className="grad-button">
                   Build your resume
                 </ButtonLink>
               </>
@@ -110,7 +110,9 @@ export function PublicLayout() {
               {user ? (
                 <ButtonLink to="/app">Open workspace</ButtonLink>
               ) : (
-                <ButtonLink to="/register">Build your resume</ButtonLink>
+                <ButtonLink to="/register" className="grad-button">
+                  Build your resume
+                </ButtonLink>
               )}
               <ThemeToggle />
             </div>
@@ -122,7 +124,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-rule">
+      <footer className="site-footer">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto]">
           <div className="max-w-sm">
             <Logo />

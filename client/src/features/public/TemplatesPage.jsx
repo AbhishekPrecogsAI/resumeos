@@ -136,6 +136,7 @@ export function TemplatesPage() {
     <>
       <PageHeader
         title="Resume templates"
+        accent="from classic to bold"
         lead="Pick a design, then type straight onto the page. Classic and modern templates with icons, photos, sidebars and colour options; every one passes the same export checks and lists its trade-offs."
       />
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">

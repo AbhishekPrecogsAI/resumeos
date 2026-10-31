@@ -9,9 +9,9 @@ beforeEach(() => mockApi(SIGNED_OUT));
 describe('public routes', () => {
   it.each([
     ['/', /Make a resume you're proud to send/],
-    ['/features', /What ResumeOS does/],
-    ['/templates', /^Resume templates$/],
-    ['/pricing', /^Pricing$/],
+    ['/features', /Everything ResumeOS does/],
+    ['/templates', /^Resume templates from classic to bold$/],
+    ['/pricing', /Free while we build it/],
     ['/security', /Security and privacy/],
     ['/privacy', /Privacy policy/],
     ['/terms', /Terms of use/],
