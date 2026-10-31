@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, CopyPlus, EyeOff, ListPlus, Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowLeftRight,
+  CopyPlus,
+  EyeOff,
+  ListPlus,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { getTemplate, DEFAULT_TEMPLATE_ID } from '@resumeos/shared/templates/index.js';
 import {
   setField,
@@ -14,6 +23,14 @@ import {
   cycleLevel,
 } from '@resumeos/shared/editing.js';
 import { templateFontCss } from '../../../../lib/templateFonts.js';
+import { sectionTitle } from '@resumeos/shared/resumeModel.js';
+import {
+  hideSection,
+  moveSection,
+  placeSection,
+  sectionColumn,
+  showSection,
+} from '@resumeos/shared/layouts.js';
 import { DatePopover } from './DatePopover.jsx';
 import { PAGE_PX, documentHeight } from '../../../../lib/measurePages.js';
 const URL_FIELD =
@@ -84,6 +101,7 @@ export function CanvasEditor({
   const [height, setHeight] = useState(PAGE_PX[pageSize]?.h ?? 1123);
   const [active, setActive] = useState(null); // { key, rect }
   const [dates, setDates] = useState(null); // { key, rect }
+  const [section, setSection] = useState(null); // { key, rect }: the section under the pointer
   const callbacks = useRef({ onTextEdit, onChange, onNotice });
   const page = PAGE_PX[pageSize] ?? PAGE_PX.A4;
 
@@ -220,6 +238,18 @@ export function CanvasEditor({
       }
     });
 
+    // Section toolbar: follows the pointer (and keyboard focus) from section to section.
+    const pickSection = (ev) => {
+      const el = ev.target.closest?.('section[data-section]');
+      if (!el) return;
+      for (const s of doc.querySelectorAll('.ed-section-active'))
+        s.classList.remove('ed-section-active');
+      el.classList.add('ed-section-active');
+      setSection({ key: el.dataset.section, rect: el.getBoundingClientRect() });
+    };
+    doc.addEventListener('mouseover', pickSection);
+    doc.addEventListener('focusin', pickSection);
+
     doc.addEventListener('focusin', (ev) => {
       for (const el of doc.querySelectorAll('.ed-active')) el.classList.remove('ed-active');
       const entry = ev.target.closest?.('[data-entry]');
@@ -230,6 +260,11 @@ export function CanvasEditor({
     });
 
     doc.addEventListener('click', (ev) => {
+      const show = ev.target.closest?.('[data-show]');
+      if (show) {
+        structural({ layout: showSection(layoutRef.current, show.dataset.show) });
+        return;
+      }
       const datesEl = ev.target.closest?.('[data-dates]');
       if (datesEl) {
         setDates({ key: datesEl.dataset.dates, rect: datesEl.getBoundingClientRect() });
@@ -384,6 +419,23 @@ export function CanvasEditor({
             </div>
           )}
 
+          {section && (
+            <SectionToolbar
+              key={section.key}
+              sectionKey={section.key}
+              rect={section.rect}
+              scale={scale}
+              template={getTemplate(templateId) ?? getTemplate(DEFAULT_TEMPLATE_ID)}
+              content={content}
+              layout={layout}
+              onLayout={(nextLayout, notice) => {
+                setSection(null);
+                structural({ layout: nextLayout });
+                if (notice) callbacks.current.onNotice?.(notice);
+              }}
+            />
+          )}
+
           {dates && (
             <DatePopover
               entryKey={dates.key}
@@ -398,6 +450,60 @@ export function CanvasEditor({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Controls for the section under the pointer, just above its top-right corner: move it within
+ * its column, move it to the other column (two-column templates), or hide it.
+ */
+function SectionToolbar({ sectionKey, rect, scale, template, content, layout, onLayout }) {
+  const title = sectionTitle(content, sectionKey);
+  const column = sectionColumn(template, layout, sectionKey);
+  const otherColumn = column === 'side' ? 'main' : 'side';
+  return (
+    <div
+      role="toolbar"
+      aria-label={`${title} section`}
+      className="absolute z-10 flex items-center gap-0.5 rounded-lg border border-rule bg-surface p-0.5 shadow-paper"
+      style={{
+        top: Math.max(0, rect.top * scale - 38),
+        left: Math.max(0, rect.right * scale - 172),
+      }}
+    >
+      <span className="px-2 text-xs font-medium text-muted">{title}</span>
+      <RailButton
+        label={`Move ${title} up`}
+        onClick={() => onLayout(moveSection(template, content, layout, sectionKey, -1))}
+      >
+        <ArrowUp className="size-4" aria-hidden="true" />
+      </RailButton>
+      <RailButton
+        label={`Move ${title} down`}
+        onClick={() => onLayout(moveSection(template, content, layout, sectionKey, 1))}
+      >
+        <ArrowDown className="size-4" aria-hidden="true" />
+      </RailButton>
+      {template.sideSections && (
+        <RailButton
+          label={`Move ${title} to the ${otherColumn === 'side' ? 'sidebar' : 'main column'}`}
+          onClick={() => onLayout(placeSection(template, layout, sectionKey, otherColumn))}
+        >
+          <ArrowLeftRight className="size-4" aria-hidden="true" />
+        </RailButton>
+      )}
+      <RailButton
+        label={`Hide ${title}`}
+        onClick={() =>
+          onLayout(
+            hideSection(layout, sectionKey),
+            `${title} is hidden. Show it again from the list at the end of the page.`,
+          )
+        }
+      >
+        <EyeOff className="size-4" aria-hidden="true" />
+      </RailButton>
     </div>
   );
 }

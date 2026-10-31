@@ -10,6 +10,8 @@ export const ORBIT = {
   // Sections spanning both columns above them, unless the resume places them in a column.
   fullWidthSections: ['summary'],
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'right',
   fonts: ['Manrope'],
   accent: { default: '#1f4fb4' },
   photo: true,
@@ -94,7 +96,7 @@ export function renderOrbit(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ORBIT.sideSections, side: 'right', header: 'top' },
+    sidebar: { keys: ORBIT.sideSections, width: SIDE_W, side: ORBIT.sidebarSide, header: 'top' },
     fullWidth: ORBIT.fullWidthSections,
     skillChips: true,
     contactIcons: true,

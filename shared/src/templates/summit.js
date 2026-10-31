@@ -8,6 +8,8 @@ export const SUMMIT = {
   columns: 2,
   // Sections shown in the sidebar unless the resume moves them.
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'right',
   fonts: ['Source Serif 4', 'IBM Plex Sans'],
   accent: { default: '#8a1f3d' },
   photo: true,
@@ -86,7 +88,7 @@ export function renderSummit(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: SUMMIT.sideSections, side: 'right', header: 'top' },
+    sidebar: { keys: SUMMIT.sideSections, width: SIDE_W, side: SUMMIT.sidebarSide, header: 'top' },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

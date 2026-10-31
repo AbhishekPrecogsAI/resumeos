@@ -78,6 +78,38 @@ describe('DesignDialog', () => {
     expect(layout()).not.toHaveProperty('placement');
   });
 
+  it('flips the sidebar, storing nothing for the template side', () => {
+    const layout = setup(); // Meridian: sidebar on the left by default
+    const side = screen.getByRole('radiogroup', { name: 'Sidebar side' });
+    expect(within(side).getByRole('radio', { name: 'Sidebar left' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    fireEvent.click(within(side).getByRole('radio', { name: 'Sidebar right' }));
+    expect(layout().sidebarSide).toBe('right');
+    fireEvent.click(within(side).getByRole('radio', { name: 'Sidebar left' }));
+    expect(layout()).not.toHaveProperty('sidebarSide');
+  });
+
+  it('applies a layout preset and marks it as current', () => {
+    const layout = setup();
+    const presets = screen.getByRole('list', { name: 'Layout presets' });
+    const skillsFirst = within(presets).getByRole('button', { name: /Skills first/ });
+    expect(skillsFirst).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(skillsFirst);
+    expect(layout().placement).toEqual({ skills: 'main' });
+    expect(layout().sectionOrder.slice(0, 3)).toEqual(['summary', 'skills', 'experience']);
+    expect(skillsFirst).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('single-column templates have presets but no sidebar switch', () => {
+    setup({ templateId: 'clarity' });
+    expect(screen.queryByRole('radiogroup', { name: 'Sidebar side' })).toBeNull();
+    const presets = screen.getByRole('list', { name: 'Layout presets' });
+    expect(within(presets).queryByRole('button', { name: /Compact sidebar/ })).toBeNull();
+    expect(within(presets).getByRole('button', { name: /Education first/ })).toBeInTheDocument();
+  });
+
   it('offers full width where the template spans a section across both columns', () => {
     setup({ templateId: 'orbit' });
     const summary = screen.getByRole('radiogroup', { name: 'Column for Summary' });

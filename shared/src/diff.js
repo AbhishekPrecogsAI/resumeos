@@ -329,9 +329,10 @@ export function diffResumes(left, right) {
     fontScale: s.layout?.fontScale ?? 1,
     spacing: s.layout?.spacing ?? 'normal',
     placement: s.layout?.placement ?? {},
+    sidebarSide: s.layout?.sidebarSide ?? null,
   });
   const [ld, rd] = [design(left), design(right)];
-  for (const field of ['font', 'fontScale', 'spacing'])
+  for (const field of ['font', 'fontScale', 'spacing', 'sidebarSide'])
     if (ld[field] !== rd[field]) template.push({ field, before: ld[field], after: rd[field] });
   if (!same(placementList(ld.placement), placementList(rd.placement)))
     template.push({

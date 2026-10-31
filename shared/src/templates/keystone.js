@@ -8,6 +8,8 @@ export const KEYSTONE = {
   columns: 2,
   // Sections shown in the sidebar unless the resume moves them.
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'right',
   fonts: ['Manrope'],
   accent: { default: '#b45309' },
   photo: true,
@@ -94,7 +96,13 @@ export function renderKeystone(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: KEYSTONE.sideSections, side: 'right', header: 'top' },
+    sidebar: {
+      keys: KEYSTONE.sideSections,
+      width: 'minmax(0, 1fr)',
+      mainWidth: 'minmax(0, 1.6fr)',
+      side: KEYSTONE.sidebarSide,
+      header: 'top',
+    },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

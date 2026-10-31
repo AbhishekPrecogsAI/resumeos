@@ -10,6 +10,8 @@ export const TIDE = {
   // Sections spanning both columns above them, unless the resume places them in a column.
   fullWidthSections: ['summary'],
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'right',
   fonts: ['Manrope'],
   accent: { default: '#1f4fb4' },
   photo: true,
@@ -102,7 +104,7 @@ export function renderTide(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: TIDE.sideSections, side: 'right', header: 'top' },
+    sidebar: { keys: TIDE.sideSections, width: SIDE_W, side: TIDE.sidebarSide, header: 'top' },
     fullWidth: TIDE.fullWidthSections,
     skillChips: true,
     contactIcons: true,

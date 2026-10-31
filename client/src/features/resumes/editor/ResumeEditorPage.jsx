@@ -894,6 +894,7 @@ function ResumeEditor({ resume, profile }) {
         setDraft={setDraft}
         meta={meta}
         flush={autosave.flush}
+        photo={previewPhoto}
       />
       <ShareDialog
         open={shareOpen}

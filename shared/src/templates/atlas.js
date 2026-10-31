@@ -8,6 +8,8 @@ export const ATLAS = {
   columns: 2,
   // Sections shown in the sidebar unless the resume moves them.
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'left',
   fonts: ['Manrope'],
   accent: { default: '#1f6fb4' },
   photo: true,
@@ -100,7 +102,12 @@ export function renderAtlas(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ATLAS.sideSections, side: 'left', header: 'sidebar' },
+    sidebar: {
+      keys: ATLAS.sideSections,
+      width: SIDE_W,
+      side: ATLAS.sidebarSide,
+      header: 'sidebar',
+    },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

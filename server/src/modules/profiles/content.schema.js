@@ -196,6 +196,8 @@ export const layoutSchema = z.strictObject({
   fontScale: z.number().min(0.8).max(1.2).optional(),
   spacing: z.enum(['compact', 'normal', 'relaxed']).optional(),
   font: z.union([z.enum(FONT_CHOICE_IDS), z.null()]).optional(),
+  // Which side a two-column template's sidebar sits on; unset keeps the template's side.
+  sidebarSide: z.enum(['left', 'right']).optional(),
 });
 
 export const baselinesSchema = z

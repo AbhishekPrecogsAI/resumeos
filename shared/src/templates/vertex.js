@@ -8,6 +8,8 @@ export const VERTEX = {
   columns: 2,
   // Sections shown in the sidebar unless the resume moves them.
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'left',
   fonts: ['Outfit', 'Manrope'],
   accent: { default: '#0f6e66' },
   photo: true,
@@ -99,7 +101,12 @@ export function renderVertex(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: VERTEX.sideSections, side: 'left', header: 'sidebar' },
+    sidebar: {
+      keys: VERTEX.sideSections,
+      width: SIDE_W,
+      side: VERTEX.sidebarSide,
+      header: 'sidebar',
+    },
     skillChips: true,
     contactIcons: true,
     photo,

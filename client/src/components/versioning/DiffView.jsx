@@ -48,6 +48,7 @@ const FIELD_LABELS = {
   fontScale: 'Text size',
   spacing: 'Spacing',
   placement: 'Section columns',
+  sidebarSide: 'Sidebar side',
   level: 'Level',
 };
 
@@ -84,6 +85,8 @@ function formatValue(field, value) {
     );
   if (field === 'font') return value ? (fontChoice(value)?.label ?? value) : 'Template default';
   if (field === 'fontScale') return `${Math.round(value * 100)}%`;
+  if (field === 'sidebarSide')
+    return value ? `${value[0].toUpperCase()}${value.slice(1)}` : 'Template default';
   if (field === 'spacing') return value.charAt(0).toUpperCase() + value.slice(1);
   if (field === 'placement')
     return value.length

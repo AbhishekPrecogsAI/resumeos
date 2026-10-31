@@ -8,6 +8,8 @@ export const PULSE = {
   columns: 2,
   // Sections shown in the sidebar unless the resume moves them.
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'right',
   fonts: ['Outfit', 'Manrope'],
   accent: { default: '#0f6e66' },
   photo: true,
@@ -84,6 +86,15 @@ li::marker { color: var(--accent); }
 .skills dd { margin: 0; }
 .chip { display: inline-block; margin: 0 3pt 4pt 0; padding: 1.5pt 7pt; border-radius: 3pt; background: rgba(255,255,255,0.1); color: #eef1f5; font-size: 8.1pt; font-weight: 600; }
 .main .chip { background: var(--soft); color: var(--deep); }
+/* Sidebar flipped to the left: the header's contact column follows the band, and spacing mirrors. */
+.flipped header { grid-template-columns: ${SIDE_W} minmax(0, 1fr); padding: 12mm 12mm 0 0; }
+.flipped header.with-photo { grid-template-columns: ${SIDE_W} auto minmax(0, 1fr); }
+.flipped .contact { grid-column: 1; }
+.flipped header h1, .flipped header .headline { grid-column: 2; padding-right: 0; padding-left: 9mm; }
+.flipped header.with-photo .photo { grid-column: 2; margin-left: 9mm; }
+.flipped header.with-photo h1, .flipped header.with-photo .headline { grid-column: 3; padding-left: 0; }
+.flipped .columns .main { padding: 11mm 12mm 9mm 9mm; }
+.flipped .columns .sidebar { padding: 11mm 8mm 9mm 7mm; }
 `;
 
 export function renderPulse(
@@ -105,7 +116,7 @@ export function renderPulse(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: PULSE.sideSections, side: 'right', header: 'top' },
+    sidebar: { keys: PULSE.sideSections, width: SIDE_W, side: PULSE.sidebarSide, header: 'top' },
     skillChips: true,
     contactIcons: true,
     headingIcons: true,

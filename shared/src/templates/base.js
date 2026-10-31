@@ -533,6 +533,10 @@ p[data-edit]:empty, h2[data-edit]:empty { min-height: 1.2em; }
 .ed-empty:hover { color: #2e3fb8; }
 .ed-add { display: inline-block; margin: 4pt 0 0; padding: 2pt 8pt; border: 1px dashed rgba(46, 63, 184, 0.35); border-radius: 999px; color: #2e3fb8; font-size: 8.5pt; font-weight: 600; cursor: pointer; }
 .ed-add:hover, .ed-add:focus { background: rgba(46, 63, 184, 0.08); outline: none; }
+.ed-hidden { display: flex; flex-wrap: wrap; align-items: center; gap: 6pt; margin: 18pt 0 0; padding: 10pt 12pt; border: 1px dashed #b7bdc8; border-radius: 6pt; color: #5b6370; font-size: 8.5pt; }
+.ed-hidden button { padding: 2pt 8pt; border: 1px solid #c9ced6; border-radius: 999px; background: #fff; color: #2e3fb8; font: inherit; font-weight: 600; cursor: pointer; }
+.ed-hidden button:hover, .ed-hidden button:focus { background: rgba(46, 63, 184, 0.08); outline: none; }
+section[data-section].ed-section-active { outline: 1.5px dashed rgba(46, 63, 184, 0.35); outline-offset: 4pt; border-radius: 3pt; }
 [data-entry].ed-active { outline: 1.5px dashed rgba(46, 63, 184, 0.45); outline-offset: 3pt; border-radius: 3pt; }
 a { pointer-events: none; }
 `;
@@ -595,6 +599,46 @@ function designCss(layout, page) {
   }
   if (SPACING_CSS[layout.spacing]) out += `\n${SPACING_CSS[layout.spacing]}\n`;
   return out;
+}
+
+const mirrorBackground = (bg) =>
+  bg.replace(/to (left|right)/g, (_, dir) => `to ${dir === 'left' ? 'right' : 'left'}`);
+
+/**
+ * Put the sidebar on the other side: an explicit grid that swaps the two columns, built from the
+ * widths the template declares, plus a mirrored full-height band when the page paints one.
+ * Templates fine-tune anything else asymmetric (padding, a header that follows the band) with
+ * `.flipped`.
+ */
+function flipCss(sidebar, side, pageBackground) {
+  const main = sidebar.mainWidth ?? 'minmax(0, 1fr)';
+  const left = side === 'left';
+  let out = `
+.columns { grid-template-columns: ${left ? `${sidebar.width} ${main}` : `${main} ${sidebar.width}`}; }
+.columns .sidebar { grid-column: ${left ? 1 : 2}; grid-row: 1; }
+.columns .main { grid-column: ${left ? 2 : 1}; grid-row: 1; }
+`;
+  if (pageBackground !== '#fff')
+    out += `html { background: ${mirrorBackground(pageBackground)}; }\n`;
+  return out;
+}
+
+/** Editor only: hidden sections listed at the end of the page, each with a way back. */
+function hiddenStrip(content, layout) {
+  const valid = new Set(resolveSectionOrder(content, layout));
+  const hidden = (layout.hiddenSections ?? []).filter((k) => valid.has(k));
+  if (!hidden.length) return '';
+  const title = (key) =>
+    key.startsWith('custom:')
+      ? (content.customSections ?? []).find((s) => `custom:${s.id}` === key)?.title ||
+        'Untitled section'
+      : SECTION_TITLES[key];
+  return `<div class="ed-hidden"><span>Hidden from this resume:</span> ${hidden
+    .map(
+      (key) =>
+        `<button type="button" data-show="${e(key)}">${e(title(key))}<span aria-hidden="true"> · </span>Show</button>`,
+    )
+    .join(' ')}</div>`;
 }
 
 export function renderResume(
@@ -684,6 +728,13 @@ ${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g.
 </header>`;
 
   let body;
+  // A resume can put the sidebar on the other side. Only the on-screen position changes: the
+  // sidebar stays first in the document, so text still extracts sidebar first.
+  const sidebarAt =
+    sidebar && (layout.sidebarSide === 'left' || layout.sidebarSide === 'right')
+      ? layout.sidebarSide
+      : sidebar?.side;
+  const flipped = Boolean(sidebar) && sidebarAt !== sidebar.side;
   if (!sidebar) {
     body = `${header}\n${sections.map((s) => s.html).join('')}`;
   } else {
@@ -714,7 +765,7 @@ ${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g.
       .map((s) => s.html)
       .join('');
     const aside = `<aside class="sidebar">${sidebar.header === 'sidebar' ? header : ''}${side}</aside>`;
-    body = `${sidebar.header === 'sidebar' ? '' : header}\n${above ? `<div class="full">${above}</div>` : ''}<div class="columns sidebar-${sidebar.side}">${aside}<main class="main">${main}</main></div>`;
+    body = `${sidebar.header === 'sidebar' ? '' : header}\n${above ? `<div class="full">${above}</div>` : ''}<div class="columns sidebar-${sidebarAt}">${aside}<main class="main">${main}</main></div>`;
   }
 
   return `<!doctype html>
@@ -723,8 +774,8 @@ ${editable ? ed({ editable }, 'headline', content.headline, 'Your headline, e.g.
 <title>${e(contact.name || 'Resume')}</title>
 <style>
 ${fontCss}
-${accentVars(defaultAccent, accentColor)}${usesLists ? LIST_CSS : ''}${css(page, chosenFont?.stack ?? fontStack)}${designCss(layout, page)}${patternCss(defaultAccent, accentColor, pattern, pageBackground)}${editable ? EDITABLE_CSS : ''}</style></head>
-<body${sidebar ? ' class="has-sidebar"' : ''}>
-${body}
+${accentVars(defaultAccent, accentColor)}${usesLists ? LIST_CSS : ''}${css(page, chosenFont?.stack ?? fontStack)}${designCss(layout, page)}${flipped ? flipCss(sidebar, sidebarAt, pageBackground) : ''}${patternCss(defaultAccent, accentColor, pattern, flipped ? mirrorBackground(pageBackground) : pageBackground)}${editable ? EDITABLE_CSS : ''}</style></head>
+<body${sidebar ? ` class="has-sidebar${flipped ? ' flipped' : ''}"` : ''}>
+${body}${editable ? hiddenStrip(content, layout) : ''}
 </body></html>`;
 }

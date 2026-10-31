@@ -97,6 +97,7 @@ describe('design settings in the layout', () => {
       { font: 'Comic Sans' },
       { placement: { skills: 'top' } },
       { placement: { nonsense: 'side' } },
+      { sidebarSide: 'top' },
     ])
       expect([wrong, (await save({ ...resume.draft.layout, ...wrong })).status]).toEqual([
         wrong,
@@ -381,5 +382,36 @@ describe('the sample resume', () => {
       }
     },
     240_000,
+  );
+});
+
+describe('sidebar side', () => {
+  it('is saved and can be cleared', async () => {
+    const { resume, save, client, base } = await setup();
+    expect((await save({ ...resume.draft.layout, sidebarSide: 'right' })).status).toBe(200);
+    expect((await client.get(base)).body.resume.draft.layout.sidebarSide).toBe('right');
+  });
+
+  it.skipIf(!hasChrome)(
+    'every two-column template passes the export checks with its sidebar flipped',
+    async () => {
+      for (const t of TEMPLATES.filter((x) => x.sideSections)) {
+        for (const content of [FIXTURES.sample, FIXTURES.multiPage]) {
+          const out = await renderPdf(pool, {
+            content,
+            layout: {
+              ...defaultLayout(content),
+              sidebarSide: t.sidebarSide === 'left' ? 'right' : 'left',
+            },
+            templateId: t.id,
+            pageSize: 'A4',
+            timeoutMs: 30_000,
+          });
+          const v = await validatePdf(out.buffer, out);
+          expect([t.id, v.checks.filter((c) => c.result !== 'pass')]).toEqual([t.id, []]);
+        }
+      }
+    },
+    300_000,
   );
 });

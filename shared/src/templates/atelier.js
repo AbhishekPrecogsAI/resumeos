@@ -8,6 +8,8 @@ export const ATELIER = {
   columns: 2,
   // Sections shown in the sidebar unless the resume moves them.
   sideSections: ['skills', 'education', 'certifications', 'languages', 'interests'],
+  // Default sidebar side; a resume can flip it (layout.sidebarSide).
+  sidebarSide: 'right',
   fonts: ['IBM Plex Sans', 'Source Serif 4'],
   accent: { default: '#23304a' },
   docxFont: 'Georgia',
@@ -88,7 +90,12 @@ export function renderAtelier(
     fontCss,
     fontStack,
     css,
-    sidebar: { keys: ATELIER.sideSections, side: 'right', header: 'top' },
+    sidebar: {
+      keys: ATELIER.sideSections,
+      width: SIDE_W,
+      side: ATELIER.sidebarSide,
+      header: 'top',
+    },
     skillChips: true,
     contactIcons: true,
     defaultAccent: ATELIER.accent.default,

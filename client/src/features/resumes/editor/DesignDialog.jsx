@@ -7,6 +7,8 @@ import { Dialog } from '../../../components/ui/Dialog.jsx';
 import { Button } from '../../../components/ui/Button.jsx';
 import { SelectField } from '../../../components/ui/Field.jsx';
 import { resumesApi } from '../../../api/resumes.api.js';
+import { TemplatePreview } from '../../../components/preview/TemplatePreview.jsx';
+import { applyPreset, matchingPreset, presetsFor, sidebarSide } from '@resumeos/shared/layouts.js';
 import { cx } from '../../../lib/cx.js';
 
 const SPACING = [
@@ -58,7 +60,7 @@ const withSettings = (layout, changes) => {
  * Design settings stored in the resume layout: font, text size, spacing and, on two-column
  * templates, which column each section goes in. All of it is undoable like any other edit.
  */
-export function DesignDialog({ open, onClose, resumeId, draft, setDraft, meta, flush }) {
+export function DesignDialog({ open, onClose, resumeId, draft, setDraft, meta, flush, photo }) {
   const template = getTemplate(meta.templateId);
   const { content, layout } = draft;
   const [fit, setFit] = useState(null); // { status, message }
@@ -126,9 +128,74 @@ export function DesignDialog({ open, onClose, resumeId, draft, setDraft, meta, f
         onClose();
       }}
       title="Design"
+      size="lg"
       description="Font, size and spacing for this resume. Your text doesn't change."
     >
       <div className="grid gap-6">
+        <section aria-labelledby="design-layout" className="grid gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 id="design-layout" className="text-sm font-medium text-ink">
+              Layout
+            </h3>
+            {template.sideSections && (
+              <Segmented
+                label="Sidebar side"
+                value={sidebarSide(template, layout)}
+                options={[
+                  { id: 'left', label: 'Sidebar left' },
+                  { id: 'right', label: 'Sidebar right' },
+                ]}
+                onChange={(id) =>
+                  update({ sidebarSide: id === template.sidebarSide ? undefined : id })
+                }
+              />
+            )}
+          </div>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Layout presets">
+            {presetsFor(template).map((preset) => {
+              const applied = applyPreset(template, content, layout, preset.id);
+              const current = matchingPreset(template, content, layout) === preset.id;
+              return (
+                <li key={preset.id}>
+                  <button
+                    type="button"
+                    aria-pressed={current}
+                    onClick={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        layout: applyPreset(template, d.content, d.layout, preset.id),
+                      }))
+                    }
+                    className={cx(
+                      'group block w-full rounded-lg border-2 p-1.5 text-left transition-colors',
+                      current ? 'border-accent' : 'border-rule hover:border-rule-strong',
+                    )}
+                  >
+                    <span className="theme-light pointer-events-none block overflow-hidden rounded bg-white">
+                      <TemplatePreview
+                        content={content}
+                        layout={applied}
+                        templateId={template.id}
+                        pageSize={meta.pageSize}
+                        accentColor={meta.accentColor}
+                        pattern={meta.backgroundPattern}
+                        photo={photo}
+                        firstPageOnly
+                        lazy
+                        title={`${preset.name} layout preview`}
+                      />
+                    </span>
+                    <span className="mt-1.5 block text-xs font-medium text-ink">{preset.name}</span>
+                    <span className="block text-[11px] leading-snug text-muted">
+                      {preset.description}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
         <SelectField
           label="Font"
           hint={
