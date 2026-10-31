@@ -1,11 +1,26 @@
 /*
- * Landing page. One system throughout: canvas sections alternate with light bands, cards share
- * one radius and border, the accent is used sparingly, and the hero's fanned stack is the only
- * motion that plays without a user action.
+ * Landing page. Colour comes from one five-stop family (indigo, violet, pink, amber, teal) used
+ * in soft glows, gradient text, icon tiles and the two feature cards. Depth comes from parallax:
+ * glows and previews drift at their own speed on scroll (useParallax sets `translate`), and the
+ * hero's layers follow the pointer by different amounts (--px / --py). Transforms here are for
+ * the page itself; resume templates never use them.
  */
 .landing {
-  --l-radius: 14px;
-  --l-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 18px 40px -24px rgb(15 23 42 / 0.28);
+  --g-indigo: #4f46e5;
+  --g-violet: #7c3aed;
+  --g-pink: #db2777;
+  --g-amber: #f59e0b;
+  --g-teal: #0d9488;
+  --g-main: linear-gradient(110deg, #4f46e5 0%, #7c3aed 45%, #db2777 100%);
+  --g-text: linear-gradient(100deg, #4338ca 0%, #7c3aed 45%, #db2777 100%);
+  --glow-a: 0.28;
+  --l-radius: 16px;
+  --l-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 22px 44px -26px rgb(30 27 75 / 0.35);
+}
+.dark .landing {
+  --g-text: linear-gradient(100deg, #a5b4fc 0%, #c4b5fd 45%, #f9a8d4 100%);
+  --glow-a: 0.2;
+  --l-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 22px 44px -26px rgb(0 0 0 / 0.7);
 }
 
 /* Shared by Reveal (used elsewhere). */
@@ -21,65 +36,156 @@
   transform: none;
 }
 
-/* ---------- Sections ---------- */
-.l-section {
-  padding-block: 72px;
-  background: var(--canvas);
+/* ---------- Building blocks ---------- */
+.grad-text {
+  background: var(--g-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.l-band {
-  border-block: 1px solid var(--rule);
-  background: var(--surface);
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
 }
-@media (min-width: 1024px) {
-  .l-section {
-    padding-block: 96px;
-  }
-}
-.l-card {
-  border: 1px solid var(--rule);
-  border-radius: var(--l-radius);
-  background: var(--surface);
-  box-shadow: var(--l-shadow);
-}
-.l-band .l-card {
-  background: var(--canvas);
-}
-.l-icon {
+.grad-tile {
   display: grid;
   flex: none;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 11px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  color: #fff;
+  box-shadow: 0 10px 20px -10px var(--tile-shadow, rgb(79 70 229 / 0.6));
+}
+.grad-tile-lg {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+}
+.grad-tile-indigo {
+  --tile-shadow: rgb(79 70 229 / 0.65);
+  background: linear-gradient(135deg, #818cf8, #4338ca);
+}
+.grad-tile-violet {
+  --tile-shadow: rgb(124 58 237 / 0.65);
+  background: linear-gradient(135deg, #c084fc, #6d28d9);
+}
+.grad-tile-pink {
+  --tile-shadow: rgb(219 39 119 / 0.6);
+  background: linear-gradient(135deg, #f472b6, #be185d);
+}
+.grad-tile-amber {
+  --tile-shadow: rgb(217 119 6 / 0.6);
+  background: linear-gradient(135deg, #fbbf24, #c2410c);
+}
+.grad-tile-teal {
+  --tile-shadow: rgb(13 148 136 / 0.6);
+  background: linear-gradient(135deg, #2dd4bf, #0f766e);
+}
+.glass-card {
+  border: 1px solid var(--rule);
+  border-radius: var(--l-radius);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: var(--l-shadow);
+  backdrop-filter: blur(10px);
 }
 
-/* ---------- Hero: a fanned stack of live template renders ---------- */
-.hero2 {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 7%, var(--canvas)) 0%,
-    var(--canvas) 85%
-  );
+/* ---------- Sections ---------- */
+.l-section {
+  padding-block: 80px;
 }
-.hero2-backdrop {
+.l-band {
+  border-block: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--accent) 3%, var(--surface));
+}
+@media (min-width: 1024px) {
+  .l-section {
+    padding-block: 104px;
+  }
+}
+/* A large soft glow behind a section, drifting on scroll. */
+.section-glow {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(
-      55% 65% at 76% 46%,
-      color-mix(in srgb, var(--accent) 16%, transparent),
-      transparent 72%
-    ),
-    radial-gradient(
-        circle at 1px 1px,
-        color-mix(in srgb, var(--ink) 10%, transparent) 1px,
-        transparent 1.6px
-      )
-      0 0 / 22px 22px;
-  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+  pointer-events: none;
+}
+.section-glow > span {
+  position: absolute;
+  top: 10%;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+}
+.section-glow-left > span {
+  left: -260px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--g-violet) calc(var(--glow-a) * 100%), transparent),
+    transparent 65%
+  );
+}
+.section-glow-right > span {
+  right: -240px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--g-pink) calc(var(--glow-a) * 80%), transparent),
+    transparent 65%
+  );
+}
+
+/* ---------- Hero ---------- */
+.hero2 {
+  background: var(--canvas);
+}
+.hero2-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.hero2-mesh .glow {
+  width: 620px;
+  height: 620px;
+}
+.glow-indigo {
+  top: -180px;
+  right: 6%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--g-indigo) calc(var(--glow-a) * 130%), transparent),
+    transparent 66%
+  );
+}
+.glow-pink {
+  right: -160px;
+  bottom: -220px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--g-pink) calc(var(--glow-a) * 110%), transparent),
+    transparent 66%
+  );
+}
+.glow-amber {
+  top: -120px;
+  left: -200px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--g-amber) calc(var(--glow-a) * 80%), transparent),
+    transparent 66%
+  );
+}
+.hero2-dots {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in srgb, var(--ink) 11%, transparent) 1px,
+      transparent 1.6px
+    )
+    0 0 / 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 70% at 60% 40%, #000 30%, transparent 75%);
 }
 .hero2-pill {
   display: inline-flex;
@@ -88,21 +194,42 @@
   padding: 4px 14px 4px 4px;
   border: 1px solid var(--rule);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
   font-size: 0.875rem;
   color: var(--muted);
+  backdrop-filter: blur(8px);
 }
 .hero2-pill-new {
   padding: 2px 9px;
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--g-main);
+  color: #fff;
   font-size: 0.75rem;
   font-weight: 600;
 }
+.landing .grad-button {
+  border: 0;
+  background: var(--g-main);
+  background-size: 160% 100%;
+  background-position: 0 0;
+  color: #fff;
+  box-shadow: 0 16px 32px -14px rgb(124 58 237 / 0.7);
+  transition:
+    background-position 0.4s ease,
+    box-shadow 0.3s ease;
+}
+.landing .grad-button:hover {
+  background-position: 100% 0;
+  box-shadow: 0 20px 38px -14px rgb(219 39 119 / 0.65);
+}
+.landing .glass-button {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+/* The stack: three live renders, fanned, each at its own depth for pointer parallax. */
 .hero2-stage {
   margin: 0;
-  /* Room for the side sheets so they never touch the screen edge. */
   padding-inline: 7%;
 }
 .stack {
@@ -119,16 +246,20 @@
   background: #fff;
   box-shadow:
     0 0 0 1px rgb(15 23 42 / 0.06),
-    0 28px 56px -22px rgb(15 23 42 / 0.42);
-  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    0 30px 60px -22px rgb(30 27 75 / 0.5);
+  transition:
+    transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1),
+    translate 0.35s ease-out;
 }
 .stack-card-left {
   left: -4%;
   transform: rotate(-7deg) translateY(6%);
+  translate: calc(var(--px, 0) * -10px) calc(var(--py, 0) * -8px);
 }
 .stack-card-right {
   right: -4%;
   transform: rotate(6deg) translateY(8%);
+  translate: calc(var(--px, 0) * 14px) calc(var(--py, 0) * 10px);
 }
 .stack-card-front {
   top: 0;
@@ -136,12 +267,7 @@
   z-index: 2;
   width: 62%;
   transform: translateX(-50%);
-}
-.hero2-stage:hover .stack-card-left {
-  transform: rotate(-9deg) translate(-3%, 6%);
-}
-.hero2-stage:hover .stack-card-right {
-  transform: rotate(8deg) translate(3%, 8%);
+  translate: calc(var(--px, 0) * 6px) calc(var(--py, 0) * 5px);
 }
 .stack-chip {
   position: absolute;
@@ -152,12 +278,20 @@
   padding: 10px 14px;
   border: 1px solid var(--rule);
   border-radius: 14px;
-  background: var(--surface);
-  box-shadow: 0 18px 36px -18px rgb(15 23 42 / 0.4);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 20px 40px -18px rgb(30 27 75 / 0.45);
+  backdrop-filter: blur(8px);
+  translate: calc(var(--px, 0) * 22px) calc(var(--py, 0) * 16px);
+  transition: translate 0.35s ease-out;
 }
 .stack-chip-accent {
   top: 16%;
   left: -8%;
+}
+.stack-chip-share {
+  top: -2%;
+  right: -6%;
+  translate: calc(var(--px, 0) * -18px) calc(var(--py, 0) * -14px);
 }
 .stack-chip-check {
   right: -8%;
@@ -168,116 +302,11 @@
     display: flex;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .stack-card-left {
-    animation: stack-fan-left 0.9s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-  .stack-card-right {
-    animation: stack-fan-right 0.9s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-  .stack-chip {
-    animation: stack-chip-in 0.5s 0.85s ease-out both;
-  }
-}
-@keyframes stack-fan-left {
-  from {
-    transform: translateX(28%) rotate(0deg);
-  }
-}
-@keyframes stack-fan-right {
-  from {
-    transform: translateX(-28%) rotate(0deg);
-  }
-}
-@keyframes stack-chip-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-}
-
-/* ---------- Template showcase row ---------- */
-.showcase-row {
-  --gutter: max(16px, calc((100% - 72rem) / 2 + 24px));
-  display: grid;
-  grid-auto-columns: minmax(200px, 236px);
-  grid-auto-flow: column;
-  gap: 24px;
-  margin: 0;
-  padding: 32px var(--gutter) 28px;
-  overflow-x: auto;
-  scroll-padding-inline: var(--gutter);
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  list-style: none;
-  /* Fade the far edge so the row reads as scrollable without a visible scrollbar. */
-  mask-image: linear-gradient(to right, #000 calc(100% - 64px), transparent);
-}
-.showcase-row::-webkit-scrollbar {
-  display: none;
-}
-.showcase-card {
-  scroll-snap-align: start;
-}
-.showcase-card a {
-  border-radius: 10px;
-}
-.showcase-paper {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: var(--l-shadow);
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-}
-.showcase-card a:hover .showcase-paper,
-.showcase-card a:focus-visible .showcase-paper {
-  transform: translateY(-6px);
-  box-shadow: 0 26px 44px -20px rgb(15 23 42 / 0.45);
-}
-.showcase-use {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 0.875rem;
-  font-weight: 600;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translate(-50%, 8px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-.showcase-card a:hover .showcase-use,
-.showcase-card a:focus-visible .showcase-use {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-.showcase-nav {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--rule-strong);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink);
-}
-.showcase-nav:hover {
-  background: var(--sunken);
-}
 
 /* ---------- How it works ---------- */
 .steps {
   display: grid;
-  gap: 32px;
+  gap: 20px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -289,24 +318,32 @@
 }
 @media (min-width: 1024px) {
   .steps {
-    position: relative;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    /* The line that joins the step numbers. */
-    background: linear-gradient(var(--rule-strong), var(--rule-strong)) 20px 20px /
-      calc(100% - 40px) 1px no-repeat;
   }
 }
-.step-num {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--accent);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+.step-card {
+  padding: 24px;
+  border: 1px solid transparent;
+  border-radius: var(--l-radius);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--rule), var(--rule)) border-box;
+  box-shadow: var(--l-shadow);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.step-card:hover {
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--g-main) border-box;
+  box-shadow: 0 26px 48px -26px rgb(124 58 237 / 0.55);
+  transform: translateY(-4px);
+}
+.step-index {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  color: var(--faint);
 }
 
 /* ---------- Make it yours ---------- */
@@ -314,9 +351,9 @@
   display: grid;
   grid-auto-columns: 62%;
   grid-auto-flow: column;
-  gap: 16px;
+  gap: 18px;
   margin: 0;
-  padding: 0 0 8px;
+  padding: 8px 0;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -335,18 +372,13 @@
     overflow: visible;
   }
 }
-@media (min-width: 1024px) {
-  .looks {
-    padding-top: 24px;
-  }
-  .looks-card-1 {
-    transform: translateY(-24px);
-  }
-}
-.looks-card > div {
+.looks-paper {
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
   box-shadow:
     0 0 0 1px rgb(15 23 42 / 0.06),
-    var(--l-shadow);
+    0 30px 56px -26px rgb(30 27 75 / 0.5);
 }
 .looks-label {
   display: flex;
@@ -360,55 +392,148 @@
 
 /* ---------- Checks ---------- */
 .finding {
-  padding: 18px 20px;
+  position: relative;
+  padding: 18px 20px 18px 24px;
+  overflow: hidden;
   border: 1px solid var(--rule);
-  border-left: 3px solid var(--warn);
-  border-radius: 10px;
-  background: var(--canvas);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  box-shadow: var(--l-shadow);
+  backdrop-filter: blur(8px);
 }
-.finding-info {
-  border-left-color: var(--accent);
+.finding::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #fbbf24, #ea580c);
+}
+.finding-info::before {
+  background: linear-gradient(180deg, #818cf8, #7c3aed);
+}
+
+/* ---------- Pricing ---------- */
+.price-card {
+  position: relative;
+  padding: 32px;
+  overflow: hidden;
+  border-radius: var(--l-radius);
+  background:
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.14) 1px, transparent 1.6px) 0 0 / 22px
+      22px,
+    radial-gradient(120% 90% at 100% 0%, rgb(244 114 182 / 0.55), transparent 60%),
+    linear-gradient(140deg, #4338ca 0%, #6d28d9 55%, #9d174d 100%);
+  box-shadow: 0 30px 60px -28px rgb(109 40 217 / 0.7);
+}
+.landing .price-card-button {
+  background: #fff;
+  color: #4338ca;
+}
+.landing .price-card-button:hover {
+  background: #eef2ff;
 }
 
 /* ---------- Final call to action ---------- */
 .l-cta {
-  padding: 56px 24px;
-  border-radius: 20px;
-  background:
-    radial-gradient(
-        circle at 1px 1px,
-        color-mix(in srgb, var(--on-accent) 16%, transparent) 1px,
-        transparent 1.6px
-      )
-      0 0 / 22px 22px,
-    var(--accent);
-  color: var(--on-accent);
+  padding: 64px 24px;
+  border-radius: 24px;
+  background: linear-gradient(115deg, #4338ca, #7c3aed, #db2777, #f59e0b, #7c3aed, #4338ca);
+  background-size: 300% 300%;
   text-align: center;
+  box-shadow: 0 40px 80px -36px rgb(124 58 237 / 0.75);
 }
 @media (min-width: 1024px) {
   .l-cta {
-    padding: 72px 48px;
+    padding: 80px 48px;
   }
 }
-.l-cta p {
-  color: color-mix(in srgb, var(--on-accent) 85%, transparent);
+.l-cta-glows {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
 }
-.l-cta .l-cta-primary {
-  background: var(--on-accent);
-  color: var(--accent);
+.l-cta-glows .glow {
+  width: 420px;
+  height: 420px;
 }
-.l-cta .l-cta-primary:hover {
-  background: color-mix(in srgb, var(--on-accent) 90%, var(--accent));
+.glow-white-a {
+  top: -200px;
+  left: -120px;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.28), transparent 65%);
 }
-.l-cta .l-cta-secondary {
-  border: 1px solid color-mix(in srgb, var(--on-accent) 55%, transparent);
-  background: transparent;
-  color: var(--on-accent);
+.glow-white-b {
+  right: -140px;
+  bottom: -220px;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.2), transparent 65%);
 }
-.l-cta .l-cta-secondary:hover {
-  background: color-mix(in srgb, var(--on-accent) 12%, transparent);
+.landing .l-cta-primary {
+  background: #fff;
+  color: #4338ca;
+  box-shadow: 0 14px 30px -14px rgb(15 23 42 / 0.5);
+}
+.landing .l-cta-primary:hover {
+  background: #eef2ff;
+}
+.landing .l-cta-secondary {
+  border: 1px solid rgb(255 255 255 / 0.6);
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+}
+.landing .l-cta-secondary:hover {
+  background: rgb(255 255 255 / 0.16);
 }
 
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .stack-card-left {
+    animation: stack-fan-left 0.9s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .stack-card-right {
+    animation: stack-fan-right 0.9s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .stack-chip {
+    animation: stack-chip-in 0.5s 0.85s ease-out both;
+  }
+  .hero2-mesh .glow {
+    animation: glow-drift 18s ease-in-out infinite alternate;
+  }
+  .glow-pink {
+    animation-duration: 22s;
+    animation-delay: -6s;
+  }
+  .l-cta {
+    animation: cta-flow 16s ease-in-out infinite alternate;
+  }
+}
+@keyframes stack-fan-left {
+  from {
+    transform: translateX(28%) rotate(0deg);
+  }
+}
+@keyframes stack-fan-right {
+  from {
+    transform: translateX(-28%) rotate(0deg);
+  }
+}
+@keyframes stack-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes glow-drift {
+  to {
+    transform: translate(40px, 30px) scale(1.08);
+  }
+}
+@keyframes cta-flow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     opacity: 1;
@@ -416,49 +541,15 @@
     transition: none;
   }
   .stack-card,
-  .showcase-paper,
-  .showcase-use {
+  .stack-chip,
+  .step-card {
     transition: none;
   }
 }
 
-/* The template row follows straight on from the hero. */
-.hero2 + .l-section {
-  padding-top: 24px;
-}
-@media (min-width: 1024px) {
-  .hero2 + .l-section {
-    padding-top: 40px;
+/* In the phone's sideways-scrolling row, vertical parallax would only misalign the previews. */
+@media (max-width: 639px) {
+  .looks [data-parallax] {
+    translate: none !important;
   }
-}
-
-/* Dark theme: the accent is light there, so the call to action becomes a deep accent panel. */
-.dark .l-cta {
-  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--rule));
-  background:
-    radial-gradient(
-        circle at 1px 1px,
-        color-mix(in srgb, var(--accent) 22%, transparent) 1px,
-        transparent 1.6px
-      )
-      0 0 / 22px 22px,
-    color-mix(in srgb, var(--accent) 16%, var(--surface));
-  color: var(--ink);
-}
-.dark .l-cta p {
-  color: var(--muted);
-}
-.dark .l-cta .l-cta-primary {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.dark .l-cta .l-cta-primary:hover {
-  background: var(--accent-hover);
-}
-.dark .l-cta .l-cta-secondary {
-  border-color: var(--rule-strong);
-  color: var(--ink);
-}
-.dark .l-cta .l-cta-secondary:hover {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
