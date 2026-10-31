@@ -63,7 +63,7 @@ export function AccentPicker({ value, defaultAccent, onChange, disabled }) {
       {open && (
         <div
           id={`${id}-panel`}
-          className="absolute right-0 z-30 mt-1.5 w-64 rounded-lg border border-rule bg-surface p-3 shadow-paper"
+          className="absolute right-0 z-30 mt-1.5 w-64 rounded-lg max-sm:fixed max-sm:inset-x-4 max-sm:top-32 max-sm:w-auto border border-rule bg-surface p-3 shadow-paper"
         >
           <p
             id={`${id}-label`}

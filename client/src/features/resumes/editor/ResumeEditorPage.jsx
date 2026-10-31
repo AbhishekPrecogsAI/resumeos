@@ -21,6 +21,7 @@ import { compareWithProfile, pullFromProfile, acknowledgeProfile } from '@resume
 import { TEMPLATES, getTemplate } from '@resumeos/shared/templates/index.js';
 import { AccentPicker } from '../../../components/editor/AccentPicker.jsx';
 import { PatternPicker } from '../../../components/editor/PatternPicker.jsx';
+import { ResumePhotoPanel } from '../../../components/editor/ResumePhotoPanel.jsx';
 import { photoApi, PHOTO_KEY } from '../../../api/photo.api.js';
 import { LIMITS } from '@resumeos/shared/limits.js';
 import { resumesApi } from '../../../api/resumes.api.js';
@@ -38,7 +39,7 @@ import { SaveStatus } from '../../../components/editor/SaveStatus.jsx';
 import { ConflictBanner } from '../../../components/editor/ConflictBanner.jsx';
 import { EntryFields } from '../../../components/editor/EntryFields.jsx';
 import { EntryListEditor } from '../../../components/editor/EntryListEditor.jsx';
-import { TextField, Checkbox } from '../../../components/ui/Field.jsx';
+import { TextField } from '../../../components/ui/Field.jsx';
 import { ProfileSection } from '../../profile/ProfileSectionsEditor.jsx';
 import {
   CONTACT_FIELDS,
@@ -227,10 +228,13 @@ function ResumeEditor({ resume, profile }) {
   // "canvas": edit on the page itself (default). "form": structured forms beside a preview.
   const [view, setViewState] = useState(() => {
     try {
-      return localStorage.getItem('resumeos:editorView') === 'form' ? 'form' : 'canvas';
+      const saved = localStorage.getItem('resumeos:editorView');
+      if (saved === 'form' || saved === 'canvas') return saved;
     } catch {
-      return 'canvas';
+      /* storage unavailable */
     }
+    // On a phone the whole page is shrunk to fit, which is hard to edit; start with the forms.
+    return window.matchMedia?.('(max-width: 639px)')?.matches ? 'form' : 'canvas';
   });
   const setView = (v) => {
     setViewState(v);
@@ -462,29 +466,13 @@ function ResumeEditor({ resume, profile }) {
   if (selected === 'contact') {
     editor = (
       <>
-        {getTemplate(meta.templateId)?.photo && (
-          <div className="mb-6 rounded-lg border border-rule bg-surface p-4">
-            <Checkbox
-              label="Show my photo on this resume"
-              hint={
-                photo.data
-                  ? 'Many employers in the US, UK and Canada prefer resumes without photos; applicant tracking systems ignore them.'
-                  : 'Upload a photo in your master profile (Contact) first.'
-              }
-              checked={Boolean(layout.showPhoto)}
-              disabled={!photo.data && !layout.showPhoto}
-              onChange={(e) => patchLayout({ showPhoto: e.target.checked })}
-            />
-            {!photo.data && (
-              <Link
-                to="/app/profile#contact"
-                className="mt-2 inline-block text-sm text-accent underline underline-offset-2"
-              >
-                Add a photo to your profile
-              </Link>
-            )}
-          </div>
-        )}
+        <div className="mb-6">
+          <ResumePhotoPanel
+            template={getTemplate(meta.templateId)}
+            layout={layout}
+            patchLayout={patchLayout}
+          />
+        </div>
         <EntryFields
           fields={CONTACT_FIELDS}
           value={content.contact}
@@ -604,7 +592,8 @@ function ResumeEditor({ resume, profile }) {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1">
+        {/* Wraps onto a second row on phones; secondary buttons show icons only there. */}
+        <div className="flex w-full flex-wrap items-center gap-1 sm:w-auto">
           <Button
             variant="ghost"
             size="icon"
@@ -652,8 +641,15 @@ function ResumeEditor({ resume, profile }) {
             <option value="A4">A4</option>
             <option value="Letter">US Letter</option>
           </select>
-          <Button variant="secondary" size="sm" onClick={() => setDesignOpen(true)}>
-            <SlidersHorizontal className="size-4" aria-hidden="true" /> Design
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setDesignOpen(true)}
+            aria-label="Design"
+            title="Design"
+          >
+            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Design</span>
           </Button>
           {getTemplate(meta.templateId)?.accent && (
             <>
@@ -675,11 +671,19 @@ function ResumeEditor({ resume, profile }) {
             onClick={openHelp}
             aria-label="Keyboard shortcuts"
             title="Keyboard shortcuts (?)"
+            className="hidden sm:inline-flex"
           >
             <Keyboard className="size-4" aria-hidden="true" />
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setSaveVersionOpen(true)}>
-            <Save className="size-4" aria-hidden="true" /> Save version
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSaveVersionOpen(true)}
+            aria-label="Save version"
+            title="Save version"
+          >
+            <Save className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Save version</span>
           </Button>
           <Link
             to={`/app/resumes/${resume.id}/versions`}
@@ -689,8 +693,15 @@ function ResumeEditor({ resume, profile }) {
           >
             <History className="size-4" aria-hidden="true" />
           </Link>
-          <Button variant="secondary" size="sm" onClick={() => setShareOpen(true)}>
-            <Share2 className="size-4" aria-hidden="true" /> Share
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShareOpen(true)}
+            aria-label="Share"
+            title="Share"
+          >
+            <Share2 className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Share</span>
           </Button>
           <Button size="sm" onClick={() => setExportOpen(true)}>
             <FileDown className="size-4" aria-hidden="true" /> Export
@@ -731,7 +742,6 @@ function ResumeEditor({ resume, profile }) {
           meta={meta}
           onTemplateChange={(templateId) => updateMeta.mutate({ templateId })}
           photo={photo.data?.dataUrl ?? null}
-          hasPhoto={Boolean(photo.data)}
           report={report}
           quality={{
             onJump: (f) => {

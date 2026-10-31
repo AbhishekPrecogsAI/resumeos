@@ -73,13 +73,14 @@ export function EntryListEditor({
   };
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
       {items.length === 0 && emptyText && (
         <p className="rounded-lg border border-dashed border-rule-strong px-4 py-6 text-center text-sm text-muted">
           {emptyText}
         </p>
       )}
-      <ul ref={listRef} className="grid gap-3">
+      {/* Shrinkable column, so long titles truncate instead of widening the page on phones. */}
+      <ul ref={listRef} className="grid grid-cols-[minmax(0,1fr)] gap-3">
         {items.map((item, index) => {
           const open = expanded.has(item.id);
           const label = describe(item) || `Untitled ${noun}`;

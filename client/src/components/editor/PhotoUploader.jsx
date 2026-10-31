@@ -5,7 +5,8 @@ import { photoApi, PHOTO_KEY, prepareProfilePhoto } from '../../api/photo.api.js
 import { Button } from '../ui/Button.jsx';
 import { useToast } from '../ui/Toast.jsx';
 
-export function PhotoUploader() {
+/** `onSaved` runs after a successful upload, e.g. to show the photo on the resume being edited. */
+export function PhotoUploader({ onSaved }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const inputRef = useRef(null);
@@ -18,6 +19,7 @@ export function PhotoUploader() {
       setError(null);
       queryClient.setQueryData(PHOTO_KEY, saved);
       toast.success('Photo saved');
+      onSaved?.(saved);
     },
     onError: (err) => setError(err.message),
   });

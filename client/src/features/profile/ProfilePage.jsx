@@ -158,7 +158,8 @@ function ProfileEditor({ profile }) {
             ))}
           </ul>
         </nav>
-        <div className="grid min-w-0 gap-10">
+        {/* One shrinkable column: an unsized grid track grows to its widest content on phones. */}
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10">
           {PROFILE_NAV.map((s) => (
             <section
               key={s.id}

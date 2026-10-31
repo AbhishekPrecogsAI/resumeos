@@ -51,20 +51,21 @@ describe('show photo toggle', () => {
     expect(calls.find((c) => c.method === 'PUT').body.layout.showPhoto).toBe(true);
   });
 
-  it('points to the profile when no photo has been uploaded', async () => {
+  it('lets you upload a photo right there when none has been uploaded', async () => {
     mockApi(base('orbit', null));
     renderRoute('/app/resumes/r1/edit');
     expect(await screen.findByLabelText('Show my photo on this resume')).toBeDisabled();
-    expect(screen.getByRole('link', { name: 'Add a photo to your profile' })).toHaveAttribute(
-      'href',
-      '/app/profile#contact',
-    );
+    expect(screen.getByRole('button', { name: /Upload photo/ })).toBeInTheDocument();
+    expect(screen.getByText(/Upload a photo above first/)).toBeInTheDocument();
   });
 
-  it('is not offered for templates without photo support', async () => {
+  it('explains when the template has no photo, and names ones that do', async () => {
     mockApi(base('clarity', { dataUrl: SAMPLE_PHOTO }));
     renderRoute('/app/resumes/r1/edit');
     await screen.findByLabelText('Resume name');
     expect(screen.queryByLabelText('Show my photo on this resume')).not.toBeInTheDocument();
+    expect(
+      await screen.findByText(/Clarity doesn't show a photo\. Templates that do: Orbit/),
+    ).toBeInTheDocument();
   });
 });

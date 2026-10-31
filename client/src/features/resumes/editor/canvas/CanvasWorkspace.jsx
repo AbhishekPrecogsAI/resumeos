@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
 import {
   ArrowDown,
   ArrowUp,
@@ -15,11 +14,11 @@ import { notYetAdded, resolveSectionOrder, sectionTitle } from '@resumeos/shared
 import { addCustomSection, addEntry } from '@resumeos/shared/editing.js';
 import { Button } from '../../../../components/ui/Button.jsx';
 import { Dialog } from '../../../../components/ui/Dialog.jsx';
-import { Checkbox } from '../../../../components/ui/Field.jsx';
 import { TemplateGrid } from '../../../../components/templates/TemplateGrid.jsx';
 import { useToast } from '../../../../components/ui/Toast.jsx';
 import { moveItem } from '../../../../lib/array.js';
 import { QualityPanel } from '../QualityPanel.jsx';
+import { ResumePhotoPanel } from '../../../../components/editor/ResumePhotoPanel.jsx';
 import { CanvasEditor } from './CanvasEditor.jsx';
 
 function entryName(content, id) {
@@ -48,7 +47,7 @@ function entryName(content, id) {
   return content.skills?.find((s) => s.id === id)?.name ?? null;
 }
 
-function LayoutDialog({ open, onClose, draft, setDraft, templateId, hasPhoto }) {
+function LayoutDialog({ open, onClose, draft, setDraft, templateId }) {
   const { content, layout } = draft;
   const order = resolveSectionOrder(content, layout);
   const hidden = new Set(layout.hiddenSections ?? []);
@@ -170,29 +169,12 @@ function LayoutDialog({ open, onClose, draft, setDraft, templateId, hasPhoto }) 
           uses in Design.
         </p>
       )}
-      {template?.photo && (
-        <div className="rounded-md border border-rule p-3">
-          <Checkbox
-            label="Show my photo"
-            hint={
-              hasPhoto
-                ? 'Many employers in the US, UK and Canada prefer resumes without photos.'
-                : 'Upload a photo in your master profile first.'
-            }
-            checked={Boolean(layout.showPhoto)}
-            disabled={!hasPhoto && !layout.showPhoto}
-            onChange={(e) => patchLayout({ showPhoto: e.target.checked })}
-          />
-          {!hasPhoto && (
-            <Link
-              to="/app/profile#contact"
-              className="mt-2 inline-block text-sm text-accent underline underline-offset-2"
-            >
-              Add a photo to your profile
-            </Link>
-          )}
-        </div>
-      )}
+      <section aria-labelledby="layout-photo">
+        <h3 id="layout-photo" className="mb-2 text-sm font-semibold text-ink">
+          Photo
+        </h3>
+        <ResumePhotoPanel template={template} layout={layout} patchLayout={patchLayout} />
+      </section>
       {hiddenItems.length > 0 && (
         <section aria-labelledby="hidden-entries">
           <h3 id="hidden-entries" className="mb-2 text-sm font-semibold text-ink">
@@ -230,7 +212,6 @@ export function CanvasWorkspace({
   meta,
   onTemplateChange,
   photo,
-  hasPhoto,
   report,
   quality,
   profileChanges,
@@ -318,7 +299,6 @@ export function CanvasWorkspace({
         draft={draft}
         setDraft={setDraft}
         templateId={meta.templateId}
-        hasPhoto={hasPhoto}
       />
       <Dialog open={dialog === 'checks'} onClose={() => setDialog(null)} size="lg" title="Checks">
         <div className="max-h-[70vh] overflow-y-auto pr-1">

@@ -34,6 +34,7 @@ import {
   showSection,
 } from '@resumeos/shared/layouts.js';
 import { DatePopover } from './DatePopover.jsx';
+import { cx } from '../../../../lib/cx.js';
 import { PAGE_PX, documentHeight } from '../../../../lib/measurePages.js';
 const URL_FIELD =
   /^(contact:(website|linkedin|github|portfolio)|(projects|certifications):[^:]+:(url|repositoryUrl))$/;
@@ -139,7 +140,10 @@ export function CanvasEditor({
     return () => ro.disconnect();
   }, []);
 
-  const scale = width ? Math.min(1.1, (width - 72) / page.w) : 0;
+  // Wide screens keep a column beside the page for the entry toolbar. On phones the page uses the
+  // full width and the toolbar sits under the selected entry instead.
+  const narrow = width > 0 && width < 640;
+  const scale = width ? Math.min(1.1, (narrow ? width : width - 72) / page.w) : 0;
 
   const measure = useCallback(() => {
     const doc = frameRef.current?.contentDocument;
@@ -349,8 +353,15 @@ export function CanvasEditor({
             <div
               role="toolbar"
               aria-label="Entry actions"
-              className="absolute flex flex-col gap-1 rounded-lg border border-rule bg-surface p-1 shadow-paper"
-              style={{ top: Math.max(0, railTop), left: page.w * scale + 10 }}
+              className={cx(
+                'absolute z-20 flex gap-1 rounded-lg border border-rule bg-surface p-1 shadow-paper',
+                narrow ? 'flex-row' : 'flex-col',
+              )}
+              style={
+                narrow
+                  ? { top: active.rect.bottom * scale + 6, right: 4 }
+                  : { top: Math.max(0, railTop), left: page.w * scale + 10 }
+              }
             >
               {activeEntry === 'skills' && (
                 <RailButton
