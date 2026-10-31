@@ -43,6 +43,13 @@ const schema = z.object({
   CLIENT_DIST_DIR: z.string().optional(),
   // Only for automated tests; refused in production below.
   RATE_LIMIT_DISABLED: booleanString,
+  // Serverless hosts (Vercel) have no shared disk or memory between requests. Unset, these follow
+  // VERCEL: export files and rate-limit counters go to MongoDB, and PDFs use the serverless
+  // Chromium build. A long-running server keeps disk, memory and the system Chrome.
+  EXPORT_STORAGE: z.enum(['disk', 'mongo']).optional(),
+  RATE_LIMIT_STORE: z.enum(['memory', 'mongo']).optional(),
+  SERVERLESS_CHROMIUM: z.enum(['true', 'false']).optional(),
+  VERCEL: z.string().optional(),
 });
 
 export function loadEnv(source = process.env) {
@@ -54,6 +61,10 @@ export function loadEnv(source = process.env) {
     throw new Error(`Invalid environment configuration:\n${details}`);
   }
   const env = result.data;
+  const serverless = Boolean(env.VERCEL);
+  env.EXPORT_STORAGE ??= serverless ? 'mongo' : 'disk';
+  env.RATE_LIMIT_STORE ??= serverless ? 'mongo' : 'memory';
+  env.SERVERLESS_CHROMIUM = (env.SERVERLESS_CHROMIUM ?? String(serverless)) === 'true';
   const problems = [];
   if (env.NODE_ENV === 'production' && env.SESSION_SECRET === PLACEHOLDER_SECRET) {
     problems.push('  - SESSION_SECRET: placeholder value is not allowed in production');

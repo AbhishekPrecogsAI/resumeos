@@ -15,10 +15,17 @@ describe('public routes', () => {
     ['/security', /Security and privacy/],
     ['/privacy', /Privacy policy/],
     ['/terms', /Terms of use/],
-  ])('%s renders its heading', async (path, heading) => {
-    renderRoute(path);
-    expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
-  });
+  ])(
+    '%s renders its heading',
+    async (path, heading) => {
+      renderRoute(path);
+      expect(
+        await screen.findByRole('heading', { level: 1, name: heading }, { timeout: 8000 }),
+      ).toBeInTheDocument();
+    },
+    // The landing page renders six live resume previews; under a full parallel run it can be slow.
+    15_000,
+  );
 
   it('unknown paths render the not-found page', async () => {
     renderRoute('/definitely-not-here');

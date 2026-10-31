@@ -1,12 +1,10 @@
 import { randomBytes, createHash } from 'node:crypto';
-import { mkdir, writeFile, unlink, stat, readdir } from 'node:fs/promises';
-import { createReadStream } from 'node:fs';
 import mongoose from 'mongoose';
-import { join, resolve } from 'node:path';
 import { contentHash } from '@resumeos/shared/hash.js';
 import { getTemplate } from '@resumeos/shared/templates/index.js';
 import { ExportRecord } from './export.model.js';
 import { renderPdf } from './render.js';
+import { createExportStorage } from './storage.js';
 import { validatePdf, parsePdf } from './validate.js';
 import { fitToOnePage } from '@resumeos/shared/fit.js';
 import { renderDocx } from './docx.js';
@@ -99,16 +97,13 @@ export function createExportService({ env, pool, logger }) {
   // One measurement at a time per user; a repeat of the same one waits for it instead.
   const fitRunning = new Map(); // userId → { key, promise }
 
-  const dir = resolve(env.EXPORT_TEMP_DIR);
   const ttlMs = env.EXPORT_TTL_MINUTES * 60_000;
-  // Files are named <random key>.<format extension>.
-  const filePath = (key, format = 'pdf') => join(dir, `${key}.${FORMATS[format]?.ext ?? 'pdf'}`);
+  // Disk on a long-running server; MongoDB on serverless hosts (see storage.js).
+  const storage = createExportStorage(env);
 
   async function removeFile(doc) {
     if (!doc.fileStorageKey) return;
-    await unlink(filePath(doc.fileStorageKey, doc.format)).catch((err) => {
-      if (err.code !== 'ENOENT') throw err;
-    });
+    await storage.remove(doc.fileStorageKey, doc.format);
   }
 
   return {
@@ -175,8 +170,8 @@ export function createExportService({ env, pool, logger }) {
             });
 
       const key = randomBytes(18).toString('base64url');
-      await mkdir(dir, { recursive: true, mode: 0o700 });
-      await writeFile(filePath(key, format), rendered.buffer, { mode: 0o600 });
+      const expiresAt = new Date(Date.now() + ttlMs);
+      await storage.put(key, format, rendered.buffer, expiresAt);
 
       try {
         const doc = await ExportRecord.create({
@@ -197,12 +192,12 @@ export function createExportService({ env, pool, logger }) {
           durationMs: Date.now() - started,
           validationSummary: validation,
           fileStorageKey: key,
-          expiresAt: new Date(Date.now() + ttlMs),
+          expiresAt,
           idempotencyKey: idempotencyKey ?? null,
         });
         return { record: publicExport(doc), reused: false };
       } catch (err) {
-        await unlink(filePath(key, format)).catch(() => {});
+        await storage.remove(key, format).catch(() => {});
         if (err?.code === 11000 && idempotencyKey) {
           const existing = await ExportRecord.findOne({ userId, idempotencyKey }).lean();
           if (existing) return { record: publicExport(existing), reused: true };
@@ -319,9 +314,8 @@ export function createExportService({ env, pool, logger }) {
           'This file is no longer available. Exports are kept for a short time; export again to get a new copy.',
         );
       }
-      const path = filePath(doc.fileStorageKey, doc.format);
-      const info = await stat(path).catch(() => null);
-      if (!info)
+      const file = await storage.open(doc.fileStorageKey, doc.format);
+      if (!file)
         throw new HttpError(
           410,
           'EXPORT_EXPIRED',
@@ -333,8 +327,8 @@ export function createExportService({ env, pool, logger }) {
       ).lean();
       const name = resume?.draft?.content?.contact?.name?.trim();
       return {
-        stream: createReadStream(path),
-        size: info.size,
+        stream: file.stream,
+        size: file.size,
         mime: FORMATS[doc.format].mime,
         disposition: contentDisposition(
           name ? `${name} resume` : doc.resumeTitle,
@@ -382,24 +376,9 @@ export function createExportService({ env, pool, logger }) {
 
     /** Remove files with no live record (e.g. a crash between write and insert) once past retention. */
     async sweepOrphans() {
-      const names = await readdir(dir).catch(() => []);
-      const cutoff = Date.now() - ttlMs;
-      let removed = 0;
-      for (const name of names) {
-        const match = /^([A-Za-z0-9_-]+)\.(pdf|docx)$/.exec(name);
-        if (!match) continue;
-        const info = await stat(join(dir, name)).catch(() => null);
-        if (!info || info.mtimeMs > cutoff) continue;
-        const tracked = await ExportRecord.exists({
-          fileStorageKey: match[1],
-          fileDeletedAt: null,
-        });
-        if (!tracked) {
-          await unlink(join(dir, name)).catch(() => {});
-          removed += 1;
-        }
-      }
-      return removed;
+      return storage.removeOrphans(Date.now() - ttlMs, (key) =>
+        ExportRecord.exists({ fileStorageKey: key, fileDeletedAt: null }),
+      );
     },
   };
 }

@@ -57,6 +57,66 @@ HTTPS_REQUIRED`. `/health/*` is exempt for internal probes.
 - **Caching:** hashed assets under `/assets` get `max-age=1y, immutable`; `index.html` gets
   `no-cache`, so deploys take effect on the next page load.
 
+## Deploying on Vercel
+
+The web app and the API can both run on Vercel. The web app is static files on Vercel's CDN;
+the API is one serverless function (`api/index.js`) that wraps the same Express app.
+`vercel.json` holds the build, routing, bundled files and security headers.
+
+### What changes on a serverless host
+
+When `VERCEL` is set (Vercel sets it on every deployment), these default to serverless-safe
+choices. Each can still be set explicitly.
+
+| Setting               | Long-running server | On Vercel | Why                                                             |
+| --------------------- | ------------------- | --------- | --------------------------------------------------------------- |
+| `EXPORT_STORAGE`      | `disk`              | `mongo`   | Requests land on different instances with no shared disk        |
+| `RATE_LIMIT_STORE`    | `memory`            | `mongo`   | In-memory counters would reset per instance                     |
+| `SERVERLESS_CHROMIUM` | `false`             | `true`    | No system Chrome; `@sparticuz/chromium` provides a build for it |
+
+- **Export files** go to the `exportfiles` collection with a TTL index, so MongoDB deletes each
+  one when it expires. The files hold no owner; account deletion removes them through the export
+  records.
+- **Rate-limit counters** go to `ratelimitcounters`, also with a TTL index. One atomic update per
+  request; each limiter has its own key prefix.
+- **PDF rendering** uses `@sparticuz/chromium` without `--single-process`. That flag makes
+  Chromium exit when its last page closes, which broke every other render; the pool also
+  relaunches the browser once if it finds it closed. All 19 templates pass the export checks
+  with this build.
+- **The export sweep** runs on traffic, at most every 10 minutes per instance, since there's no
+  long-running timer. With MongoDB storage, files expire on their own anyway.
+- **The Fit to one page cache** stays in memory per instance; a cold instance just measures again.
+
+### Bundled files
+
+The function reads some files in ways Vercel's bundler can't detect, so `includeFiles` lists
+them: the Chromium binaries, the pdf.js worker, and the resume font files and their
+`package.json`s. A test (`server/tests/serverless.test.js`) fails if any needed file isn't
+covered.
+
+### Headers
+
+Vercel serves `index.html` itself, so `vercel.json` sends the same Content-Security-Policy as
+the server, including the SHA-256 of the inline theme script, plus HSTS, `nosniff`, Referrer-
+Policy and COOP. The same test fails if the policy or the hash drifts from what the server would
+send. Change `client/index.html`'s inline script and the test tells you the new value.
+
+### Steps
+
+1. Create a MongoDB Atlas cluster. Allow access from anywhere (`0.0.0.0/0`), because Vercel
+   functions don't have fixed IP addresses.
+2. Import the repository in Vercel. Keep the root directory as the repository root;
+   `vercel.json` sets the install, build and output settings.
+3. Add environment variables for Production:
+   - `NODE_ENV=production`
+   - `MONGODB_URI`: the Atlas connection string, including the database name
+   - `SESSION_SECRET`: 48 random bytes in hex, generated as above
+   - `APP_BASE_URL` and `CLIENT_ORIGIN`: the deployment's `https://` URL
+4. Deploy, then open `/health/ready`. It returns 200 once the database is connected.
+
+Functions get up to 60 seconds (`maxDuration`). The first PDF on a cold instance takes a few
+seconds while Chromium unpacks; later ones take about half a second.
+
 ## Health and monitoring
 
 - `GET /health/live`: the process is up. Use it for liveness.

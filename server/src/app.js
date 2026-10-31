@@ -53,7 +53,15 @@ export function createApp({ env, logger, isDbReady, version = '0.0.0', pdfPool }
   registerJobData(userData);
   registerApplicationData(userData);
   registerShareData(userData);
-  const pool = pdfPool ?? createBrowserPool({ chromePath: env.CHROME_PATH, logger });
+  const pool =
+    pdfPool ??
+    createBrowserPool({
+      chromePath: env.CHROME_PATH,
+      logger,
+      serverless: env.SERVERLESS_CHROMIUM,
+      // A serverless instance has one small slice of memory; render one PDF at a time.
+      maxConcurrent: env.SERVERLESS_CHROMIUM ? 1 : 2,
+    });
   const exportsService = createExportService({ env, pool, logger });
   registerExportData(userData, exportsService);
   const shares = createShareService({ env, pool, logger });
