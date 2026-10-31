@@ -20,6 +20,8 @@ export function TemplatePreview({
   accentColor = null,
   pattern = 'none',
   photo = null,
+  // Defer rendering until the preview scrolls near the viewport (for pages with many previews).
+  lazy = false,
 }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
@@ -71,6 +73,9 @@ export function TemplatePreview({
           srcDoc={html}
           // allow-same-origin (without allow-scripts) lets us measure height; no script can run.
           sandbox="allow-same-origin"
+          loading={lazy ? 'lazy' : undefined}
+          // A first-page crop of a longer resume mustn't show its own scrollbar.
+          scrolling={firstPageOnly ? 'no' : undefined}
           onLoad={measure}
           tabIndex={-1}
           className="absolute top-0 left-0 origin-top-left border-0 bg-white"

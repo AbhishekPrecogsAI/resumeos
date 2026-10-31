@@ -8,7 +8,7 @@ beforeEach(() => mockApi(SIGNED_OUT));
 
 describe('public routes', () => {
   it.each([
-    ['/', /One career record/],
+    ['/', /Make a resume you're proud to send/],
     ['/features', /What ResumeOS does/],
     ['/templates', /^Resume templates$/],
     ['/pricing', /^Pricing$/],
