@@ -270,6 +270,42 @@ export function addSkill(content, category = 'Skills', afterSkillId = null) {
   return { content: next, focus: `skills:${skill.id}:name` };
 }
 
+/**
+ * Start a new skill category: a category exists through the skills that carry its name, so this
+ * adds one empty skill under a fresh name and returns the path of the category heading to focus.
+ */
+export function addSkillCategory(content) {
+  const next = clone(content);
+  next.skills ??= [];
+  const taken = new Set(next.skills.map((s) => s.category?.trim()).filter(Boolean));
+  let name = 'New category';
+  for (let n = 2; taken.has(name); n += 1) name = `New category ${n}`;
+  const skill = {
+    id: newId(ID_PREFIX.skills),
+    name: '',
+    category: name,
+    context: '',
+    evidenceIds: [],
+  };
+  next.skills.push(skill);
+  return { content: next, focus: `skillcat:${skill.id}` };
+}
+
+/** Rename a category for every skill in it ('' makes them uncategorised). */
+export function renameSkillCategory(content, from, to) {
+  const next = clone(content);
+  for (const s of next.skills ?? []) if ((s.category?.trim() || '') === from) s.category = to;
+  return next;
+}
+
+/** Remove several skills at once, e.g. a whole category from its heading. */
+export function deleteSkills(content, ids) {
+  const remove = new Set(ids);
+  const next = clone(content);
+  next.skills = (next.skills ?? []).filter((s) => !remove.has(s.id));
+  return next;
+}
+
 export function removeSkill(content, skillId) {
   const next = clone(content);
   const i = next.skills.findIndex((s) => s.id === skillId);

@@ -186,6 +186,34 @@ describe('SkillsEditor', () => {
     expect(current().map((s) => s.name)).toEqual(['Go', 'PostgreSQL', 'Node.js']);
   });
 
+  it('renames and deletes a whole category from its chip', () => {
+    const skill = (id, name, category) => ({ id, name, category, context: '', evidenceIds: [] });
+    renderWithProviders(
+      <Controlled
+        Component={SkillsEditor}
+        prop="skills"
+        initial={[
+          skill('sk_1', 'Go', 'Languages'),
+          skill('sk_2', 'Rust', 'Languages'),
+          skill('sk_3', 'Redis', 'Data'),
+        ]}
+      />,
+    );
+    const chips = screen.getByRole('list', { name: 'Skill categories' });
+    expect(within(chips).getByText('Languages')).toBeInTheDocument();
+
+    fireEvent.click(within(chips).getByRole('button', { name: 'Rename Languages' }));
+    const input = screen.getByLabelText('New name for Languages');
+    fireEvent.change(input, { target: { value: 'Programming' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(current().map((s) => s.category)).toEqual(['Programming', 'Programming', 'Data']);
+
+    fireEvent.click(within(chips).getByRole('button', { name: 'Delete Data' }));
+    expect(within(chips).getByText(/Delete Data and its 1 skill\?/)).toBeInTheDocument();
+    fireEvent.click(within(chips).getByRole('button', { name: 'Delete' }));
+    expect(current().map((s) => s.name)).toEqual(['Go', 'Rust']);
+  });
+
   it('sets an optional level, and stores nothing when cleared', () => {
     renderWithProviders(
       <Controlled

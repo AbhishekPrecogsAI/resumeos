@@ -209,18 +209,27 @@ const renderers = {
         );
       const row = (s) =>
         `<span class="lv">${skill(s)}<span class="lv-meter" data-level="skills:${e(s.id)}" role="button" tabindex="0" title="Change level">${meter(s.level, opts.levelStyle)}</span></span>`;
+      // Editor-only controls per category: delete it (named categories only) and add a skill.
+      const groupHtml = ([cat, list]) => {
+        const ids = list.map((s) => s.id).join(',');
+        const named = Boolean(list[0].category?.trim());
+        const del = named
+          ? `<button type="button" class="ed-cat-del" data-delcat="${e(ids)}" aria-label="${e(`Delete the ${cat} category and its skills`)}" title="Delete category">×</button>`
+          : '';
+        const addSkillButton = `<button type="button" class="ed-skill-add" data-addskill="${e(list.at(-1).id)}">+ Skill</button>`;
+        return `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${ids}`, uncategorised ? '' : cat, 'Category (optional)')}${del}</dt><dd>${
+          leveled
+            ? `<span class="levels">${list.map(row).join('')}</span>`
+            : list.map(skill).join(opts.skillChips ? ' ' : '<span class="sep">, </span>')
+        } ${addSkillButton}</dd></div>`;
+      };
       return `<dl class="skills${opts.skillChips ? ' chips' : ''}${leveled ? ' leveled' : ''}" data-entry="skills">${[
         ...groups,
       ]
-        .map(
-          ([cat, list]) =>
-            `<div data-skill-group="${e(cat)}"><dt>${ed(opts, `skillcat:${list.map((s) => s.id).join(',')}`, uncategorised ? '' : cat, 'Category (optional)')}</dt><dd>${
-              leveled
-                ? `<span class="levels">${list.map(row).join('')}</span>`
-                : list.map(skill).join(opts.skillChips ? ' ' : '<span class="sep">, </span>')
-            }</dd></div>`,
-        )
-        .join('')}</dl>`;
+        .map(groupHtml)
+        .join(
+          '',
+        )}</dl><p class="ed-add" data-addcat role="button" tabindex="0">+ Add a category</p>`;
     }
     if (leveled) {
       // Rows are spans, not divs: templates style `.skills div` (spacing, display: contents)
@@ -533,6 +542,11 @@ p[data-edit]:empty, h2[data-edit]:empty { min-height: 1.2em; }
 .ed-empty:hover { color: #2e3fb8; }
 .ed-add { display: inline-block; margin: 4pt 0 0; padding: 2pt 8pt; border: 1px dashed rgba(46, 63, 184, 0.35); border-radius: 999px; color: #2e3fb8; font-size: 8.5pt; font-weight: 600; cursor: pointer; }
 .ed-add:hover, .ed-add:focus { background: rgba(46, 63, 184, 0.08); outline: none; }
+.sidebar .ed-add, .ed-skill-add { color: inherit; border-color: currentColor; }
+.ed-skill-add { margin-left: 2pt; padding: 0.5pt 6pt; border: 1px dashed currentColor; border-radius: 999px; background: transparent; font: inherit; font-size: 7.5pt; font-weight: 600; cursor: pointer; }
+.ed-skill-add:hover, .ed-skill-add:focus { background: rgba(46, 63, 184, 0.1); outline: none; }
+.ed-cat-del { margin-left: 5pt; width: 14pt; height: 14pt; padding: 0; border: 0; border-radius: 50%; background: #fde8e7; color: #b42318; font: 700 9pt/14pt sans-serif; text-align: center; vertical-align: middle; cursor: pointer; visibility: hidden; }
+[data-skill-group]:hover .ed-cat-del, .ed-cat-del:focus { visibility: visible; outline: none; }
 .ed-hidden { display: flex; flex-wrap: wrap; align-items: center; gap: 6pt; margin: 18pt 0 0; padding: 10pt 12pt; border: 1px dashed #b7bdc8; border-radius: 6pt; color: #5b6370; font-size: 8.5pt; }
 .ed-hidden button { padding: 2pt 8pt; border: 1px solid #c9ced6; border-radius: 999px; background: #fff; color: #2e3fb8; font: inherit; font-weight: 600; cursor: pointer; }
 .ed-hidden button:hover, .ed-hidden button:focus { background: rgba(46, 63, 184, 0.08); outline: none; }

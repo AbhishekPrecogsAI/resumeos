@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { newId } from '@resumeos/shared/ids.js';
 import { ID_PREFIX, SKILL_LEVELS } from '@resumeos/shared/resumeModel.js';
 import { LIMITS } from '@resumeos/shared/limits.js';
 import { moveItem, removeAt, replaceAt } from '../../lib/array.js';
 import { Button } from '../ui/Button.jsx';
 import { cx } from '../../lib/cx.js';
+import { renameSkillCategory } from '@resumeos/shared/editing.js';
 
 const input =
   'h-9 w-full min-w-0 rounded-md border border-rule-strong bg-surface px-2.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-accent';
@@ -25,6 +26,79 @@ function IconButton({ label, onClick, disabled, children }) {
   );
 }
 
+/** One category chip: shows its size, renames every skill in it, or deletes them (two steps). */
+function CategoryChip({ name, count, onRename, onDelete }) {
+  const [mode, setMode] = useState('view'); // view | rename | confirm
+  const [value, setValue] = useState(name);
+  const inputRef = useRef(null);
+  // Rename was just clicked, so put the cursor in the box.
+  useEffect(() => {
+    if (mode === 'rename') inputRef.current?.select();
+  }, [mode]);
+  const commit = () => {
+    const next = value.trim();
+    if (next && next !== name) onRename(next);
+    setMode('view');
+  };
+
+  if (mode === 'rename')
+    return (
+      <li className="flex items-center gap-1 rounded-full border border-accent bg-surface py-0.5 pr-1 pl-2">
+        <input
+          aria-label={`New name for ${name}`}
+          className="h-7 w-36 bg-transparent text-sm text-ink outline-none"
+          value={value}
+          maxLength={80}
+          ref={inputRef}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commit();
+            } else if (e.key === 'Escape') {
+              setValue(name);
+              setMode('view');
+            }
+          }}
+          onBlur={commit}
+        />
+        <IconButton label="Save name" onClick={commit}>
+          <Check className="size-4" aria-hidden="true" />
+        </IconButton>
+      </li>
+    );
+
+  if (mode === 'confirm')
+    return (
+      <li className="flex items-center gap-2 rounded-full border border-danger bg-danger-soft py-0.5 pr-1 pl-3 text-sm text-ink">
+        Delete {name} and its {count} {count === 1 ? 'skill' : 'skills'}?
+        <button
+          type="button"
+          onClick={onDelete}
+          className="h-7 rounded-full bg-danger px-3 text-xs font-semibold text-white"
+        >
+          Delete
+        </button>
+        <IconButton label="Keep category" onClick={() => setMode('view')}>
+          <X className="size-4" aria-hidden="true" />
+        </IconButton>
+      </li>
+    );
+
+  return (
+    <li className="flex items-center gap-0.5 rounded-full border border-rule-strong bg-surface py-0.5 pr-1 pl-3 text-sm text-ink">
+      {name}
+      <span className="ml-1 text-xs text-muted">{count}</span>
+      <IconButton label={`Rename ${name}`} onClick={() => setMode('rename')}>
+        <Pencil className="size-3.5" aria-hidden="true" />
+      </IconButton>
+      <IconButton label={`Delete ${name}`} onClick={() => setMode('confirm')}>
+        <Trash2 className="size-3.5" aria-hidden="true" />
+      </IconButton>
+    </li>
+  );
+}
+
 /**
  * Skills as compact rows. Categories group skills on the resume ("Languages", "Data", …).
  * The quick-add field accepts several skills separated by commas.
@@ -32,7 +106,7 @@ function IconButton({ label, onClick, disabled, children }) {
 export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted }) {
   const [draft, setDraft] = useState('');
   const [category, setCategory] = useState('');
-  const categories = [...new Set(skills.map((s) => s.category).filter(Boolean))];
+  const categories = [...new Set(skills.map((s) => s.category?.trim()).filter(Boolean))];
 
   const addFromDraft = () => {
     const names = draft
@@ -133,6 +207,23 @@ export function SkillsEditor({ skills = [], onChange, renderRowExtra, isMuted })
           ))}
         </datalist>
       </div>
+
+      {categories.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium text-ink">Categories</p>
+          <ul className="flex flex-wrap gap-2" aria-label="Skill categories">
+            {categories.map((name) => (
+              <CategoryChip
+                key={name}
+                name={name}
+                count={skills.filter((s) => s.category?.trim() === name).length}
+                onRename={(to) => onChange(renameSkillCategory({ skills }, name, to).skills)}
+                onDelete={() => onChange(skills.filter((s) => s.category?.trim() !== name))}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
 
       {skills.length === 0 ? (
         <p className="text-sm text-muted">No skills yet.</p>

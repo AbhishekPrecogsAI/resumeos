@@ -20,6 +20,8 @@ import {
   deleteEntry,
   moveEntry,
   addEntryAfter,
+  addSkillCategory,
+  deleteSkills,
   cycleLevel,
 } from '@resumeos/shared/editing.js';
 import { templateFontCss } from '../../../../lib/templateFonts.js';
@@ -60,11 +62,12 @@ export function normalise(path, text) {
   return clean;
 }
 
-function placeCaretAtEnd(win, el) {
+function placeCaretAtEnd(win, el, selectAll = false) {
   el.focus();
   const range = win.document.createRange();
   range.selectNodeContents(el);
-  range.collapse(false);
+  // A new category's placeholder name is selected, so typing replaces it.
+  if (!selectAll) range.collapse(false);
   const sel = win.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
@@ -191,7 +194,7 @@ export function CanvasEditor({
     });
 
     doc.addEventListener('keydown', (ev) => {
-      const button = ev.target.closest?.('[data-dates], [data-add], [data-level]');
+      const button = ev.target.closest?.('[data-dates], [data-add], [data-level], [data-addcat]');
       if (button && (ev.key === 'Enter' || ev.key === ' ')) {
         ev.preventDefault();
         button.click();
@@ -260,6 +263,30 @@ export function CanvasEditor({
     });
 
     doc.addEventListener('click', (ev) => {
+      const deleteCategory = ev.target.closest?.('[data-delcat]');
+      if (deleteCategory) {
+        structural({
+          content: deleteSkills(contentRef.current, deleteCategory.dataset.delcat.split(',')),
+        });
+        callbacks.current.onNotice?.(
+          'Category deleted with its skills. Use Undo to bring it back.',
+        );
+        return;
+      }
+      const addSkillHere = ev.target.closest?.('[data-addskill]');
+      if (addSkillHere) {
+        const afterId = addSkillHere.dataset.addskill;
+        const category =
+          contentRef.current.skills.find((s) => s.id === afterId)?.category?.trim() || 'Skills';
+        const out = addSkill(contentRef.current, category, afterId);
+        structural({ content: out.content }, out.focus);
+        return;
+      }
+      if (ev.target.closest?.('[data-addcat]')) {
+        const out = addSkillCategory(contentRef.current);
+        structural({ content: out.content }, out.focus);
+        return;
+      }
       const show = ev.target.closest?.('[data-show]');
       if (show) {
         structural({ layout: showSection(layoutRef.current, show.dataset.show) });
@@ -286,7 +313,7 @@ export function CanvasEditor({
     if (pendingFocus.current) {
       const target = doc.querySelector(`[data-edit="${cssEscape(pendingFocus.current)}"]`);
       pendingFocus.current = null;
-      if (target) placeCaretAtEnd(win, target);
+      if (target) placeCaretAtEnd(win, target, target.dataset.edit.startsWith('skillcat:'));
     }
   };
 

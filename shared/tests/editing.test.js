@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   addEntryAfter,
+  addSkillCategory,
+  deleteSkills,
+  renameSkillCategory,
   BLANK_ENTRY,
   setField,
   getField,
@@ -128,6 +131,42 @@ describe('on-page editing', () => {
       );
     expect(editable).not.toContain('data-add="summary"');
     expect(t.render(c(), {})).not.toMatch(/ed-add|data-add/);
+  });
+
+  it('adds a category under a fresh name, focusing its heading on the page', () => {
+    const first = addSkillCategory(c());
+    const added = first.content.skills.at(-1);
+    expect(added).toMatchObject({ name: '', category: 'New category' });
+    expect(first.focus).toBe(`skillcat:${added.id}`);
+    // The focus path is exactly the new group's heading on the page.
+    const html = TEMPLATES[0].render(first.content, {}, { editable: true });
+    expect(html).toContain(`data-edit="${first.focus}"`);
+    expect(addSkillCategory(first.content).content.skills.at(-1).category).toBe('New category 2');
+  });
+
+  it('renames a category everywhere, or deletes its skills', () => {
+    const renamed = renameSkillCategory(c(), 'Data', 'Databases');
+    expect(renamed.skills.filter((s) => s.category === 'Databases')).toHaveLength(3);
+    expect(renamed.skills.some((s) => s.category === 'Data')).toBe(false);
+    const ids = c()
+      .skills.filter((s) => s.category === 'Data')
+      .map((s) => s.id);
+    expect(deleteSkills(c(), ids).skills.map((s) => s.category)).not.toContain('Data');
+    expect(deleteSkills(c(), ids).skills).toHaveLength(c().skills.length - 3);
+  });
+
+  it('offers add and delete for categories on the page, never in exports', () => {
+    const t = TEMPLATES.find((x) => x.id === 'orbit');
+    const html = t.render(c(), {}, { editable: true });
+    expect(html).toContain('data-addcat');
+    expect(html.match(/data-delcat="/g)).toHaveLength(3); // one per named category
+    expect(html.match(/data-addskill="/g)).toHaveLength(3);
+    // An uncategorised group can get skills but has no category to delete.
+    const plain = { ...c(), skills: c().skills.map((s) => ({ ...s, category: '' })) };
+    const plainHtml = t.render(plain, {}, { editable: true });
+    expect(plainHtml).not.toContain('data-delcat');
+    expect(plainHtml).toContain('data-addskill');
+    expect(t.render(c(), {})).not.toMatch(/data-addcat|data-delcat|data-addskill/);
   });
 
   it('parses technologies as a list', () => {
